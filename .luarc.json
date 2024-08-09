@@ -1,0 +1,16 @@
+{
+  "runtime.version": "Lua 5.2",
+  // "diagnostics.disable": ["lowercase-global"],
+  "diagnostics.globals": [
+    "_draw",
+    "_init",
+    "_update",
+    "btnp",
+    "flr",
+    "printh",
+    "rect",
+    "rectfill",
+    "rnd",
+    "sspr"
+  ]
+}

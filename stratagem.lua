@@ -272,6 +272,18 @@ function UpdateGrid()
 	end
 end
 
+function DrawHUD()
+	print("score: ", 0, 0, 12, 1)
+	print(Player.score, 24, 0, 12, 1)
+
+	print("lives:", 64, 0, 8, 2)
+	for i = 1, Player.lives do
+		print("X", 81 + i * 6, 0, 8, 2)
+	end
+	print("level", 10, 122, 7)
+	print(Player.level, 34, 122, 7)
+end
+
 function _init()
 	Player = InitGame()
 	UpdateGrid()
@@ -281,8 +293,8 @@ function _draw()
 	if CartState == S_GAMEPLAY then
 		DrawGrid()
 		DrawCursor(Player)
+		DrawHUD()
 	end
-	print(#FloodMatch({ 1, 1 }, {}), 16 * 1, 16 * 1, 3)
 end
 
 function _update()

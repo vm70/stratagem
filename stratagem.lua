@@ -15,8 +15,8 @@ S_HIGH_SCORES = 4
 
 N_GEMS = 8
 
-DROP_FRAMES = 1
-MATCH_FRAMES = 10
+DROP_FRAMES = 2
+MATCH_FRAMES = 20
 
 ---@type Coords[] gem sprite x & y coordinates
 GEM_SPRITES = {
@@ -88,6 +88,10 @@ function SwapGems(gem1, gem2)
 		Player.lives = Player.lives - 1
 	end
 	UpdateGrid(true)
+	while GridHasMatches() or GridHasHoles() do
+		UpdateGrid(true)
+	end
+	Player.combo = 0
 end
 
 ---@param coords Coords
@@ -98,19 +102,20 @@ function ClearMatching(coords, byPlayer)
 		return false
 	end
 	local matchList = FloodMatch(coords, {})
-	if #matchList >= 3 and byPlayer then
-		Player.combo = Player.combo + 1
-		local moveScore = Player.level * Player.combo * MATCH_3_PTS * (#matchList - 2)
-		Player.score = Player.score + moveScore
+	if #matchList >= 3 then
 		for _, matchCoord in pairs(matchList) do
 			Grid[matchCoord[1]][matchCoord[2]] = 0
 		end
-		_draw()
-		Wait(MATCH_FRAMES)
+		if byPlayer then
+			Player.combo = Player.combo + 1
+			local moveScore = Player.level * Player.combo * MATCH_3_PTS * (#matchList - 2)
+			Player.score = Player.score + moveScore
+			_draw()
+			Wait(MATCH_FRAMES)
+		end
 		return true
-	else
-		return false
 	end
+	return false
 end
 
 ---@param gemCoords Coords
@@ -147,7 +152,7 @@ end
 ---@param visited Coords[]
 ---@return Coords[]
 function FloodMatch(gemCoords, visited)
-	printh("Checking " .. gemCoords[1] .. "," .. gemCoords[2])
+	printh("Checking " .. gemCoords[1] .. "," .. gemCoords[2]..": ".."Gem ID"..Grid[gemCoords[1]][gemCoords[2]])
 	-- mark the current cell as visited
 	visited[#visited + 1] = gemCoords
 	for _, neighbor in pairs(Neighbors(gemCoords)) do
@@ -248,6 +253,7 @@ function GridHasHoles()
 	for y = 1, 6 do
 		for x = 1, 6 do
 			if Grid[y][x] == 0 then
+				printh("Grid has holes")
 				return true
 			end
 		end
@@ -258,7 +264,8 @@ end
 function GridHasMatches()
 	for y=1,6 do
 		for x = 1, 6 do
-			if #FloodMatch({y, x}, {}) >= 3 then
+			if Grid[y][x] ~= 0 and #FloodMatch({y, x}, {}) >= 3 then
+				printh("Grid has matches")
 				return true
 			end
 		end
@@ -268,8 +275,7 @@ end
 
 ---@param byPlayer boolean
 function UpdateGrid(byPlayer)
-	while GridHasHoles() and GridHasMatches() do
-		-- Fill all holes first
+	while GridHasHoles() do
 		for y = 1, 6 do
 			for x = 1, 6 do
 				if Grid[y][x] == 0 then
@@ -286,12 +292,12 @@ function UpdateGrid(byPlayer)
 				end
 			end
 		end
-		-- -- Clear all matches
-		-- for y = 1, 6 do
-		-- 	for x = 1, 6 do
-		-- 		ClearMatching({y, x}, byPlayer)
-		-- 	end
-		-- end
+	end
+	-- Clear all matches second
+	for y = 1, 6 do
+		for x = 1, 6 do
+			ClearMatching({y, x}, byPlayer)
+		end
 	end
 end
 
@@ -305,11 +311,15 @@ function DrawHUD()
 	end
 	print("level", 10, 122, 7)
 	print(Player.level, 34, 122, 7)
+	print("combo", 10, 116, 7)
+	print(Player.combo, 34, 116, 7)
 end
 
 function _init()
 	Player = InitGame()
-	UpdateGrid(false)
+	while GridHasMatches() or GridHasHoles() do
+		UpdateGrid(false)
+	end
 end
 
 function _draw()
@@ -322,6 +332,6 @@ end
 
 function _update()
 	if CartState == S_GAMEPLAY then
-		UpdateCursor(Player)
+		UpdateCursor()
 	end
 end

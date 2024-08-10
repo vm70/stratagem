@@ -6,7 +6,7 @@
 -----------------
 
 ---@alias Coords [integer, integer]
----@alias Player {cursor: Coords, swapping: boolean, score: integer, level: integer, lives: integer, combo: integer}
+---@alias Player {cursor: Coords, swapping: boolean, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
 
 S_TITLE_SCREEN = 1
 S_GAMEPLAY = 2
@@ -15,7 +15,7 @@ S_HIGH_SCORES = 4
 
 N_GEMS = 8
 
-DROP_FRAMES = 2
+DROP_FRAMES = 1
 MATCH_FRAMES = 20
 
 ---@type Coords[] gem sprite x & y coordinates
@@ -30,7 +30,8 @@ GEM_SPRITES = {
 	{ 8, 16 },
 }
 
-MATCH_3_PTS = 5
+BASE_MATCH_PTS = 1
+LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
 ------------------------
 --  global variables  --
@@ -60,17 +61,24 @@ function Wait(frames)
 	end
 end
 
----@return Player # player stats object
-function InitGame()
+function InitGrid()
 	for y = 1, 6 do
 		for x = 1, 6 do
 			Grid[y][x] = 0
 		end
 	end
-	return {
+	while GridHasMatches() or GridHasHoles() do
+		UpdateGrid(false)
+	end
+end
+
+function InitPlayer()
+	Player = {
 		cursor = { 3, 3 }, -- cursor y- and x- coordinates
 		swapping = false,
 		score = 0,
+		initLevelScore = 0,
+		levelThreshold = LEVEL_1_THRESHOLD,
 		level = 1,
 		lives = 3,
 		combo = 0,
@@ -84,7 +92,9 @@ function SwapGems(gem1, gem2)
 	local temp = Grid[gem1[1]][gem1[2]]
 	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
 	Grid[gem2[1]][gem2[2]] = temp
-	if not (ClearMatching(gem2, true) or ClearMatching(gem1, true)) then
+	local gem1Matched = ClearMatching(gem1, true)
+	local gem2Matched = ClearMatching(gem2, true)
+	if not (gem1Matched or gem2Matched) then
 		Player.lives = Player.lives - 1
 	end
 	UpdateGrid(true)
@@ -108,9 +118,10 @@ function ClearMatching(coords, byPlayer)
 		end
 		if byPlayer then
 			Player.combo = Player.combo + 1
-			local moveScore = Player.level * Player.combo * MATCH_3_PTS * (#matchList - 2)
+			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
 			_draw()
+			print(moveScore, 16 * coords[2] + 1, 16 * coords[1] + 1, 7)
 			Wait(MATCH_FRAMES)
 		end
 		return true
@@ -152,7 +163,7 @@ end
 ---@param visited Coords[]
 ---@return Coords[]
 function FloodMatch(gemCoords, visited)
-	printh("Checking " .. gemCoords[1] .. "," .. gemCoords[2]..": ".."Gem ID"..Grid[gemCoords[1]][gemCoords[2]])
+	printh("Checking " .. gemCoords[1] .. "," .. gemCoords[2] .. ": " .. "Gem ID" .. Grid[gemCoords[1]][gemCoords[2]])
 	-- mark the current cell as visited
 	visited[#visited + 1] = gemCoords
 	for _, neighbor in pairs(Neighbors(gemCoords)) do
@@ -234,7 +245,8 @@ function DrawCursor(Player)
 end
 
 function DrawGrid()
-	rectfill(0, 0, 127, 127, 1)
+	rectfill(0, 0, 127, 127, 0)
+	map(0, 0, 0, 0, 16, 16, 0)
 	rectfill(16, 16, 111, 111, 0)
 	for y = 1, 6 do
 		for x = 1, 6 do
@@ -262,9 +274,9 @@ function GridHasHoles()
 end
 
 function GridHasMatches()
-	for y=1,6 do
+	for y = 1, 6 do
 		for x = 1, 6 do
-			if Grid[y][x] ~= 0 and #FloodMatch({y, x}, {}) >= 3 then
+			if Grid[y][x] ~= 0 and #FloodMatch({ y, x }, {}) >= 3 then
 				printh("Grid has matches")
 				return true
 			end
@@ -296,7 +308,7 @@ function UpdateGrid(byPlayer)
 	-- Clear all matches second
 	for y = 1, 6 do
 		for x = 1, 6 do
-			ClearMatching({y, x}, byPlayer)
+			ClearMatching({ y, x }, byPlayer)
 		end
 	end
 end
@@ -313,13 +325,23 @@ function DrawHUD()
 	print(Player.level, 34, 122, 7)
 	print("combo", 10, 116, 7)
 	print(Player.combo, 34, 116, 7)
+	-- calculate level completion ratio
+	local levelRatio = (Player.score - Player.initLevelScore) / (Player.levelThreshold - Player.initLevelScore)
+	levelRatio = min(levelRatio, 1)
+	local rectlen = (93 * levelRatio)
+	rectfill(17, 114, 17 + rectlen, 117, 7)
+end
+
+function LevelUp()
+	Player.levelThreshold = Player.score + Player.levelThreshold * (2 ^ Player.level)
+	Player.initLevelScore = Player.score
+	Player.level = Player.level + 1
+	InitGrid()
 end
 
 function _init()
-	Player = InitGame()
-	while GridHasMatches() or GridHasHoles() do
-		UpdateGrid(false)
-	end
+	InitPlayer()
+	InitGrid()
 end
 
 function _draw()
@@ -333,5 +355,8 @@ end
 function _update()
 	if CartState == S_GAMEPLAY then
 		UpdateCursor()
+		if Player.score >= Player.levelThreshold then
+			LevelUp()
+		end
 	end
 end

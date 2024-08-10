@@ -77,34 +77,36 @@ function InitGame()
 	}
 end
 
----@param cursorGem Coords # gem coordinates selected by cursor
----@param movedGem Coords # gem coordinates that cursor moves into
-function SwapGems(cursorGem, movedGem)
-	printh("Swapping gem" .. cursorGem[1] .. "," .. cursorGem[2] .. " with " .. movedGem[1] .. "," .. movedGem[2])
-	local temp = Grid[cursorGem[1]][cursorGem[2]]
-	Grid[cursorGem[1]][cursorGem[2]] = Grid[movedGem[1]][movedGem[2]]
-	Grid[movedGem[1]][movedGem[2]] = temp
-	if not (ClearMatching(movedGem, true) or ClearMatching(cursorGem, true)) then
+---@param gem1 Coords
+---@param gem2 Coords
+function SwapGems(gem1, gem2)
+	printh("Swapping gem" .. gem1[1] .. "," .. gem1[2] .. " with " .. gem2[1] .. "," .. gem2[2])
+	local temp = Grid[gem1[1]][gem1[2]]
+	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
+	Grid[gem2[1]][gem2[2]] = temp
+	if not (ClearMatching(gem2, true) or ClearMatching(gem1, true)) then
 		Player.lives = Player.lives - 1
 	end
-	while GridHasHoles() do
-		UpdateGrid()
-		Wait(DROP_FRAMES)
-	end
+	UpdateGrid(true)
 end
 
 ---@param coords Coords
 ---@param byPlayer boolean
 ---@return boolean
 function ClearMatching(coords, byPlayer)
+	if Grid[coords[1]][coords[2]] == 0 then
+		return false
+	end
 	local matchList = FloodMatch(coords, {})
-	if #matchList > 2 and byPlayer then
+	if #matchList >= 3 and byPlayer then
 		Player.combo = Player.combo + 1
 		local moveScore = Player.level * Player.combo * MATCH_3_PTS * (#matchList - 2)
 		Player.score = Player.score + moveScore
 		for _, matchCoord in pairs(matchList) do
 			Grid[matchCoord[1]][matchCoord[2]] = 0
 		end
+		_draw()
+		Wait(MATCH_FRAMES)
 		return true
 	else
 		return false
@@ -158,74 +160,72 @@ function FloodMatch(gemCoords, visited)
 	return visited
 end
 
----@param player Player # player object
-function UpdateCursor(player)
-	if not player.swapping then
+function UpdateCursor()
+	if not Player.swapping then
 		-- move left
-		if btnp(0) and player.cursor[2] > 1 then
-			player.cursor[2] = player.cursor[2] - 1
+		if btnp(0) and Player.cursor[2] > 1 then
+			Player.cursor[2] = Player.cursor[2] - 1
 		end
 		-- move right
-		if btnp(1) and player.cursor[2] < 6 then
-			player.cursor[2] = player.cursor[2] + 1
+		if btnp(1) and Player.cursor[2] < 6 then
+			Player.cursor[2] = Player.cursor[2] + 1
 		end
 		-- move up
-		if btnp(2) and player.cursor[1] > 1 then
-			player.cursor[1] = player.cursor[1] - 1
+		if btnp(2) and Player.cursor[1] > 1 then
+			Player.cursor[1] = Player.cursor[1] - 1
 		end
 		-- move down
-		if btnp(3) and player.cursor[1] < 6 then
-			player.cursor[1] = player.cursor[1] + 1
+		if btnp(3) and Player.cursor[1] < 6 then
+			Player.cursor[1] = Player.cursor[1] + 1
 		end
 		-- start swapping
 		if btnp(4) or btnp(5) then
-			player.swapping = true
+			Player.swapping = true
 		end
 	else
 		-- swap left
-		if btnp(0) and player.cursor[2] > 1 then
-			SwapGems(player.cursor, { player.cursor[1], player.cursor[2] - 1 })
-			player.cursor = { player.cursor[1], player.cursor[2] - 1 }
-			player.swapping = false
+		if btnp(0) and Player.cursor[2] > 1 then
+			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
+			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
+			Player.swapping = false
 		end
 		-- swap right
-		if btnp(1) and player.cursor[2] < 6 then
-			SwapGems(player.cursor, { player.cursor[1], player.cursor[2] + 1 })
-			player.cursor = { player.cursor[1], player.cursor[2] + 1 }
-			player.swapping = false
+		if btnp(1) and Player.cursor[2] < 6 then
+			Player.cursor = { Player.cursor[1], Player.cursor[2] + 1 }
+			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] - 1 })
+			Player.swapping = false
 		end
 		-- swap up
-		if btnp(2) and player.cursor[1] > 1 then
-			SwapGems(player.cursor, { player.cursor[1] - 1, player.cursor[2] })
-			player.cursor = { player.cursor[1] - 1, player.cursor[2] }
-			player.swapping = false
+		if btnp(2) and Player.cursor[1] > 1 then
+			Player.cursor = { Player.cursor[1] - 1, Player.cursor[2] }
+			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
+			Player.swapping = false
 		end
 		-- swap down
-		if btnp(3) and player.cursor[1] < 6 then
-			SwapGems(player.cursor, { player.cursor[1] + 1, player.cursor[2] })
-			player.cursor = { player.cursor[1] + 1, player.cursor[2] }
-			player.swapping = false
+		if btnp(3) and Player.cursor[1] < 6 then
+			Player.cursor = { Player.cursor[1] + 1, Player.cursor[2] }
+			SwapGems(Player.cursor, { Player.cursor[1] - 1, Player.cursor[2] })
+			Player.swapping = false
 		end
 		-- cancel swap
 		if btnp(4) or btnp(5) then
-			player.swapping = false
+			Player.swapping = false
 		end
 	end
-	printh("Cursor is at " .. player.cursor[1] .. "," .. player.cursor[2])
+	printh("Cursor is at " .. Player.cursor[1] .. "," .. Player.cursor[2])
 end
 
 -- draw the cursor on the grid
----@param player Player
-function DrawCursor(player)
+function DrawCursor(Player)
 	-- fillp(0b0011001111001100)
 	-- ternary expressions in Lua are cursed
 	local color
-	if player.swapping then
+	if Player.swapping then
 		color = 7
 	else
 		color = 11
 	end
-	rect(16 * player.cursor[2], 16 * player.cursor[1], 16 * player.cursor[2] + 15, 16 * player.cursor[1] + 15, color)
+	rect(16 * Player.cursor[2], 16 * Player.cursor[1], 16 * Player.cursor[2] + 15, 16 * Player.cursor[1] + 15, color)
 end
 
 function DrawGrid()
@@ -255,8 +255,21 @@ function GridHasHoles()
 	return false
 end
 
-function UpdateGrid()
-	while GridHasHoles() do
+function GridHasMatches()
+	for y=1,6 do
+		for x = 1, 6 do
+			if #FloodMatch({y, x}, {}) >= 3 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+---@param byPlayer boolean
+function UpdateGrid(byPlayer)
+	while GridHasHoles() and GridHasMatches() do
+		-- Fill all holes first
 		for y = 1, 6 do
 			for x = 1, 6 do
 				if Grid[y][x] == 0 then
@@ -266,9 +279,19 @@ function UpdateGrid()
 						Grid[y][x] = Grid[y - 1][x]
 						Grid[y - 1][x] = 0
 					end
+					if byPlayer then
+						Wait(DROP_FRAMES)
+						_draw()
+					end
 				end
 			end
 		end
+		-- -- Clear all matches
+		-- for y = 1, 6 do
+		-- 	for x = 1, 6 do
+		-- 		ClearMatching({y, x}, byPlayer)
+		-- 	end
+		-- end
 	end
 end
 
@@ -286,7 +309,7 @@ end
 
 function _init()
 	Player = InitGame()
-	UpdateGrid()
+	UpdateGrid(false)
 end
 
 function _draw()

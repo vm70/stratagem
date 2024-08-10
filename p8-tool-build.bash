@@ -3,7 +3,7 @@
 p8tool build stratagem.p8 \
 	--lua stratagem.lua \
 	--gfx gemini.p8 \
-	--empty-map \
+	--map gemini.p8 \
 	--empty-sfx \
 	--empty-music
 

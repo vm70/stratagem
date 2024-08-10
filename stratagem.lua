@@ -30,7 +30,7 @@ GEM_SPRITES = {
 	{ 8, 16 },
 }
 
-GEM_COLORS = {8, 9, 12, 11, 14, 7, 4, 13}
+GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 BASE_MATCH_PTS = 1
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
@@ -255,9 +255,11 @@ function DrawCursor(Player)
 end
 
 function DrawGrid()
-	rectfill(0, 0, 127, 127, 0)
+	fillp(20082)
+	rectfill(0, 0, 128, 128, 0x21)
+	fillp(0)
+	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
-	rectfill(16, 16, 111, 111, 0)
 	for y = 1, 6 do
 		for x = 1, 6 do
 			local col = Grid[y][x]
@@ -298,7 +300,7 @@ end
 ---@param byPlayer boolean
 function UpdateGrid(byPlayer)
 	while GridHasHoles() do
-		for y = 1, 6 do
+		for y = 6, 1, -1 do
 			for x = 1, 6 do
 				if Grid[y][x] == 0 then
 					if y == 1 then
@@ -307,12 +309,12 @@ function UpdateGrid(byPlayer)
 						Grid[y][x] = Grid[y - 1][x]
 						Grid[y - 1][x] = 0
 					end
-					if byPlayer then
-						Wait(DROP_FRAMES)
-						_draw()
-					end
 				end
 			end
+		end
+		if byPlayer then
+			_draw()
+			Wait(DROP_FRAMES)
 		end
 	end
 	-- Clear all matches second

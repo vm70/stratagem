@@ -335,17 +335,9 @@ end
 
 --- Draw the HUD (score, lives, level progress bar, etc) on the screen
 function DrawHUD()
-	print("score: ", 0, 0, 12, 1)
-	print(Player.score, 24, 0, 12, 1)
-
-	print("lives:", 64, 0, 8, 2)
-	for i = 1, Player.lives do
-		print("X", 81 + i * 6, 0, 8, 2)
-	end
-	print("level", 10, 122, 7)
-	print(Player.level, 34, 122, 7)
-	print("combo", 10, 116, 7)
-	print(Player.combo, 34, 116, 7)
+	print("score:"..Player.score, 17, 9, 7)
+	print("lives:"..Player.lives, 73, 9, 8)
+	print("level:"..Player.level, 49, 121, 7)
 	-- calculate level completion ratio
 	local levelRatio = (Player.score - Player.initLevelScore) / (Player.levelThreshold - Player.initLevelScore)
 	levelRatio = min(levelRatio, 1)

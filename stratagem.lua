@@ -9,9 +9,11 @@
 ---@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
 
 S_TITLE_SCREEN = 1
-S_GAMEPLAY = 2
-S_GAME_OVER = 3
-S_HIGH_SCORES = 4
+S_GAME_INIT = 2
+S_GAMEPLAY = 3
+S_LEVEL_UP = 4
+S_GAME_OVER = 5
+S_HIGH_SCORES = 6
 
 N_GEMS = 8
 
@@ -30,7 +32,9 @@ GEM_SPRITES = {
 	{ 8, 16 },
 }
 
+---@type integer[] main PICO-8 colors of gems
 GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
+
 BASE_MATCH_PTS = 1
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
@@ -38,7 +42,7 @@ LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 --  global variables  --
 ------------------------
 
----@type integer[][]
+---@type integer[][] game grid
 Grid = {
 	{ 0, 0, 0, 0, 0, 0 },
 	{ 0, 0, 0, 0, 0, 0 },
@@ -55,13 +59,15 @@ CartState = 2
 --  functions  --
 -----------------
 
----@param frames integer
+--- Wait for a specified number of frames
+---@param frames integer number of frames to wait
 function Wait(frames)
 	for _ = 1, frames do
 		flip()
 	end
 end
 
+--- Initialize the grid with random gems; remove matches and holes
 function InitGrid()
 	for y = 1, 6 do
 		for x = 1, 6 do
@@ -73,9 +79,11 @@ function InitGrid()
 	end
 end
 
+--- Initialize the player for starting the game
 function InitPlayer()
+	---@type Player
 	Player = {
-		cursor = { 3, 3 }, -- cursor y- and x- coordinates
+		cursor = { 3, 3 },
 		swapMode = 0,
 		score = 0,
 		initLevelScore = 0,
@@ -86,6 +94,7 @@ function InitPlayer()
 	}
 end
 
+--- swap the two gems (done by the player)
 ---@param gem1 Coords
 ---@param gem2 Coords
 function SwapGems(gem1, gem2)
@@ -105,9 +114,10 @@ function SwapGems(gem1, gem2)
 	Player.combo = 0
 end
 
----@param coords Coords
----@param byPlayer boolean
----@return boolean
+--- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
+---@param coords Coords # coordinates of a single gem in the match
+---@param byPlayer boolean # whether the clearing was by the player or automatic
+---@return boolean # whether the match clearing was successful
 function ClearMatching(coords, byPlayer)
 	if Grid[coords[1]][coords[2]] == 0 then
 		return false
@@ -131,8 +141,9 @@ function ClearMatching(coords, byPlayer)
 	return false
 end
 
+--- Get the neighbors of the given coordinate
 ---@param gemCoords Coords
----@return Coords[]
+---@return Coords[] # array of neighbor coordinates
 function Neighbors(gemCoords)
 	local neighbors = {}
 	if gemCoords[1] ~= 1 then
@@ -150,8 +161,10 @@ function Neighbors(gemCoords)
 	return neighbors
 end
 
----@param coordsList Coords[]
----@param coords Coords
+--- Check whether a coordinate pair is in a coordinate list
+---@param coordsList Coords[] # list of coordinate pairs to search
+---@param coords Coords # coordinate pair to search for
+---@return boolean # whether the coords was in the coords list
 function Contains(coordsList, coords)
 	for _, item in pairs(coordsList) do
 		if item[1] == coords[1] and item[2] == coords[2] then
@@ -161,16 +174,17 @@ function Contains(coordsList, coords)
 	return false
 end
 
----@param gemCoords Coords
----@param visited Coords[]
----@return Coords[]
+--- Find the list of gems that are in the same match as the given gem coordinate using flood filling
+---@param gemCoords Coords # current coordinates to search
+---@param visited Coords[] # list of visited coordinates
+---@return Coords[] # list of coordinates in the match
 function FloodMatch(gemCoords, visited)
-	printh("Checking " .. gemCoords[1] .. "," .. gemCoords[2] .. ": " .. "Gem ID" .. Grid[gemCoords[1]][gemCoords[2]])
 	-- mark the current cell as visited
 	visited[#visited + 1] = gemCoords
 	for _, neighbor in pairs(Neighbors(gemCoords)) do
 		if not Contains(visited, neighbor) then
 			if Grid[neighbor[1]][neighbor[2]] == Grid[gemCoords[1]][gemCoords[2]] then
+				-- do recursion for all non-visited neighbors
 				visited = FloodMatch(neighbor, visited)
 			end
 		end
@@ -178,6 +192,7 @@ function FloodMatch(gemCoords, visited)
 	return visited
 end
 
+--- Do all cursor updating actions
 function UpdateCursor()
 	if Player.swapMode == 0 then
 		-- move left
@@ -232,8 +247,8 @@ function UpdateCursor()
 	end
 end
 
--- draw the cursor on the grid
-function DrawCursor(Player)
+--- draw the cursor on the grid
+function DrawCursor()
 	fillp(13260)
 	local color
 	if Player.swapMode == 0 then
@@ -254,6 +269,7 @@ function DrawCursor(Player)
 	fillp(0)
 end
 
+--- draw the game grid
 function DrawGrid()
 	fillp(20082)
 	rectfill(0, 0, 128, 128, 0x21)
@@ -262,18 +278,18 @@ function DrawGrid()
 	map(0, 0, 0, 0, 16, 16, 0)
 	for y = 1, 6 do
 		for x = 1, 6 do
-			local col = Grid[y][x]
-			if col ~= 0 then
-				sspr(GEM_SPRITES[col][1], GEM_SPRITES[col][2], 16, 16, 16 * x, 16 * y)
+			local color = Grid[y][x]
+			if color ~= 0 then
+				sspr(GEM_SPRITES[color][1], GEM_SPRITES[color][2], 16, 16, 16 * x, 16 * y)
 			end
+			-- print(color, 16 * x, 16 * y, 11)
 		end
 	end
 end
 
+--- Check whether the grid has 0's (holes)
+---@return boolean # whether the grid has holes
 function GridHasHoles()
-	if Grid == nil then
-		return false
-	end
 	for y = 1, 6 do
 		for x = 1, 6 do
 			if Grid[y][x] == 0 then
@@ -285,6 +301,8 @@ function GridHasHoles()
 	return false
 end
 
+--- Check whether the grid has matches
+---@return boolean # whether the grid has matches
 function GridHasMatches()
 	for y = 1, 6 do
 		for x = 1, 6 do
@@ -297,8 +315,10 @@ function GridHasMatches()
 	return false
 end
 
+--- Update the grid by first clearing holes, then clearing matches
 ---@param byPlayer boolean
 function UpdateGrid(byPlayer)
+	-- Clear all holes first
 	while GridHasHoles() do
 		for y = 6, 1, -1 do
 			for x = 1, 6 do
@@ -317,7 +337,7 @@ function UpdateGrid(byPlayer)
 			Wait(DROP_FRAMES)
 		end
 	end
-	-- Clear all matches second
+	-- Clear any matches currently on the grid
 	for y = 1, 6 do
 		for x = 1, 6 do
 			ClearMatching({ y, x }, byPlayer)
@@ -325,6 +345,7 @@ function UpdateGrid(byPlayer)
 	end
 end
 
+--- Draw the HUD (score, lives, level progress bar, etc) on the screen
 function DrawHUD()
 	print("score: ", 0, 0, 12, 1)
 	print(Player.score, 24, 0, 12, 1)
@@ -344,11 +365,14 @@ function DrawHUD()
 	rectfill(17, 114, 17 + rectlen, 117, 7)
 end
 
+--- Increase the player level
 function LevelUp()
+	CartState = S_GAME_INIT
 	Player.levelThreshold = Player.score + Player.levelThreshold * (2 ^ Player.level)
 	Player.initLevelScore = Player.score
 	Player.level = Player.level + 1
 	InitGrid()
+	CartState = S_GAMEPLAY
 end
 
 function _init()
@@ -357,18 +381,42 @@ function _init()
 end
 
 function _draw()
-	if CartState == S_GAMEPLAY then
+	if CartState == S_TITLE_SCREEN then
+		printh(CartState)
+	elseif CartState == S_GAME_INIT then
 		DrawGrid()
-		DrawCursor(Player)
+		rectfill(14, 14, 113, 113, 0)
+	elseif CartState == S_GAMEPLAY then
+		DrawGrid()
+		DrawCursor()
 		DrawHUD()
+	elseif CartState == S_LEVEL_UP then
+		printh(CartState)
+	elseif CartState == S_GAME_OVER then
+		printh(CartState)
+	elseif CartState == S_HIGH_SCORES then
+		printh(CartState)
 	end
 end
 
 function _update()
-	if CartState == S_GAMEPLAY then
+	if CartState == S_TITLE_SCREEN then
+		printh(CartState)
+	elseif CartState == S_GAME_INIT then
+		InitPlayer()
+		InitGrid()
+		CartState = S_GAMEPLAY
+	elseif CartState == S_GAMEPLAY then
 		UpdateCursor()
 		if Player.score >= Player.levelThreshold then
-			LevelUp()
+			CartState = S_LEVEL_UP
 		end
+	elseif CartState == S_LEVEL_UP then
+		LevelUp()
+		CartState = S_GAMEPLAY
+	elseif CartState == S_GAME_OVER then
+		printh(CartState)
+	elseif CartState == S_HIGH_SCORES then
+		printh(CartState)
 	end
 end

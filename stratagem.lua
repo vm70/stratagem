@@ -8,12 +8,15 @@
 ---@alias Coords [integer, integer]
 ---@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
 
-S_TITLE_SCREEN = 1
-S_GAME_INIT = 2
-S_GAMEPLAY = 3
-S_LEVEL_UP = 4
-S_GAME_OVER = 5
-S_HIGH_SCORES = 6
+---@enum States
+STATES = {
+	title_screen = 1,
+	game_init = 2,
+	gameplay = 3,
+	level_up = 4,
+	game_over = 5,
+	high_scores = 6,
+}
 
 N_GEMS = 8
 
@@ -335,9 +338,9 @@ end
 
 --- Draw the HUD (score, lives, level progress bar, etc) on the screen
 function DrawHUD()
-	print("score:"..Player.score, 17, 9, 7)
-	print("lives:"..Player.lives, 73, 9, 8)
-	print("level:"..Player.level, 49, 121, 7)
+	print("score:" .. Player.score, 17, 9, 7)
+	print("lives:" .. Player.lives, 73, 9, 8)
+	print("level:" .. Player.level, 49, 121, 7)
 	-- calculate level completion ratio
 	local levelRatio = (Player.score - Player.initLevelScore) / (Player.levelThreshold - Player.initLevelScore)
 	levelRatio = min(levelRatio, 1)
@@ -347,12 +350,10 @@ end
 
 --- Increase the player level
 function LevelUp()
-	CartState = S_GAME_INIT
 	Player.levelThreshold = Player.score + Player.levelThreshold * (2 ^ Player.level)
 	Player.initLevelScore = Player.score
 	Player.level = Player.level + 1
 	InitGrid()
-	CartState = S_GAMEPLAY
 end
 
 function _init()
@@ -361,42 +362,49 @@ function _init()
 end
 
 function _draw()
-	if CartState == S_TITLE_SCREEN then
+	if CartState == STATES.title_screen then
 		printh(CartState)
-	elseif CartState == S_GAME_INIT then
+	elseif CartState == STATES.game_init then
 		DrawGrid()
 		rectfill(14, 14, 113, 113, 0)
-	elseif CartState == S_GAMEPLAY then
+	elseif CartState == STATES.gameplay then
 		DrawGrid()
 		DrawCursor()
 		DrawHUD()
-	elseif CartState == S_LEVEL_UP then
+	elseif CartState == STATES.level_up then
 		printh(CartState)
-	elseif CartState == S_GAME_OVER then
+		rectfill(14, 14, 113, 113, 0)
+	elseif CartState == STATES.game_over then
 		printh(CartState)
-	elseif CartState == S_HIGH_SCORES then
+	elseif CartState == STATES.high_scores then
 		printh(CartState)
 	end
 end
 
 function _update()
-	if CartState == S_TITLE_SCREEN then
+	if CartState == STATES.title_screen then
 		printh(CartState)
-	elseif CartState == S_GAME_INIT then
+	elseif CartState == STATES.game_init then
 		InitPlayer()
 		InitGrid()
-		CartState = S_GAMEPLAY
-	elseif CartState == S_GAMEPLAY then
+		CartState = STATES.gameplay
+	elseif CartState == STATES.gameplay then
 		UpdateCursor()
 		if Player.score >= Player.levelThreshold then
-			CartState = S_LEVEL_UP
+			CartState = STATES.level_up
+			Timer = 0
 		end
-	elseif CartState == S_LEVEL_UP then
-		LevelUp()
-		CartState = S_GAMEPLAY
-	elseif CartState == S_GAME_OVER then
+	elseif CartState == STATES.level_up then
+		if Timer ~= 100 then
+			Timer = Timer + 1
+		else
+			Timer = 0
+			LevelUp()
+			CartState = STATES.gameplay
+		end
+	elseif CartState == STATES.game_over then
 		printh(CartState)
-	elseif CartState == S_HIGH_SCORES then
+	elseif CartState == STATES.high_scores then
 		printh(CartState)
 	end
 end

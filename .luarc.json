@@ -6,6 +6,7 @@
     "_init",
     "_update",
     "btnp",
+    "flip",
     "flr",
     "printh",
     "rect",

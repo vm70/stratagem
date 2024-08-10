@@ -6,7 +6,7 @@
 -----------------
 
 ---@alias Coords [integer, integer]
----@alias Player {cursor: Coords, swapping: boolean, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
+---@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
 
 S_TITLE_SCREEN = 1
 S_GAMEPLAY = 2
@@ -30,6 +30,7 @@ GEM_SPRITES = {
 	{ 8, 16 },
 }
 
+GEM_COLORS = {8, 9, 12, 11, 14, 7, 4, 13}
 BASE_MATCH_PTS = 1
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
@@ -75,7 +76,7 @@ end
 function InitPlayer()
 	Player = {
 		cursor = { 3, 3 }, -- cursor y- and x- coordinates
-		swapping = false,
+		swapMode = 0,
 		score = 0,
 		initLevelScore = 0,
 		levelThreshold = LEVEL_1_THRESHOLD,
@@ -88,7 +89,7 @@ end
 ---@param gem1 Coords
 ---@param gem2 Coords
 function SwapGems(gem1, gem2)
-	printh("Swapping gem" .. gem1[1] .. "," .. gem1[2] .. " with " .. gem2[1] .. "," .. gem2[2])
+	Player.swapMode = 2
 	local temp = Grid[gem1[1]][gem1[2]]
 	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
 	Grid[gem2[1]][gem2[2]] = temp
@@ -113,6 +114,7 @@ function ClearMatching(coords, byPlayer)
 	end
 	local matchList = FloodMatch(coords, {})
 	if #matchList >= 3 then
+		local gemColor = GEM_COLORS[Grid[coords[1]][coords[2]]]
 		for _, matchCoord in pairs(matchList) do
 			Grid[matchCoord[1]][matchCoord[2]] = 0
 		end
@@ -121,7 +123,7 @@ function ClearMatching(coords, byPlayer)
 			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
 			_draw()
-			print(moveScore, 16 * coords[2] + 1, 16 * coords[1] + 1, 7)
+			print(moveScore, 16 * coords[2] + 1, 16 * coords[1] + 1, gemColor)
 			Wait(MATCH_FRAMES)
 		end
 		return true
@@ -177,7 +179,7 @@ function FloodMatch(gemCoords, visited)
 end
 
 function UpdateCursor()
-	if not Player.swapping then
+	if Player.swapMode == 0 then
 		-- move left
 		if btnp(0) and Player.cursor[2] > 1 then
 			Player.cursor[2] = Player.cursor[2] - 1
@@ -194,54 +196,62 @@ function UpdateCursor()
 		if btnp(3) and Player.cursor[1] < 6 then
 			Player.cursor[1] = Player.cursor[1] + 1
 		end
-		-- start swapping
+		-- start swapMode
 		if btnp(4) or btnp(5) then
-			Player.swapping = true
+			Player.swapMode = 1
 		end
 	else
 		-- swap left
 		if btnp(0) and Player.cursor[2] > 1 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
-			Player.swapping = false
+			Player.swapMode = 0
 		end
 		-- swap right
 		if btnp(1) and Player.cursor[2] < 6 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] + 1 }
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] - 1 })
-			Player.swapping = false
+			Player.swapMode = 0
 		end
 		-- swap up
 		if btnp(2) and Player.cursor[1] > 1 then
 			Player.cursor = { Player.cursor[1] - 1, Player.cursor[2] }
 			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
-			Player.swapping = false
+			Player.swapMode = 0
 		end
 		-- swap down
 		if btnp(3) and Player.cursor[1] < 6 then
 			Player.cursor = { Player.cursor[1] + 1, Player.cursor[2] }
 			SwapGems(Player.cursor, { Player.cursor[1] - 1, Player.cursor[2] })
-			Player.swapping = false
+			Player.swapMode = 0
 		end
 		-- cancel swap
 		if btnp(4) or btnp(5) then
-			Player.swapping = false
+			Player.swapMode = 0
 		end
 	end
-	printh("Cursor is at " .. Player.cursor[1] .. "," .. Player.cursor[2])
 end
 
 -- draw the cursor on the grid
 function DrawCursor(Player)
-	-- fillp(0b0011001111001100)
-	-- ternary expressions in Lua are cursed
+	fillp(13260)
 	local color
-	if Player.swapping then
+	if Player.swapMode == 0 then
 		color = 7
-	else
+	end
+	if Player.swapMode == 1 then
 		color = 11
 	end
-	rect(16 * Player.cursor[2], 16 * Player.cursor[1], 16 * Player.cursor[2] + 15, 16 * Player.cursor[1] + 15, color)
+	if Player.swapMode ~= 2 then
+		rect(
+			16 * Player.cursor[2],
+			16 * Player.cursor[1],
+			16 * Player.cursor[2] + 15,
+			16 * Player.cursor[1] + 15,
+			color
+		)
+	end
+	fillp(0)
 end
 
 function DrawGrid()

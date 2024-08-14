@@ -1,10 +1,6 @@
 -- stratagem
 -- by vm70
 
------------------
---  constants  --
------------------
-
 ---@alias Coords [integer, integer]
 ---@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
 
@@ -29,10 +25,6 @@ GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 BASE_MATCH_PTS = 1
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
-------------------------
---  global variables  --
-------------------------
-
 ---@type integer[][] game grid
 Grid = {
 	{ 0, 0, 0, 0, 0, 0 },
@@ -44,11 +36,7 @@ Grid = {
 }
 
 ---@type integer current state of the cartridge
-CartState = 2
-
------------------
---  functions  --
------------------
+CartState = 1
 
 --- Wait for a specified number of frames
 ---@param frames integer number of frames to wait
@@ -348,6 +336,13 @@ function DrawHUD()
 	rectfill(17, 114, 17 + rectlen, 117, 7)
 end
 
+function DrawTitle()
+	for i=1,8 do
+		spr(79 + i, 8 * (i - 1), 0)
+		spr(63 + i, 8 * (i - 1), 0)
+	end
+end
+
 --- Increase the player level
 function LevelUp()
 	Player.levelThreshold = Player.score + Player.levelThreshold * (2 ^ Player.level)
@@ -363,7 +358,8 @@ end
 
 function _draw()
 	if CartState == STATES.title_screen then
-		printh(CartState)
+		-- printh(CartState)
+		DrawTitle()
 	elseif CartState == STATES.game_init then
 		DrawGrid()
 		rectfill(14, 14, 113, 113, 0)

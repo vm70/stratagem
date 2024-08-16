@@ -114,7 +114,7 @@ function ClearMatching(coords, byPlayer)
 			Player.combo = Player.combo + 1
 			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
-			LastMatch = {move_score = moveScore, x = coords[2], y = coords[1], color = gemColor}
+			LastMatch = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
 		end
 		return true
 	end
@@ -238,13 +238,7 @@ function DrawCursor()
 	if CartState == STATES.swap_select then
 		color = 11
 	end
-	rect(
-		16 * Player.cursor[2],
-		16 * Player.cursor[1],
-		16 * Player.cursor[2] + 15,
-		16 * Player.cursor[1] + 15,
-		color
-	)
+	rect(16 * Player.cursor[2], 16 * Player.cursor[1], 16 * Player.cursor[2] + 15, 16 * Player.cursor[1] + 15, color)
 end
 
 function DrawGameBG()
@@ -263,7 +257,7 @@ function DrawGrid()
 			if color ~= 0 then
 				sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
 			end
-			print(color, 16 * x, 16 * y, 11)
+			-- print(color, 16 * x, 16 * y, 11)
 		end
 	end
 end
@@ -271,7 +265,7 @@ end
 function GridHasMatches()
 	for y = 1, 6 do
 		for x = 1, 6 do
-			if #FloodMatch({y, x}, {}) >= 3 then
+			if #FloodMatch({ y, x }, {}) >= 3 then
 				return true
 			end
 		end
@@ -378,8 +372,8 @@ function LevelUp()
 end
 
 function DrawMatch()
-	if LastMatch ~= nil then
-		print(LastMatch.move_score, 16 * LastMatch.x + 1, 16 * LastMatch.y + 1, LastMatch.color)
+	if LastMatch ~= nil and Player.combo ~= 0 then
+		print(chr(2) .. "0" .. LastMatch.move_score, 16 * LastMatch.x + 1, 16 * LastMatch.y + 1, LastMatch.color)
 	end
 end
 
@@ -412,6 +406,7 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
+		DrawMatch()
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
 		DrawGrid()
@@ -453,8 +448,10 @@ function _update()
 	elseif CartState == STATES.swap_select then
 		UpdateCursor()
 	elseif CartState == STATES.update_board then
-		if not FillGridHoles() then
-			CartState = STATES.player_matching
+		if ((TransitionFrame - Frame) % 30) % 3 == 0 then
+			if not FillGridHoles() then
+				CartState = STATES.player_matching
+			end
 		end
 	elseif CartState == STATES.player_matching then
 		if not ClearGridMatches(true) then
@@ -464,6 +461,7 @@ function _update()
 			Player.combo = 0
 			CartState = STATES.game_idle
 		else
+			TransitionFrame = Frame
 			CartState = STATES.update_board
 		end
 	elseif CartState == STATES.level_up then

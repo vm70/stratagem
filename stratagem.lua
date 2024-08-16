@@ -1,5 +1,7 @@
--- stratagem
+-- stratagemSTATES.level
 -- by VM70
+
+-- TODO: move functionality of "swap mode" state originally controlled by player to actual cart states
 
 ---@alias Coords [integer, integer]
 ---@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
@@ -8,10 +10,11 @@
 STATES = {
 	title_screen = 1,
 	game_init = 2,
-	gameplay = 3,
-	level_up = 4,
-	game_over = 5,
-	high_scores = 6,
+	generate_board = 3,
+	gameplay = 4,
+	level_up = 5,
+	game_over = 6,
+	high_scores = 7,
 }
 
 N_GEMS = 8
@@ -44,23 +47,12 @@ TitleSprite = {
 ---@type integer current state of the cartridge
 CartState = 2
 
---- Wait for a specified number of frames
----@param frames integer number of frames to wait
-function Wait(frames)
-	for _ = 1, frames do
-		flip()
-	end
-end
-
---- Initialize the grid with random gems; remove matches and holes
+--- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
 		for x = 1, 6 do
 			Grid[y][x] = 0
 		end
-	end
-	while GridHasMatches() or GridHasHoles() do
-		UpdateGrid(false)
 	end
 end
 
@@ -92,11 +84,6 @@ function SwapGems(gem1, gem2)
 	if not (gem1Matched or gem2Matched) then
 		Player.lives = Player.lives - 1
 	end
-	UpdateGrid(true)
-	while GridHasMatches() or GridHasHoles() do
-		UpdateGrid(true)
-	end
-	Player.combo = 0
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -119,7 +106,6 @@ function ClearMatching(coords, byPlayer)
 			Player.score = Player.score + moveScore
 			_draw()
 			print(moveScore, 16 * coords[2] + 1, 16 * coords[1] + 1, gemColor)
-			Wait(MATCH_FRAMES)
 		end
 		return true
 	end
@@ -205,25 +191,21 @@ function UpdateCursor()
 		if btnp(0) and Player.cursor[2] > 1 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
-			Player.swapMode = 0
 		end
 		-- swap right
 		if btnp(1) and Player.cursor[2] < 6 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] + 1 }
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] - 1 })
-			Player.swapMode = 0
 		end
 		-- swap up
 		if btnp(2) and Player.cursor[1] > 1 then
 			Player.cursor = { Player.cursor[1] - 1, Player.cursor[2] }
 			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
-			Player.swapMode = 0
 		end
 		-- swap down
 		if btnp(3) and Player.cursor[1] < 6 then
 			Player.cursor = { Player.cursor[1] + 1, Player.cursor[2] }
 			SwapGems(Player.cursor, { Player.cursor[1] - 1, Player.cursor[2] })
-			Player.swapMode = 0
 		end
 		-- cancel swap
 		if btnp(4) or btnp(5) then
@@ -256,8 +238,9 @@ function DrawCursor()
 	end
 end
 
+Patterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 function DrawGameBG()
-	fillp(0x4E72)
+	fillp(Patterns[1 + flr(time() % #Patterns)])
 	-- herringbone pattern
 	-- 0100 -> 4
 	-- 1110 -> E
@@ -277,66 +260,43 @@ function DrawGrid()
 			if color ~= 0 then
 				sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
 			end
-			-- print(color, 16 * x, 16 * y, 11)
+			print(color, 16 * x, 16 * y, 11)
 		end
 	end
 end
 
---- Check whether the grid has 0's (holes)
----@return boolean # whether the grid has holes
-function GridHasHoles()
+--- Clear the matches on the grid.
+---@param byPlayer boolean whether the match is made by the player
+---@return boolean # whether any matches were cleared
+function ClearGridMatches(byPlayer)
+	local hadMatches = false
 	for y = 1, 6 do
+		for x = 1, 6 do
+			hadMatches = hadMatches or ClearMatching({ y, x }, byPlayer)
+		end
+	end
+	return hadMatches
+end
+
+--- Fill holes in the grid by dropping gems.
+---@return boolean # whether the grid has any holes
+function FillGridHoles()
+	local hasHoles = false
+	for y = 6, 1, -1 do
 		for x = 1, 6 do
 			if Grid[y][x] == 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
-
---- Check whether the grid has matches
----@return boolean # whether the grid has matches
-function GridHasMatches()
-	for y = 1, 6 do
-		for x = 1, 6 do
-			if Grid[y][x] ~= 0 and #FloodMatch({ y, x }, {}) >= 3 then
-				printh("Grid has matches")
-				return true
-			end
-		end
-	end
-	return false
-end
-
---- Update the grid by first clearing holes, then clearing matches
----@param byPlayer boolean
-function UpdateGrid(byPlayer)
-	-- Clear all holes first
-	while GridHasHoles() do
-		for y = 6, 1, -1 do
-			for x = 1, 6 do
-				if Grid[y][x] == 0 then
-					if y == 1 then
-						Grid[y][x] = 1 + flr(rnd(N_GEMS))
-					else
-						Grid[y][x] = Grid[y - 1][x]
-						Grid[y - 1][x] = 0
-					end
+				if y == 1 then
+					Grid[y][x] = 1 + flr(rnd(N_GEMS))
+				else
+					hasHoles = true
+					printh("Found a hole at " .. x .. "," .. y)
+					Grid[y][x] = Grid[y - 1][x]
+					Grid[y - 1][x] = 0
 				end
 			end
 		end
-		if byPlayer then
-			_draw()
-			Wait(DROP_FRAMES)
-		end
 	end
-	-- Clear any matches currently on the grid
-	for y = 1, 6 do
-		for x = 1, 6 do
-			ClearMatching({ y, x }, byPlayer)
-		end
-	end
+	return hasHoles
 end
 
 --- Draw the HUD (score, lives, level progress bar, etc) on the screen
@@ -344,6 +304,7 @@ function DrawHUD()
 	print("score:" .. Player.score, 17, 9, 7)
 	print("lives:" .. Player.lives, 73, 9, 8)
 	print("level:" .. Player.level, 49, 121, 7)
+	print("combo:" .. Player.combo, 0, 0, 7)
 	-- calculate level completion ratio
 	local levelRatio = (Player.score - Player.initLevelScore) / (Player.levelThreshold - Player.initLevelScore)
 	levelRatio = min(levelRatio, 1)
@@ -399,18 +360,22 @@ function _draw()
 	if CartState == STATES.title_screen then
 		DrawTitleScreen()
 	elseif CartState == STATES.game_init then
-		InitGrid()
-		InitPlayer()
 		DrawGameBG()
 		DrawGrid()
-		rectfill(14, 14, 113, 113, 0)
+		DrawHUD()
+	elseif CartState == STATES.generate_board then
+		DrawGameBG()
+		DrawGrid()
+		DrawHUD()
 	elseif CartState == STATES.gameplay then
 		DrawGameBG()
 		DrawGrid()
 		DrawCursor()
 		DrawHUD()
 	elseif CartState == STATES.level_up then
-		rectfill(14, 14, 113, 113, 0)
+		DrawGameBG()
+		DrawGrid()
+		DrawHUD()
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawGrid()
@@ -424,22 +389,36 @@ function _update()
 	elseif CartState == STATES.game_init then
 		InitPlayer()
 		InitGrid()
-		CartState = STATES.gameplay
+		CartState = STATES.generate_board
+	elseif CartState == STATES.generate_board then
+		if not FillGridHoles() then
+			if not ClearGridMatches(false) then
+				CartState = STATES.gameplay
+			end
+		end
 	elseif CartState == STATES.gameplay then
 		UpdateCursor()
+		if Player.swapMode == 2 then
+			if not FillGridHoles() then
+				if not ClearGridMatches(true) then
+					Player.combo = 0
+					Player.swapMode = 0
+				end
+			end
+		end
 		if Player.score >= Player.levelThreshold then
 			CartState = STATES.level_up
-			Timer = 0
+			LevelUpCounter = 0
 		elseif Player.lives == 0 then
 			CartState = STATES.game_over
 		end
 	elseif CartState == STATES.level_up then
-		if Timer ~= 100 then
-			Timer = Timer + 1
+		if LevelUpCounter ~= 100 then
+			LevelUpCounter = LevelUpCounter + 1
 		else
-			Timer = 0
+			LevelUpCounter = 0
 			LevelUp()
-			CartState = STATES.gameplay
+			CartState = STATES.generate_board
 		end
 	elseif CartState == STATES.game_over then
 	elseif CartState == STATES.high_scores then

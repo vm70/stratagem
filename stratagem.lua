@@ -1,20 +1,20 @@
 -- stratagemSTATES.level
 -- by VM70
 
--- TODO: move functionality of "swap mode" state originally controlled by player to actual cart states
-
 ---@alias Coords [integer, integer]
----@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
+---@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
 
 ---@enum States
 STATES = {
 	title_screen = 1,
 	game_init = 2,
 	generate_board = 3,
-	gameplay = 4,
-	level_up = 5,
-	game_over = 6,
-	high_scores = 7,
+	game_idle = 4,
+	swap_select = 5,
+	player_matching = 6,
+	level_up = 7,
+	game_over = 8,
+	high_scores = 9,
 }
 
 N_GEMS = 8
@@ -37,6 +37,14 @@ Grid = {
 	{ 0, 0, 0, 0, 0, 0 },
 	{ 0, 0, 0, 0, 0, 0 },
 }
+
+---@type integer[] background patterns
+BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
+-- herringbone pattern
+-- 0100 -> 4
+-- 1110 -> E
+-- 0111 -> 7
+-- 0010 -> 2
 
 TitleSprite = {
 	width = 82,
@@ -61,7 +69,6 @@ function InitPlayer()
 	---@type Player
 	Player = {
 		cursor = { 3, 3 },
-		swapMode = 0,
 		score = 0,
 		initLevelScore = 0,
 		levelThreshold = LEVEL_1_THRESHOLD,
@@ -75,7 +82,6 @@ end
 ---@param gem1 Coords
 ---@param gem2 Coords
 function SwapGems(gem1, gem2)
-	Player.swapMode = 2
 	local temp = Grid[gem1[1]][gem1[2]]
 	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
 	Grid[gem2[1]][gem2[2]] = temp
@@ -165,7 +171,8 @@ end
 
 --- Do all cursor updating actions
 function UpdateCursor()
-	if Player.swapMode == 0 then
+	if CartState == STATES.game_idle then
+		-- move around the board while idle
 		-- move left
 		if btnp(0) and Player.cursor[2] > 1 then
 			Player.cursor[2] = Player.cursor[2] - 1
@@ -182,11 +189,11 @@ function UpdateCursor()
 		if btnp(3) and Player.cursor[1] < 6 then
 			Player.cursor[1] = Player.cursor[1] + 1
 		end
-		-- start swapMode
 		if btnp(4) or btnp(5) then
-			Player.swapMode = 1
+			CartState = STATES.swap_select
 		end
-	else
+	elseif CartState == STATES.swap_select then
+		-- player has chosen to swap gems
 		-- swap left
 		if btnp(0) and Player.cursor[2] > 1 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
@@ -209,7 +216,7 @@ function UpdateCursor()
 		end
 		-- cancel swap
 		if btnp(4) or btnp(5) then
-			Player.swapMode = 0
+			CartState = STATES.game_idle
 		end
 	end
 end
@@ -220,32 +227,21 @@ function DrawCursor()
 	-- 0011 -> 3
 	-- 1100 -> C
 	-- 1100 -> C
-	local color
-	if Player.swapMode == 0 then
-		color = 7
-	end
-	if Player.swapMode == 1 then
+	local color = 7
+	if CartState == STATES.swap_select then
 		color = 11
 	end
-	if Player.swapMode ~= 2 then
-		rect(
-			16 * Player.cursor[2],
-			16 * Player.cursor[1],
-			16 * Player.cursor[2] + 15,
-			16 * Player.cursor[1] + 15,
-			color
-		)
-	end
+	rect(
+		16 * Player.cursor[2],
+		16 * Player.cursor[1],
+		16 * Player.cursor[2] + 15,
+		16 * Player.cursor[1] + 15,
+		color
+	)
 end
 
-Patterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 function DrawGameBG()
-	fillp(Patterns[1 + flr(time() % #Patterns)])
-	-- herringbone pattern
-	-- 0100 -> 4
-	-- 1110 -> E
-	-- 0111 -> 7
-	-- 0010 -> 2
+	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
 	rectfill(0, 0, 128, 128, 0x21)
 	fillp(0)
 end
@@ -367,10 +363,19 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
-	elseif CartState == STATES.gameplay then
+	elseif CartState == STATES.game_idle then
 		DrawGameBG()
 		DrawGrid()
 		DrawCursor()
+		DrawHUD()
+	elseif CartState == STATES.swap_select then
+		DrawGameBG()
+		DrawGrid()
+		DrawCursor()
+		DrawHUD()
+	elseif CartState == STATES.player_matching then
+		DrawGameBG()
+		DrawGrid()
 		DrawHUD()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
@@ -393,24 +398,25 @@ function _update()
 	elseif CartState == STATES.generate_board then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
-				CartState = STATES.gameplay
+				CartState = STATES.game_idle
 			end
 		end
-	elseif CartState == STATES.gameplay then
+	elseif CartState == STATES.game_idle then
 		UpdateCursor()
-		if Player.swapMode == 2 then
-			if not FillGridHoles() then
-				if not ClearGridMatches(true) then
-					Player.combo = 0
-					Player.swapMode = 0
-				end
-			end
-		end
 		if Player.score >= Player.levelThreshold then
 			CartState = STATES.level_up
 			LevelUpCounter = 0
 		elseif Player.lives == 0 then
 			CartState = STATES.game_over
+		end
+	elseif CartState == STATES.swap_select then
+		UpdateCursor()
+	elseif CartState == STATES.player_matching then
+		if not FillGridHoles() then
+			if not ClearGridMatches(true) then
+				Player.combo = 0
+				CartState = STATES.game_idle
+			end
 		end
 	elseif CartState == STATES.level_up then
 		if LevelUpCounter ~= 100 then

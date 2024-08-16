@@ -1,5 +1,5 @@
 -- stratagem
--- by vm70
+-- by VM70
 
 ---@alias Coords [integer, integer]
 ---@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
@@ -35,8 +35,14 @@ Grid = {
 	{ 0, 0, 0, 0, 0, 0 },
 }
 
+TitleSprite = {
+	width = 82,
+	height = 31,
+	y_offset = 10,
+}
+
 ---@type integer current state of the cartridge
-CartState = 1
+CartState = 2
 
 --- Wait for a specified number of frames
 ---@param frames integer number of frames to wait
@@ -94,8 +100,8 @@ function SwapGems(gem1, gem2)
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
----@param coords Coords # coordinates of a single gem in the match
----@param byPlayer boolean # whether the clearing was by the player or automatic
+---@param coords Coords coordinates of a single gem in the match
+---@param byPlayer boolean whether the clearing was by the player or automatic
 ---@return boolean # whether the match clearing was successful
 function ClearMatching(coords, byPlayer)
 	if Grid[coords[1]][coords[2]] == 0 then
@@ -141,8 +147,8 @@ function Neighbors(gemCoords)
 end
 
 --- Check whether a coordinate pair is in a coordinate list
----@param coordsList Coords[] # list of coordinate pairs to search
----@param coords Coords # coordinate pair to search for
+---@param coordsList Coords[] list of coordinate pairs to search
+---@param coords Coords coordinate pair to search for
 ---@return boolean # whether the coords was in the coords list
 function Contains(coordsList, coords)
 	for _, item in pairs(coordsList) do
@@ -154,8 +160,8 @@ function Contains(coordsList, coords)
 end
 
 --- Find the list of gems that are in the same match as the given gem coordinate using flood filling
----@param gemCoords Coords # current coordinates to search
----@param visited Coords[] # list of visited coordinates
+---@param gemCoords Coords current coordinates to search
+---@param visited Coords[] list of visited coordinates
 ---@return Coords[] # list of coordinates in the match
 function FloodMatch(gemCoords, visited)
 	-- mark the current cell as visited
@@ -228,7 +234,10 @@ end
 
 --- draw the cursor on the grid
 function DrawCursor()
-	fillp(13260)
+	-- 0011 -> 3
+	-- 0011 -> 3
+	-- 1100 -> C
+	-- 1100 -> C
 	local color
 	if Player.swapMode == 0 then
 		color = 7
@@ -245,14 +254,21 @@ function DrawCursor()
 			color
 		)
 	end
+end
+
+function DrawGameBG()
+	fillp(0x4E72)
+	-- herringbone pattern
+	-- 0100 -> 4
+	-- 1110 -> E
+	-- 0111 -> 7
+	-- 0010 -> 2
+	rectfill(0, 0, 128, 128, 0x21)
 	fillp(0)
 end
 
 --- draw the game grid
 function DrawGrid()
-	fillp(20082)
-	rectfill(0, 0, 128, 128, 0x21)
-	fillp(0)
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
 	for y = 1, 6 do
@@ -272,7 +288,6 @@ function GridHasHoles()
 	for y = 1, 6 do
 		for x = 1, 6 do
 			if Grid[y][x] == 0 then
-				printh("Grid has holes")
 				return true
 			end
 		end
@@ -336,11 +351,36 @@ function DrawHUD()
 	rectfill(17, 114, 17 + rectlen, 117, 7)
 end
 
-function DrawTitle()
-	for i=1,8 do
-		spr(79 + i, 8 * (i - 1), 0)
-		spr(63 + i, 8 * (i - 1), 0)
+-- Draw the title screen
+function DrawTitleScreen()
+	rectfill(0, 0, 128, 128, 1)
+	-- draw wobbly function background
+	for x = 0, 128, 3 do
+		for y = 0, 128, 3 do
+			local color = 1
+			if
+				cos(27 / 39 * x / 61 + y / 47 + time() / 23 + cos(29 / 31 * y / 67 + time() / 27))
+				> sin(22 / 41 * x / 68 + y / 57 * time() / 32)
+			then
+				color = 2
+			end
+			pset(x, y, color)
+		end
 	end
+	map(16, 0, 0, 0, 16, 16)
+	-- draw foreground title
+	sspr(
+		0,
+		32,
+		TitleSprite.width,
+		TitleSprite.height,
+		64 - TitleSprite.width / 2,
+		TitleSprite.y_offset,
+		TitleSprite.width,
+		TitleSprite.height
+	)
+	print("\142: start game", 12, 64, 7)
+	print("\151: high scores", 12, 72, 7)
 end
 
 --- Increase the player level
@@ -352,34 +392,35 @@ function LevelUp()
 end
 
 function _init()
-	InitGrid()
-	InitPlayer()
+	cls(0)
 end
 
 function _draw()
 	if CartState == STATES.title_screen then
-		-- printh(CartState)
-		DrawTitle()
+		DrawTitleScreen()
 	elseif CartState == STATES.game_init then
+		InitGrid()
+		InitPlayer()
+		DrawGameBG()
 		DrawGrid()
 		rectfill(14, 14, 113, 113, 0)
 	elseif CartState == STATES.gameplay then
+		DrawGameBG()
 		DrawGrid()
 		DrawCursor()
 		DrawHUD()
 	elseif CartState == STATES.level_up then
-		printh(CartState)
 		rectfill(14, 14, 113, 113, 0)
 	elseif CartState == STATES.game_over then
-		printh(CartState)
+		DrawGameBG()
+		DrawGrid()
+		DrawHUD()
 	elseif CartState == STATES.high_scores then
-		printh(CartState)
 	end
 end
 
 function _update()
 	if CartState == STATES.title_screen then
-		printh(CartState)
 	elseif CartState == STATES.game_init then
 		InitPlayer()
 		InitGrid()
@@ -389,6 +430,8 @@ function _update()
 		if Player.score >= Player.levelThreshold then
 			CartState = STATES.level_up
 			Timer = 0
+		elseif Player.lives == 0 then
+			CartState = STATES.game_over
 		end
 	elseif CartState == STATES.level_up then
 		if Timer ~= 100 then
@@ -399,8 +442,6 @@ function _update()
 			CartState = STATES.gameplay
 		end
 	elseif CartState == STATES.game_over then
-		printh(CartState)
 	elseif CartState == STATES.high_scores then
-		printh(CartState)
 	end
 end

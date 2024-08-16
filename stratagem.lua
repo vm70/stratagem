@@ -52,6 +52,9 @@ TitleSprite = {
 	y_offset = 10,
 }
 
+---@type integer frame number, modulo 30 for 30 fps
+Frame = 0
+
 ---@type integer current state of the cartridge
 CartState = 2
 
@@ -110,8 +113,7 @@ function ClearMatching(coords, byPlayer)
 			Player.combo = Player.combo + 1
 			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
-			_draw()
-			print(moveScore, 16 * coords[2] + 1, 16 * coords[1] + 1, gemColor)
+			LastMatch = {score = moveScore, x = coords[2], y = coords[1], color = gemColor}
 		end
 		return true
 	end
@@ -198,21 +200,25 @@ function UpdateCursor()
 		if btnp(0) and Player.cursor[2] > 1 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
+			CartState = STATES.player_matching
 		end
 		-- swap right
 		if btnp(1) and Player.cursor[2] < 6 then
 			Player.cursor = { Player.cursor[1], Player.cursor[2] + 1 }
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] - 1 })
+			CartState = STATES.player_matching
 		end
 		-- swap up
 		if btnp(2) and Player.cursor[1] > 1 then
 			Player.cursor = { Player.cursor[1] - 1, Player.cursor[2] }
 			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
+			CartState = STATES.player_matching
 		end
 		-- swap down
 		if btnp(3) and Player.cursor[1] < 6 then
 			Player.cursor = { Player.cursor[1] + 1, Player.cursor[2] }
 			SwapGems(Player.cursor, { Player.cursor[1] - 1, Player.cursor[2] })
+			CartState = STATES.player_matching
 		end
 		-- cancel swap
 		if btnp(4) or btnp(5) then
@@ -348,6 +354,12 @@ function LevelUp()
 	InitGrid()
 end
 
+function DrawMatch()
+	if LastMatch ~= nil then
+		print(LastMatch.moveScore, 16 * LastMatch.x + 1, 16 * LastMatch.y + 1, LastMatch.color)
+	end
+end
+
 function _init()
 	cls(0)
 end
@@ -377,6 +389,7 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
+		DrawMatch()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawGrid()
@@ -390,6 +403,7 @@ function _draw()
 end
 
 function _update()
+	Frame = (Frame + 1) % 30
 	if CartState == STATES.title_screen then
 	elseif CartState == STATES.game_init then
 		InitPlayer()
@@ -411,11 +425,14 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select then
 		UpdateCursor()
+		SwapFrame = Frame
 	elseif CartState == STATES.player_matching then
-		if not FillGridHoles() then
-			if not ClearGridMatches(true) then
-				Player.combo = 0
-				CartState = STATES.game_idle
+		if (SwapFrame - Frame % 30) % 2 == 0 then
+			if not FillGridHoles() then
+				if not ClearGridMatches(true) then
+					Player.combo = 0
+					CartState = STATES.game_idle
+				end
 			end
 		end
 	elseif CartState == STATES.level_up then

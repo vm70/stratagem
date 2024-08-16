@@ -174,57 +174,45 @@ end
 
 --- Do all cursor updating actions
 function UpdateCursor()
-	if CartState == STATES.game_idle then
-		-- move around the board while idle
-		-- move left
-		if btnp(0) and Player.cursor[2] > 1 then
-			Player.cursor[2] = Player.cursor[2] - 1
-		end
-		-- move right
-		if btnp(1) and Player.cursor[2] < 6 then
-			Player.cursor[2] = Player.cursor[2] + 1
-		end
-		-- move up
-		if btnp(2) and Player.cursor[1] > 1 then
-			Player.cursor[1] = Player.cursor[1] - 1
-		end
-		-- move down
-		if btnp(3) and Player.cursor[1] < 6 then
-			Player.cursor[1] = Player.cursor[1] + 1
-		end
-		if btnp(4) or btnp(5) then
-			CartState = STATES.swap_select
-		end
-	elseif CartState == STATES.swap_select then
+	if CartState == STATES.swap_select then
 		-- player has chosen to swap gems
-		-- swap left
 		if btnp(0) and Player.cursor[2] > 1 then
-			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
-			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
-			CartState = STATES.player_matching
-		end
-		-- swap right
-		if btnp(1) and Player.cursor[2] < 6 then
-			Player.cursor = { Player.cursor[1], Player.cursor[2] + 1 }
+			-- swap left
 			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] - 1 })
-			CartState = STATES.player_matching
-		end
-		-- swap up
-		if btnp(2) and Player.cursor[1] > 1 then
-			Player.cursor = { Player.cursor[1] - 1, Player.cursor[2] }
-			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
-			CartState = STATES.player_matching
-		end
-		-- swap down
-		if btnp(3) and Player.cursor[1] < 6 then
-			Player.cursor = { Player.cursor[1] + 1, Player.cursor[2] }
+		elseif btnp(1) and Player.cursor[2] < 6 then
+			-- swap right
+			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
+		elseif btnp(2) and Player.cursor[1] > 1 then
+			-- swap up
 			SwapGems(Player.cursor, { Player.cursor[1] - 1, Player.cursor[2] })
+		elseif btnp(3) and Player.cursor[1] < 6 then
+			-- swap down
+			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
+		end
+		if btnp(0) or btnp(1) or btnp(2) or btnp(3) then
+			MatchFrame = Frame
 			CartState = STATES.player_matching
 		end
-		-- cancel swap
-		if btnp(4) or btnp(5) then
-			CartState = STATES.game_idle
-		end
+	end
+	-- move the cursor around the board while swapping or idle
+	if btnp(0) and Player.cursor[2] > 1 then
+		-- move left
+		Player.cursor[2] = Player.cursor[2] - 1
+	elseif btnp(1) and Player.cursor[2] < 6 then
+		-- move right
+		Player.cursor[2] = Player.cursor[2] + 1
+	elseif btnp(2) and Player.cursor[1] > 1 then
+		-- move up
+		Player.cursor[1] = Player.cursor[1] - 1
+	elseif btnp(3) and Player.cursor[1] < 6 then
+		-- move down
+		Player.cursor[1] = Player.cursor[1] + 1
+	elseif (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
+		-- idle to swapping
+		CartState = STATES.swap_select
+	elseif (btnp(4) or btnp(5)) and CartState == STATES.swap_select then
+		-- swapping to idle
+		CartState = STATES.game_idle
 	end
 end
 
@@ -448,7 +436,7 @@ function _update()
 	elseif CartState == STATES.swap_select then
 		UpdateCursor()
 	elseif CartState == STATES.update_board then
-		if ((TransitionFrame - Frame) % 30) % 3 == 0 then
+		if ((ClearMatchFrame - Frame) % 30) % 3 == 0 then
 			if not FillGridHoles() then
 				CartState = STATES.player_matching
 			end
@@ -461,7 +449,7 @@ function _update()
 			Player.combo = 0
 			CartState = STATES.game_idle
 		else
-			TransitionFrame = Frame
+			ClearMatchFrame = Frame
 			CartState = STATES.update_board
 		end
 	elseif CartState == STATES.level_up then

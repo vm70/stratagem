@@ -19,6 +19,7 @@
     "rnd",
     "sin",
     "spr",
-    "sspr"
+    "sspr",
+    "time",
   ]
 }

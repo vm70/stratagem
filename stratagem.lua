@@ -12,9 +12,10 @@ STATES = {
 	game_idle = 4,
 	swap_select = 5,
 	player_matching = 6,
-	level_up = 7,
-	game_over = 8,
-	high_scores = 9,
+	update_board = 7,
+	level_up = 8,
+	game_over = 9,
+	high_scores = 10,
 }
 
 N_GEMS = 8
@@ -88,11 +89,11 @@ function SwapGems(gem1, gem2)
 	local temp = Grid[gem1[1]][gem1[2]]
 	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
 	Grid[gem2[1]][gem2[2]] = temp
-	local gem1Matched = ClearMatching(gem1, true)
-	local gem2Matched = ClearMatching(gem2, true)
-	if not (gem1Matched or gem2Matched) then
-		Player.lives = Player.lives - 1
-	end
+	-- local gem1Matched = ClearMatching(gem1, true)
+	-- local gem2Matched = ClearMatching(gem2, true)
+	-- if not (gem1Matched or gem2Matched) then
+	-- 	Player.lives = Player.lives - 1
+	-- end
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -113,7 +114,7 @@ function ClearMatching(coords, byPlayer)
 			Player.combo = Player.combo + 1
 			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
-			LastMatch = {score = moveScore, x = coords[2], y = coords[1], color = gemColor}
+			LastMatch = {move_score = moveScore, x = coords[2], y = coords[1], color = gemColor}
 		end
 		return true
 	end
@@ -267,6 +268,17 @@ function DrawGrid()
 	end
 end
 
+function GridHasMatches()
+	for y = 1, 6 do
+		for x = 1, 6 do
+			if #FloodMatch({y, x}, {}) >= 3 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 --- Clear the matches on the grid.
 ---@param byPlayer boolean whether the match is made by the player
 ---@return boolean # whether any matches were cleared
@@ -278,6 +290,17 @@ function ClearGridMatches(byPlayer)
 		end
 	end
 	return hadMatches
+end
+
+function GridHasHoles()
+	for y = 1, 6 do
+		for x = 1, 6 do
+			if Grid[y][x] == 0 then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 --- Fill holes in the grid by dropping gems.
@@ -356,7 +379,7 @@ end
 
 function DrawMatch()
 	if LastMatch ~= nil then
-		print(LastMatch.moveScore, 16 * LastMatch.x + 1, 16 * LastMatch.y + 1, LastMatch.color)
+		print(LastMatch.move_score, 16 * LastMatch.x + 1, 16 * LastMatch.y + 1, LastMatch.color)
 	end
 end
 
@@ -384,6 +407,10 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawCursor()
+		DrawHUD()
+	elseif CartState == STATES.update_board then
+		DrawGameBG()
+		DrawGrid()
 		DrawHUD()
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
@@ -425,15 +452,19 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select then
 		UpdateCursor()
-		SwapFrame = Frame
+	elseif CartState == STATES.update_board then
+		if not FillGridHoles() then
+			CartState = STATES.player_matching
+		end
 	elseif CartState == STATES.player_matching then
-		if (SwapFrame - Frame % 30) % 2 == 0 then
-			if not FillGridHoles() then
-				if not ClearGridMatches(true) then
-					Player.combo = 0
-					CartState = STATES.game_idle
-				end
+		if not ClearGridMatches(true) then
+			if Player.combo == 0 then
+				Player.lives = Player.lives - 1
 			end
+			Player.combo = 0
+			CartState = STATES.game_idle
+		else
+			CartState = STATES.update_board
 		end
 	elseif CartState == STATES.level_up then
 		if LevelUpCounter ~= 100 then

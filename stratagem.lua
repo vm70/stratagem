@@ -18,15 +18,19 @@ STATES = {
 	high_scores = 10,
 }
 
+---@type integer Number of gems in the game (max 8)
 N_GEMS = 8
 
-DROP_FRAMES = 1
-MATCH_FRAMES = 20
+---@type integer Number of frames to wait before dropping new gems down
+DROP_FRAMES = 3
 
 ---@type integer[] main PICO-8 colors of gems
 GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 
+---@type integer How many points a three-gem match scores on level 1
 BASE_MATCH_PTS = 1
+
+---@type integer How many points needed to get to level 2
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
 ---@type integer[][] game grid
@@ -47,13 +51,14 @@ BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 -- 0111 -> 7
 -- 0010 -> 2
 
+---@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
 TitleSprite = {
 	width = 82,
 	height = 31,
 	y_offset = 10,
 }
 
----@type integer frame number, modulo 30 for 30 fps
+---@type integer frame number for the current second, ranging from 0 to 30
 Frame = 0
 
 ---@type integer current state of the cartridge
@@ -89,11 +94,6 @@ function SwapGems(gem1, gem2)
 	local temp = Grid[gem1[1]][gem1[2]]
 	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
 	Grid[gem2[1]][gem2[2]] = temp
-	-- local gem1Matched = ClearMatching(gem1, true)
-	-- local gem2Matched = ClearMatching(gem2, true)
-	-- if not (gem1Matched or gem2Matched) then
-	-- 	Player.lives = Player.lives - 1
-	-- end
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -156,7 +156,7 @@ end
 
 --- Find the list of gems that are in the same match as the given gem coordinate using flood filling
 ---@param gemCoords Coords current coordinates to search
----@param visited Coords[] list of visited coordinates
+---@param visited Coords[] list of visited coordinates. Start with "{}" if new match
 ---@return Coords[] # list of coordinates in the match
 function FloodMatch(gemCoords, visited)
 	-- mark the current cell as visited
@@ -207,7 +207,9 @@ function UpdateCursor()
 	elseif btnp(3) and Player.cursor[1] < 6 then
 		-- move down
 		Player.cursor[1] = Player.cursor[1] + 1
-	elseif (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
+	end
+	-- idle <-> swapping
+	if (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
 		-- idle to swapping
 		CartState = STATES.swap_select
 	elseif (btnp(4) or btnp(5)) and CartState == STATES.swap_select then
@@ -436,7 +438,7 @@ function _update()
 	elseif CartState == STATES.swap_select then
 		UpdateCursor()
 	elseif CartState == STATES.update_board then
-		if ((ClearMatchFrame - Frame) % 30) % 3 == 0 then
+		if ((ClearMatchFrame - Frame) % 30) % DROP_FRAMES == 0 then
 			if not FillGridHoles() then
 				CartState = STATES.player_matching
 			end

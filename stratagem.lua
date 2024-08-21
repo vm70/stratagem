@@ -35,14 +35,10 @@ BASE_MATCH_PTS = 1
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
 ---@type integer[][] game grid
-Grid = {
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-}
+Grid = {}
+
+---@type Player table containing player information
+Player = {}
 
 ---@type integer[] background patterns
 BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
@@ -68,6 +64,7 @@ CartState = 2
 --- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
+		Grid[y] = {}
 		for x = 1, 6 do
 			Grid[y][x] = 0
 		end
@@ -76,7 +73,6 @@ end
 
 --- Initialize the player for starting the game
 function InitPlayer()
-	---@type Player
 	Player = {
 		cursor = { 3, 3 },
 		score = 0,

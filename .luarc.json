@@ -5,12 +5,14 @@
     "_init",
     "_update",
     "btnp",
+    "cartdata",
+    "chr",
     "cls",
     "cos",
+    "dget",
     "fillp",
     "flip",
     "flr",
-		"chr",
     "map",
     "max",
     "min",
@@ -22,6 +24,6 @@
     "sin",
     "spr",
     "sspr",
-    "time",
+    "time"
   ]
 }

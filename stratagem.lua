@@ -4,7 +4,7 @@
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match { move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[]}
+---@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[], placement: integer}
 
 ---@enum States
 STATES = {
@@ -38,6 +38,9 @@ LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
 ---@type string Allowed initial characters for high scores
 INITIAL_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789 "
+
+---@type integer value for no high score
+NO_PLACEMENT = 11
 
 ---@type integer[][] game grid
 Grid = {}
@@ -81,8 +84,9 @@ end
 
 --- Initialize the player for starting the game
 function InitPlayer()
+	---@type Player
 	Player = {
-		cursor = { 3, 3 },
+		grid_cursor = { 3, 3 },
 		score = 0,
 		initLevelScore = 0,
 		levelThreshold = LEVEL_1_THRESHOLD,
@@ -91,6 +95,8 @@ function InitPlayer()
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 		letterIDs = { 1, 1, 1 },
+		placement = 0,
+		hs_cursor = 1,
 	}
 end
 
@@ -415,13 +421,12 @@ function DrawMatchPoints()
 	end
 end
 
-function NewHighScore()
-	for _, score in ipairs(HighScores) do
-		if score.score > Player.score then
-			-- score = { initials = "   ", score = Player.score }
-			return true
+function PlayerPlacement()
+	for scoreIdx, score in ipairs(HighScores) do
+		if Player.score > score.score then
+			return scoreIdx
 		end
-		return false
+		return NO_PLACEMENT
 	end
 end
 
@@ -469,9 +474,9 @@ function _draw()
 		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
-		DrawHUD()
 		print("game over", 16, 16, 7)
-		print("\142/\151: continue", 16, 22, 7)
+	elseif CartState == STATES.enter_high_score then
+		DrawGameBG()
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
 		DrawHighScores()
@@ -532,9 +537,23 @@ function _update()
 			GameOverCounter = GameOverCounter + 1
 		else
 			if btnp() then
-				CartState = STATES.high_scores
+				Player.placement = PlayerPlacement()
+				if Player.placement == NO_PLACEMENT then
+					GameOverCounter = 0
+					CartState = STATES.high_scores
+				else
+					CartState = STATES.enter_high_score
+				end
 			end
 		end
+	elseif CartState == STATES.enter_high_score then
 	elseif CartState == STATES.high_scores then
+		if GameOverCounter ~= 100 then
+			GameOverCounter = GameOverCounter + 1
+		else
+			if btnp() then
+				CartState = STATES.title_screen
+			end
+		end
 	end
 end

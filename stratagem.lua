@@ -1,8 +1,9 @@
 -- stratagemSTATES.level
 -- by VM70
 
+---@alias Match { move_score: integer, x: integer, y: integer, color: integer}
 ---@alias Coords [integer, integer]
----@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
+---@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match}
 
 ---@enum States
 STATES = {
@@ -84,6 +85,7 @@ function InitPlayer()
 		level = 1,
 		lives = 3,
 		combo = 0,
+		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 	}
 end
 
@@ -114,10 +116,11 @@ function ClearMatching(coords, byPlayer)
 			Player.combo = Player.combo + 1
 			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
-			LastMatch = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
+			Player.last_match = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
 		end
 		return true
 	end
+	Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
 	return false
 end
 
@@ -361,9 +364,15 @@ function LevelUp()
 	InitGrid()
 end
 
-function DrawMatch()
-	if LastMatch ~= nil and Player.combo ~= 0 then
-		print(chr(2) .. "0" .. LastMatch.move_score, 16 * LastMatch.x + 1, 16 * LastMatch.y + 1, LastMatch.color)
+--- Draw the player's match points where the gems were cleared
+function DrawMatchPoints()
+	if Player.combo ~= 0 then
+		print(
+			chr(2) .. "0" .. Player.last_match.move_score,
+			16 * Player.last_match.x + 1,
+			16 * Player.last_match.y + 1,
+			Player.last_match.color
+		)
 	end
 end
 
@@ -396,12 +405,12 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
-		DrawMatch()
+		DrawMatchPoints()
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
-		DrawMatch()
+		DrawMatchPoints()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawGrid()

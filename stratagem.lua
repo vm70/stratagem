@@ -35,6 +35,9 @@ BASE_MATCH_PTS = 1
 ---@type integer How many points needed to get to level 2
 LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
 
+---@type string Allowed initial characters for high scores
+INITIAL_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789 "
+
 ---@type integer[][] game grid
 Grid = {}
 
@@ -62,6 +65,9 @@ Frame = 0
 ---@type integer current state of the cartridge
 CartState = 2
 
+---@type HighScore[] high score
+HighScores = {}
+
 --- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
@@ -84,6 +90,28 @@ function InitPlayer()
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 	}
+end
+
+--- Initialize the high scores by reading from persistent memory
+function InitHighScores()
+	cartdata("vm70_stratagem")
+	for score = 1, 10 do
+		---@type integer[]
+		local rawScoreData = {}
+		for word = 1, 4 do
+			rawScoreData[word] = dget(4 * (score - 1) + word)
+		end
+		if rawScoreData[1] == 0 then
+			rawScoreData = { 1, 1, 1, (11 - score) * 100 }
+		end
+		printh(rawScoreData[1], rawScoreData[2], rawScoreData[3], rawScoreData[4])
+		HighScores[score] = {
+			initials = INITIAL_CHARS[rawScoreData[1]]
+				.. INITIAL_CHARS[rawScoreData[2]]
+				.. INITIAL_CHARS[rawScoreData[3]],
+			score = rawScoreData[4],
+		}
+	end
 end
 
 --- swap the two gems (done by the player)
@@ -298,7 +326,7 @@ function FillGridHoles()
 					Grid[y][x] = 1 + flr(rnd(N_GEMS))
 				else
 					hasHoles = true
-					printh("Found a hole at " .. x .. "," .. y)
+					-- printh("Found a hole at " .. x .. "," .. y)
 					Grid[y][x] = Grid[y - 1][x]
 					Grid[y - 1][x] = 0
 				end
@@ -337,6 +365,12 @@ function DrawTitleBG()
 		end
 	end
 	map(16, 0, 0, 0, 16, 16)
+end
+
+function DrawHighScores()
+	for i, score in ipairs(HighScores) do
+		print(score.initials .. " " .. score.score, 64, 2 + 6 * i, 7)
+	end
 end
 
 -- Draw the title screen
@@ -380,6 +414,7 @@ function _init()
 	cls(0)
 	InitPlayer()
 	InitGrid()
+	InitHighScores()
 end
 
 function _draw()
@@ -431,6 +466,7 @@ function _draw()
 		print("\142/\151: continue", 16, 22, 7)
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
+		DrawHighScores()
 	end
 end
 

@@ -1,8 +1,9 @@
 -- stratagemSTATES.level
 -- by VM70
 
----@alias Match { move_score: integer, x: integer, y: integer, color: integer}
 ---@alias Coords [integer, integer]
+---@alias HighScore {initials: string, score: integer}
+---@alias Match { move_score: integer, x: integer, y: integer, color: integer}
 ---@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match}
 
 ---@enum States
@@ -320,8 +321,7 @@ function DrawHUD()
 	rectfill(17, 114, 17 + rectlen, 117, 7)
 end
 
--- Draw the title screen
-function DrawTitleScreen()
+function DrawTitleBG()
 	rectfill(0, 0, 128, 128, 1)
 	-- draw wobbly function background
 	for x = 0, 128, 3 do
@@ -337,6 +337,10 @@ function DrawTitleScreen()
 		end
 	end
 	map(16, 0, 0, 0, 16, 16)
+end
+
+-- Draw the title screen
+function DrawTitleFG()
 	-- draw foreground title
 	sspr(
 		0,
@@ -374,11 +378,14 @@ end
 
 function _init()
 	cls(0)
+	InitPlayer()
+	InitGrid()
 end
 
 function _draw()
 	if CartState == STATES.title_screen then
-		DrawTitleScreen()
+		DrawTitleBG()
+		DrawTitleFG()
 	elseif CartState == STATES.game_init then
 		DrawGameBG()
 		DrawGrid()
@@ -387,6 +394,7 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
+		rectfill(14, 14, 113, 113, 0)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
 		DrawGrid()
@@ -411,11 +419,18 @@ function _draw()
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
+		rectfill(14, 14, 113, 113, 0)
+		print("level " .. Player.level .. " complete", 16, 16, 7)
+		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawGrid()
 		DrawHUD()
+		rectfill(14, 14, 113, 113, 0)
+		print("game over", 16, 16, 7)
+		print("\142/\151: continue", 16, 22, 7)
 	elseif CartState == STATES.high_scores then
+		DrawTitleBG()
 	end
 end
 
@@ -438,6 +453,7 @@ function _update()
 			CartState = STATES.level_up
 			LevelUpCounter = 0
 		elseif Player.lives == 0 then
+			GameOverCounter = 0
 			CartState = STATES.game_over
 		end
 	elseif CartState == STATES.swap_select then
@@ -468,6 +484,13 @@ function _update()
 			CartState = STATES.generate_board
 		end
 	elseif CartState == STATES.game_over then
+		if GameOverCounter ~= 100 then
+			GameOverCounter = GameOverCounter + 1
+		else
+			if btnp() then
+				CartState = STATES.high_scores
+			end
+		end
 	elseif CartState == STATES.high_scores then
 	end
 end

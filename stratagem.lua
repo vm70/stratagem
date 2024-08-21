@@ -4,7 +4,7 @@
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match { move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match}
+---@alias Player {cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[]}
 
 ---@enum States
 STATES = {
@@ -17,7 +17,8 @@ STATES = {
 	update_board = 7,
 	level_up = 8,
 	game_over = 9,
-	high_scores = 10,
+	enter_high_score = 10,
+	high_scores = 11,
 }
 
 ---@type integer Number of gems in the game (max 8)
@@ -89,6 +90,7 @@ function InitPlayer()
 		lives = 3,
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
+		letterIDs = { 1, 1, 1 },
 	}
 end
 
@@ -263,12 +265,11 @@ function DrawGameBG()
 	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
 	rectfill(0, 0, 128, 128, 0x21)
 	fillp(0)
-end
-
---- draw the game grid
-function DrawGrid()
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
+end
+
+function DrawGems()
 	for y = 1, 6 do
 		for x = 1, 6 do
 			local color = Grid[y][x]
@@ -369,7 +370,11 @@ end
 
 function DrawHighScores()
 	for i, score in ipairs(HighScores) do
-		print(score.initials .. " " .. score.score, 64, 2 + 6 * i, 7)
+		local padded = "" .. i
+		if #padded ~= 2 then
+			padded = " " .. padded
+		end
+		print(padded .. ". " .. score.initials .. " " .. score.score, 64, 2 + 6 * i, 7)
 	end
 end
 
@@ -410,6 +415,16 @@ function DrawMatchPoints()
 	end
 end
 
+function NewHighScore()
+	for _, score in ipairs(HighScores) do
+		if score.score > Player.score then
+			-- score = { initials = "   ", score = Player.score }
+			return true
+		end
+		return false
+	end
+end
+
 function _init()
 	cls(0)
 	InitPlayer()
@@ -423,45 +438,38 @@ function _draw()
 		DrawTitleFG()
 	elseif CartState == STATES.game_init then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
 	elseif CartState == STATES.generate_board then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
-		rectfill(14, 14, 113, 113, 0)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
-		DrawGrid()
+		DrawGems()
 		DrawCursor()
 		DrawHUD()
 	elseif CartState == STATES.swap_select then
 		DrawGameBG()
-		DrawGrid()
+		DrawGems()
 		DrawCursor()
 		DrawHUD()
 	elseif CartState == STATES.update_board then
 		DrawGameBG()
-		DrawGrid()
+		DrawGems()
 		DrawHUD()
 		DrawMatchPoints()
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
-		DrawGrid()
+		DrawGems()
 		DrawHUD()
 		DrawMatchPoints()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
-		rectfill(14, 14, 113, 113, 0)
 		print("level " .. Player.level .. " complete", 16, 16, 7)
 		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
-		rectfill(14, 14, 113, 113, 0)
 		print("game over", 16, 16, 7)
 		print("\142/\151: continue", 16, 22, 7)
 	elseif CartState == STATES.high_scores then

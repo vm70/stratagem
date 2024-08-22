@@ -1,0 +1,116 @@
+---
+base: lua52
+globals:
+  add:
+    args:
+      - type: table
+      - type: number
+      - type: number
+        required: false
+  btnp:
+    args:
+      - type: number
+      - type: number
+        required: false
+  cartdata:
+    args:
+      - type: string
+  dget:
+    args:
+      - type: number
+  dset:
+    args:
+      - type: number
+      - type: number
+  printh:
+    args:
+      - type: string
+      - type: string
+        required: false
+      - type: bool
+        required: false
+      - type: bool
+        required: false
+  max:
+    args:
+      - type: number
+      - type: number
+  min:
+    args:
+      - type: number
+      - type: number
+  rect:
+    args:
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+        required: false
+  rectfill:
+    args:
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+        required: false
+  fillp:
+    args:
+      - type: number
+  flr:
+    args:
+      - type: number
+  time:
+    any: true
+  map:
+    args:
+      - type: number
+      - type: number
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+  sspr:
+    args:
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+  rnd:
+    args:
+      - type: number
+  cos:
+    args:
+      - type: number
+  sin:
+    args:
+      - type: number
+  pset:
+    args:
+      - type: number
+      - type: number
+      - type: number
+        required: false
+  chr:
+    any: true
+  cls:
+    args:
+      - type: number
+        required: false

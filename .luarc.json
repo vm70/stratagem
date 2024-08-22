@@ -10,6 +10,7 @@
     "cls",
     "cos",
     "dget",
+    "dset",
     "fillp",
     "flip",
     "flr",

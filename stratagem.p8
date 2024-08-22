@@ -5,52 +5,88 @@ __lua__
 -- by VM70
 
 ---@alias Coords [integer, integer]
----@alias Player {cursor: Coords, swapMode: integer, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer}
+---@alias HighScore {initials: string, score: integer}
+---@alias Match { move_score: integer, x: integer, y: integer, color: integer}
+---@alias Player {grid_cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[], placement: integer, hs_cursor: HSPositions}
 
 ---@enum States
 STATES = {
 	title_screen = 1,
 	game_init = 2,
 	generate_board = 3,
-	gameplay = 4,
-	level_up = 5,
-	game_over = 6,
-	high_scores = 7,
+	game_idle = 4,
+	swap_select = 5,
+	player_matching = 6,
+	update_board = 7,
+	level_up = 8,
+	game_over = 9,
+	enter_high_score = 10,
+	high_scores = 11,
 }
 
+---@enum HSPositions
+HS_POSITIONS = {
+	first = 1,
+	second = 2,
+	third = 3,
+	ok = 4,
+}
+
+---@type integer Number of gems in the game (max 8)
 N_GEMS = 8
 
-DROP_FRAMES = 1
-MATCH_FRAMES = 20
+---@type integer Number of frames to wait before dropping new gems down
+DROP_FRAMES = 3
 
 ---@type integer[] main PICO-8 colors of gems
 GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 
-BASE_MATCH_PTS = 1
-LEVEL_1_THRESHOLD = 50 * BASE_MATCH_PTS
+---@type integer How many points a three-gem match scores on level 1
+BASE_MATCH_PTS = 3
+
+---@type integer How many points needed to get to level 2
+LEVEL_1_THRESHOLD = 80
+
+---@type string Allowed initial characters for high scores
+INITIAL_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789 "
+
+---@type integer value for no high score
+NO_PLACEMENT = 11
 
 ---@type integer[][] game grid
-Grid = {
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0 },
-}
+Grid = {}
 
+---@type Player table containing player information
+Player = {}
+
+---@type integer[] background patterns
+BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
+-- herringbone pattern
+-- 0100 -> 4
+-- 1110 -> E
+-- 0111 -> 7
+-- 0010 -> 2
+
+---@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
 TitleSprite = {
 	width = 82,
 	height = 31,
 	y_offset = 10,
 }
 
----@type integer current state of the cartridge
-CartState = 2
+---@type integer frame number for the current second, ranging from 0 to 30
+Frame = 0
+
+---@type States current state of the cartridge
+CartState = STATES.game_init
+
+---@type HighScore[] high score
+Leaderboard = {}
 
 --- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
+		Grid[y] = {}
 		for x = 1, 6 do
 			Grid[y][x] = 0
 		end
@@ -61,30 +97,84 @@ end
 function InitPlayer()
 	---@type Player
 	Player = {
-		cursor = { 3, 3 },
-		swapMode = 0,
+		grid_cursor = { 3, 3 },
 		score = 0,
 		initLevelScore = 0,
 		levelThreshold = LEVEL_1_THRESHOLD,
 		level = 1,
 		lives = 3,
 		combo = 0,
+		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
+		letterIDs = { 1, 1, 1 },
+		placement = 0,
+		hs_cursor = HS_POSITIONS.first,
 	}
+end
+
+--- Initialize the high scores by reading from persistent memory
+function LoadLeaderboard()
+	cartdata("vm70_stratagem")
+	for score_idx = 1, 10 do
+		---@type integer[]
+		local rawScoreData = {}
+		for word = 1, 4 do
+			rawScoreData[word] = dget(4 * (score_idx - 1) + word)
+		end
+		if rawScoreData[1] == 0 then
+			rawScoreData = { 1, 1, 1, (11 - score_idx) * 100 }
+		end
+		printh(rawScoreData[1], rawScoreData[2], rawScoreData[3], rawScoreData[4])
+		Leaderboard[score_idx] = {
+			initials = INITIAL_CHARS[rawScoreData[1]]
+				.. INITIAL_CHARS[rawScoreData[2]]
+				.. INITIAL_CHARS[rawScoreData[3]],
+			score = rawScoreData[4],
+		}
+	end
+end
+
+function UpdateLeaderboard()
+	local first = INITIAL_CHARS[Player.letterIDs[1]]
+	local second = INITIAL_CHARS[Player.letterIDs[2]]
+	local third = INITIAL_CHARS[Player.letterIDs[3]]
+	---@type HighScore
+	local newHighScore = { initials = first .. second .. third, score = Player.score }
+	if 1 <= Player.placement and Player.placement <= 10 then
+		add(Leaderboard, newHighScore, Player.placement)
+		Leaderboard[11] = nil
+	end
+end
+
+---@param str string
+---@param wantChar string
+function FindInString(str, wantChar)
+	for idx = 1, #str do
+		if str[idx] == wantChar then
+			return idx
+		end
+	end
+	return -1
+end
+
+function SaveLeaderboard()
+	for score_idx, score in ipairs(Leaderboard) do
+		local first = FindInString(INITIAL_CHARS, score.initials[1])
+		dset(4 * (score_idx - 1) + 0, first)
+		local second = FindInString(INITIAL_CHARS, score.initials[2])
+		dset(4 * (score_idx - 1) + 1, second)
+		local third = FindInString(INITIAL_CHARS, score.initials[3])
+		dset(4 * (score_idx - 1) + 2, third)
+		dset(4 * (score_idx - 1) + 3, score.score)
+	end
 end
 
 --- swap the two gems (done by the player)
 ---@param gem1 Coords
 ---@param gem2 Coords
 function SwapGems(gem1, gem2)
-	Player.swapMode = 2
 	local temp = Grid[gem1[1]][gem1[2]]
 	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
 	Grid[gem2[1]][gem2[2]] = temp
-	local gem1Matched = ClearMatching(gem1, true)
-	local gem2Matched = ClearMatching(gem2, true)
-	if not (gem1Matched or gem2Matched) then
-		Player.lives = Player.lives - 1
-	end
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -105,11 +195,11 @@ function ClearMatching(coords, byPlayer)
 			Player.combo = Player.combo + 1
 			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
 			Player.score = Player.score + moveScore
-			_draw()
-			print(moveScore, 16 * coords[2] + 1, 16 * coords[1] + 1, gemColor)
+			Player.last_match = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
 		end
 		return true
 	end
+	Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
 	return false
 end
 
@@ -148,7 +238,7 @@ end
 
 --- Find the list of gems that are in the same match as the given gem coordinate using flood filling
 ---@param gemCoords Coords current coordinates to search
----@param visited Coords[] list of visited coordinates
+---@param visited Coords[] list of visited coordinates. Start with "{}" if new match
 ---@return Coords[] # list of coordinates in the match
 function FloodMatch(gemCoords, visited)
 	-- mark the current cell as visited
@@ -165,53 +255,69 @@ function FloodMatch(gemCoords, visited)
 end
 
 --- Do all cursor updating actions
-function UpdateCursor()
-	if Player.swapMode == 0 then
+function UpdateGridCursor()
+	if CartState == STATES.swap_select then
+		-- player has chosen to swap gems
+		if btnp(0) and Player.grid_cursor[2] > 1 then
+			-- swap left
+			SwapGems(Player.grid_cursor, { Player.grid_cursor[1], Player.grid_cursor[2] - 1 })
+		elseif btnp(1) and Player.grid_cursor[2] < 6 then
+			-- swap right
+			SwapGems(Player.grid_cursor, { Player.grid_cursor[1], Player.grid_cursor[2] + 1 })
+		elseif btnp(2) and Player.grid_cursor[1] > 1 then
+			-- swap up
+			SwapGems(Player.grid_cursor, { Player.grid_cursor[1] - 1, Player.grid_cursor[2] })
+		elseif btnp(3) and Player.grid_cursor[1] < 6 then
+			-- swap down
+			SwapGems(Player.grid_cursor, { Player.grid_cursor[1] + 1, Player.grid_cursor[2] })
+		end
+		if btnp(0) or btnp(1) or btnp(2) or btnp(3) then
+			MatchFrame = Frame
+			CartState = STATES.player_matching
+		end
+	end
+	-- move the cursor around the board while swapping or idle
+	if btnp(0) and Player.grid_cursor[2] > 1 then
 		-- move left
-		if btnp(0) and Player.cursor[2] > 1 then
-			Player.cursor[2] = Player.cursor[2] - 1
-		end
+		Player.grid_cursor[2] = Player.grid_cursor[2] - 1
+	elseif btnp(1) and Player.grid_cursor[2] < 6 then
 		-- move right
-		if btnp(1) and Player.cursor[2] < 6 then
-			Player.cursor[2] = Player.cursor[2] + 1
-		end
+		Player.grid_cursor[2] = Player.grid_cursor[2] + 1
+	elseif btnp(2) and Player.grid_cursor[1] > 1 then
 		-- move up
-		if btnp(2) and Player.cursor[1] > 1 then
-			Player.cursor[1] = Player.cursor[1] - 1
-		end
+		Player.grid_cursor[1] = Player.grid_cursor[1] - 1
+	elseif btnp(3) and Player.grid_cursor[1] < 6 then
 		-- move down
-		if btnp(3) and Player.cursor[1] < 6 then
-			Player.cursor[1] = Player.cursor[1] + 1
-		end
-		-- start swapMode
-		if btnp(4) or btnp(5) then
-			Player.swapMode = 1
-		end
-	else
-		-- swap left
-		if btnp(0) and Player.cursor[2] > 1 then
-			Player.cursor = { Player.cursor[1], Player.cursor[2] - 1 }
-			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] + 1 })
-		end
-		-- swap right
-		if btnp(1) and Player.cursor[2] < 6 then
-			Player.cursor = { Player.cursor[1], Player.cursor[2] + 1 }
-			SwapGems(Player.cursor, { Player.cursor[1], Player.cursor[2] - 1 })
-		end
-		-- swap up
-		if btnp(2) and Player.cursor[1] > 1 then
-			Player.cursor = { Player.cursor[1] - 1, Player.cursor[2] }
-			SwapGems(Player.cursor, { Player.cursor[1] + 1, Player.cursor[2] })
-		end
-		-- swap down
-		if btnp(3) and Player.cursor[1] < 6 then
-			Player.cursor = { Player.cursor[1] + 1, Player.cursor[2] }
-			SwapGems(Player.cursor, { Player.cursor[1] - 1, Player.cursor[2] })
-		end
-		-- cancel swap
-		if btnp(4) or btnp(5) then
-			Player.swapMode = 0
-		end
+		Player.grid_cursor[1] = Player.grid_cursor[1] + 1
+	end
+	-- idle <-> swapping
+	if (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
+		-- idle to swapping
+		CartState = STATES.swap_select
+	elseif (btnp(4) or btnp(5)) and CartState == STATES.swap_select then
+		-- swapping to idle
+		CartState = STATES.game_idle
+	end
+end
+
+function UpdateScoreCursor()
+	if Player.hs_cursor ~= HS_POSITIONS.first and btnp(0) then
+		-- move left
+		Player.hs_cursor = Player.hs_cursor - 1
+	elseif Player.hs_cursor ~= HS_POSITIONS.ok and btnp(1) then
+		-- move right
+		Player.hs_cursor = Player.hs_cursor + 1
+	elseif Player.hs_cursor ~= HS_POSITIONS.ok and btnp(2) then
+		-- increment letter
+		Player.letterIDs[Player.hs_cursor] = max((Player.letterIDs[Player.hs_cursor] + 1) % (#INITIAL_CHARS + 1), 1)
+	elseif Player.hs_cursor ~= HS_POSITIONS.ok and btnp(3) then
+		-- decrement letter
+		Player.letterIDs[Player.hs_cursor] = max((Player.letterIDs[Player.hs_cursor] - 1) % (#INITIAL_CHARS + 1), 1)
+	elseif Player.hs_cursor == HS_POSITIONS.ok and (btnp(4) or btnp(5)) then
+		-- all done typing score
+		UpdateLeaderboard()
+		SaveLeaderboard()
+		CartState = STATES.high_scores
 	end
 end
 
@@ -221,49 +327,48 @@ function DrawCursor()
 	-- 0011 -> 3
 	-- 1100 -> C
 	-- 1100 -> C
-	local color
-	if Player.swapMode == 0 then
-		color = 7
-	end
-	if Player.swapMode == 1 then
+	local color = 7
+	if CartState == STATES.swap_select then
 		color = 11
 	end
-	if Player.swapMode ~= 2 then
-		rect(
-			16 * Player.cursor[2],
-			16 * Player.cursor[1],
-			16 * Player.cursor[2] + 15,
-			16 * Player.cursor[1] + 15,
-			color
-		)
-	end
+	rect(
+		16 * Player.grid_cursor[2],
+		16 * Player.grid_cursor[1],
+		16 * Player.grid_cursor[2] + 15,
+		16 * Player.grid_cursor[1] + 15,
+		color
+	)
 end
 
-Patterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 function DrawGameBG()
-	fillp(Patterns[1 + flr(time() % #Patterns)])
-	-- herringbone pattern
-	-- 0100 -> 4
-	-- 1110 -> E
-	-- 0111 -> 7
-	-- 0010 -> 2
+	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
 	rectfill(0, 0, 128, 128, 0x21)
 	fillp(0)
-end
-
---- draw the game grid
-function DrawGrid()
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
+end
+
+function DrawGems()
 	for y = 1, 6 do
 		for x = 1, 6 do
 			local color = Grid[y][x]
 			if color ~= 0 then
 				sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
 			end
-			print(color, 16 * x, 16 * y, 11)
+			-- print(color, 16 * x, 16 * y, 11)
 		end
 	end
+end
+
+function GridHasMatches()
+	for y = 1, 6 do
+		for x = 1, 6 do
+			if #FloodMatch({ y, x }, {}) >= 3 then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 --- Clear the matches on the grid.
@@ -279,6 +384,17 @@ function ClearGridMatches(byPlayer)
 	return hadMatches
 end
 
+function GridHasHoles()
+	for y = 1, 6 do
+		for x = 1, 6 do
+			if Grid[y][x] == 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 --- Fill holes in the grid by dropping gems.
 ---@return boolean # whether the grid has any holes
 function FillGridHoles()
@@ -290,7 +406,7 @@ function FillGridHoles()
 					Grid[y][x] = 1 + flr(rnd(N_GEMS))
 				else
 					hasHoles = true
-					printh("Found a hole at " .. x .. "," .. y)
+					-- printh("Found a hole at " .. x .. "," .. y)
 					Grid[y][x] = Grid[y - 1][x]
 					Grid[y - 1][x] = 0
 				end
@@ -313,8 +429,7 @@ function DrawHUD()
 	rectfill(17, 114, 17 + rectlen, 117, 7)
 end
 
--- Draw the title screen
-function DrawTitleScreen()
+function DrawTitleBG()
 	rectfill(0, 0, 128, 128, 1)
 	-- draw wobbly function background
 	for x = 0, 128, 3 do
@@ -330,6 +445,20 @@ function DrawTitleScreen()
 		end
 	end
 	map(16, 0, 0, 0, 16, 16)
+end
+
+function DrawHighScores()
+	for i, score in ipairs(Leaderboard) do
+		local padded = "" .. i
+		if #padded ~= 2 then
+			padded = " " .. padded
+		end
+		print(padded .. ". " .. score.initials .. " " .. score.score, 64, 2 + 6 * i, 7)
+	end
+end
+
+-- Draw the title screen
+function DrawTitleFG()
 	-- draw foreground title
 	sspr(
 		0,
@@ -347,46 +476,124 @@ end
 
 --- Increase the player level
 function LevelUp()
-	Player.levelThreshold = Player.score + Player.levelThreshold * (2 ^ Player.level)
+	Player.levelThreshold = Player.score + Player.levelThreshold * (Player.level ^ 2)
 	Player.initLevelScore = Player.score
 	Player.level = Player.level + 1
 	InitGrid()
 end
 
+--- Draw the player's match points where the gems were cleared
+function DrawMatchPoints()
+	if Player.combo ~= 0 then
+		print(
+			chr(2) .. "0" .. Player.last_match.move_score,
+			16 * Player.last_match.x + 1,
+			16 * Player.last_match.y + 1,
+			Player.last_match.color
+		)
+	end
+end
+
+function PlayerPlacement()
+	for scoreIdx, score in ipairs(Leaderboard) do
+		if Player.score > score.score then
+			return scoreIdx
+		end
+	end
+	return NO_PLACEMENT
+end
+
+function OrdinalIndicator(place)
+	if place == 1 then
+		return "st"
+	elseif place == 2 then
+		return "nd"
+	elseif place == 3 then
+		return "rd"
+	elseif 4 <= place and place <= 10 then
+		return "th"
+	else
+		error("only works for 1-10")
+	end
+end
+
+---@param hs_state HSPositions
+function HSColor(hs_state)
+	local color = 7
+	if hs_state == Player.hs_cursor then
+		color = 11
+	end
+	return color
+end
+
 function _init()
 	cls(0)
+	InitPlayer()
+	InitGrid()
+	LoadLeaderboard()
 end
 
 function _draw()
 	if CartState == STATES.title_screen then
-		DrawTitleScreen()
+		DrawTitleBG()
+		DrawTitleFG()
 	elseif CartState == STATES.game_init then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
 	elseif CartState == STATES.generate_board then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
-	elseif CartState == STATES.gameplay then
+	elseif CartState == STATES.game_idle then
 		DrawGameBG()
-		DrawGrid()
+		DrawGems()
 		DrawCursor()
 		DrawHUD()
+	elseif CartState == STATES.swap_select then
+		DrawGameBG()
+		DrawGems()
+		DrawCursor()
+		DrawHUD()
+	elseif CartState == STATES.update_board then
+		DrawGameBG()
+		DrawGems()
+		DrawHUD()
+		DrawMatchPoints()
+	elseif CartState == STATES.player_matching then
+		DrawGameBG()
+		DrawGems()
+		DrawHUD()
+		DrawMatchPoints()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
-		DrawGrid()
 		DrawHUD()
+		print("level " .. Player.level .. " complete", 16, 16, 7)
+		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
-		DrawGrid()
-		DrawHUD()
+		print("game over", 16, 16, 7)
+	elseif CartState == STATES.enter_high_score then
+		DrawGameBG()
+		print("nice job!", 16, 16, 7)
+		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
+		print("enter your initials", 16, 28, 7)
+		print(INITIAL_CHARS[Player.letterIDs[1]], 16, 36, HSColor(HS_POSITIONS.first))
+		print(INITIAL_CHARS[Player.letterIDs[2]], 21, 36, HSColor(HS_POSITIONS.second))
+		print(INITIAL_CHARS[Player.letterIDs[3]], 26, 36, HSColor(HS_POSITIONS.third))
+		print("ok", 31, 36, HSColor(HS_POSITIONS.ok))
 	elseif CartState == STATES.high_scores then
+		DrawTitleBG()
+		DrawHighScores()
 	end
 end
 
 function _update()
+	Frame = (Frame + 1) % 30
 	if CartState == STATES.title_screen then
+		if btnp(4) then
+			CartState = STATES.game_init
+		elseif btnp(5) then
+			CartState = STATES.high_scores
+		end
 	elseif CartState == STATES.game_init then
 		InitPlayer()
 		InitGrid()
@@ -394,24 +601,36 @@ function _update()
 	elseif CartState == STATES.generate_board then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
-				CartState = STATES.gameplay
+				CartState = STATES.game_idle
 			end
 		end
-	elseif CartState == STATES.gameplay then
-		UpdateCursor()
-		if Player.swapMode == 2 then
-			if not FillGridHoles() then
-				if not ClearGridMatches(true) then
-					Player.combo = 0
-					Player.swapMode = 0
-				end
-			end
-		end
+	elseif CartState == STATES.game_idle then
+		UpdateGridCursor()
 		if Player.score >= Player.levelThreshold then
 			CartState = STATES.level_up
 			LevelUpCounter = 0
 		elseif Player.lives == 0 then
+			GameOverCounter = 0
 			CartState = STATES.game_over
+		end
+	elseif CartState == STATES.swap_select then
+		UpdateGridCursor()
+	elseif CartState == STATES.update_board then
+		if ((ClearMatchFrame - Frame) % 30) % DROP_FRAMES == 0 then
+			if not FillGridHoles() then
+				CartState = STATES.player_matching
+			end
+		end
+	elseif CartState == STATES.player_matching then
+		if not ClearGridMatches(true) then
+			if Player.combo == 0 then
+				Player.lives = Player.lives - 1
+			end
+			Player.combo = 0
+			CartState = STATES.game_idle
+		else
+			ClearMatchFrame = Frame
+			CartState = STATES.update_board
 		end
 	elseif CartState == STATES.level_up then
 		if LevelUpCounter ~= 100 then
@@ -422,7 +641,30 @@ function _update()
 			CartState = STATES.generate_board
 		end
 	elseif CartState == STATES.game_over then
+		if GameOverCounter ~= 100 then
+			GameOverCounter = GameOverCounter + 1
+		else
+			if btnp(4) or btnp(5) then
+				Player.placement = PlayerPlacement()
+				printh("Player placement: " .. Player.placement)
+				if Player.placement == NO_PLACEMENT then
+					GameOverCounter = 0
+					CartState = STATES.high_scores
+				else
+					CartState = STATES.enter_high_score
+				end
+			end
+		end
+	elseif CartState == STATES.enter_high_score then
+		UpdateScoreCursor()
 	elseif CartState == STATES.high_scores then
+		if GameOverCounter ~= 100 then
+			GameOverCounter = GameOverCounter + 1
+		else
+			if btnp(4) or btnp(5) then
+				CartState = STATES.title_screen
+			end
+		end
 	end
 end
 __gfx__
@@ -510,22 +752,22 @@ __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
-0000000000000000000000000000000005141414141414141414141414141406000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0005111212121314141112121213060004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0004000000000000000000000000040004000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00040000000000000000000000000400040d08090000000000000000080b0c04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00040000000000000000000000000400040c0b080a0e000000000d0c0a070b04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001501020202020202020202020316000407090e0d0908070e090b0c0e0d0a04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000111212121213000000000015141414141414141414141414141416000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0005111212121213141112121213060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000400000000000000000000000004000d080900000000000000000000080b0c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001501020202020202020202020316000c0b080a0e0000000000000d0c0a070b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000111212121213000000000007090e0d09080700000e090b0c0e0d0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

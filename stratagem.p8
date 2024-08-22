@@ -118,12 +118,15 @@ function LoadLeaderboard()
 		---@type integer[]
 		local rawScoreData = {}
 		for word = 1, 4 do
-			rawScoreData[word] = dget(4 * (score_idx - 1) + word)
+			rawScoreData[word] = dget(4 * (score_idx - 1) + word - 1)
 		end
 		if rawScoreData[1] == 0 then
 			rawScoreData = { 1, 1, 1, (11 - score_idx) * 100 }
 		end
-		printh(rawScoreData[1], rawScoreData[2], rawScoreData[3], rawScoreData[4])
+		printh(rawScoreData[1])
+		printh(rawScoreData[2])
+		printh(rawScoreData[3])
+		printh(rawScoreData[4])
 		Leaderboard[score_idx] = {
 			initials = INITIAL_CHARS[rawScoreData[1]]
 				.. INITIAL_CHARS[rawScoreData[2]]

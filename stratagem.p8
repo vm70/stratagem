@@ -197,7 +197,7 @@ function ClearMatching(coords, byPlayer)
 		end
 		if byPlayer then
 			_Player.combo = _Player.combo + 1
-			sfx(_Player.combo)
+			sfx(min(_Player.combo, 7))
 			local moveScore = _Player.level * _Player.combo * _BaseMatchPts * (#matchList - 2)
 			_Player.score = _Player.score + moveScore
 			_Player.last_match = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }

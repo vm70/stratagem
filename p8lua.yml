@@ -114,3 +114,12 @@ globals:
     args:
       - type: number
         required: false
+  sfx:
+    args:
+      - type: number
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false

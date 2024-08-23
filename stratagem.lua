@@ -194,13 +194,16 @@ function ClearMatching(coords, byPlayer)
 		end
 		if byPlayer then
 			_Player.combo = _Player.combo + 1
+			sfx(_Player.combo)
 			local moveScore = _Player.level * _Player.combo * _BaseMatchPts * (#matchList - 2)
 			_Player.score = _Player.score + moveScore
 			_Player.last_match = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
 		end
 		return true
 	end
-	_Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
+	if byPlayer then
+		_Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
+	end
 	return false
 end
 
@@ -614,6 +617,7 @@ function _update()
 	elseif _CartState == _States.player_matching then
 		if not ClearGridMatches(true) then
 			if _Player.combo == 0 then
+				sfx(0)
 				_Player.lives = _Player.lives - 1
 			end
 			_Player.combo = 0

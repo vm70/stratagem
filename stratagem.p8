@@ -6,11 +6,11 @@ __lua__
 
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
----@alias Match { move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[], placement: integer, hs_cursor: HSPositions}
+---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
+---@alias Player {grid_cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[], placement: integer, score_cursor: ScorePositions}
 
 ---@enum States
-STATES = {
+_States = {
 	title_screen = 1,
 	game_init = 2,
 	generate_board = 3,
@@ -24,8 +24,8 @@ STATES = {
 	high_scores = 11,
 }
 
----@enum HSPositions
-HS_POSITIONS = {
+---@enum ScorePositions
+_ScorePositions = {
 	first = 1,
 	second = 2,
 	third = 3,
@@ -33,62 +33,65 @@ HS_POSITIONS = {
 }
 
 ---@type integer Number of gems in the game (max 8)
-N_GEMS = 8
+_NGems = 8
 
 ---@type integer Number of frames to wait before dropping new gems down
-DROP_FRAMES = 3
+_DropFrames = 3
+
+---@type integer Number of frames to wait to show the match points
+_MatchFrames = 20
 
 ---@type integer[] main PICO-8 colors of gems
-GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
+_GemColors = { 8, 9, 12, 11, 14, 7, 4, 13 }
 
 ---@type integer How many points a three-gem match scores on level 1
-BASE_MATCH_PTS = 3
+_BaseMatchPts = 3
 
 ---@type integer How many points needed to get to level 2
-LEVEL_1_THRESHOLD = 80
+_L1Threshold = 80
 
 ---@type string Allowed initial characters for high scores
-INITIAL_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789 "
+_Initials = "abcdefghijklmnopqrstuvwxyz0123456789 "
 
 ---@type integer value for no high score
-NO_PLACEMENT = 11
+_NoPlacement = 11
 
 ---@type integer[][] game grid
-Grid = {}
+_Grid = {}
 
 ---@type Player table containing player information
-Player = {}
+_Player = {}
 
 ---@type integer[] background patterns
-BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 -- herringbone pattern
 -- 0100 -> 4
 -- 1110 -> E
 -- 0111 -> 7
 -- 0010 -> 2
+_BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 
 ---@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
-TitleSprite = {
+_TitleSprite = {
 	width = 82,
 	height = 31,
 	y_offset = 10,
 }
 
----@type integer frame number for the current second, ranging from 0 to 30
-Frame = 0
-
 ---@type States current state of the cartridge
-CartState = STATES.game_init
+_CartState = _States.game_init
 
 ---@type HighScore[] high score
-Leaderboard = {}
+_Leaderboard = {}
+
+---@type integer frame counter for state transitions / pauses
+_FrameCounter = 0
 
 --- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
-		Grid[y] = {}
+		_Grid[y] = {}
 		for x = 1, 6 do
-			Grid[y][x] = 0
+			_Grid[y][x] = 0
 		end
 	end
 end
@@ -96,18 +99,18 @@ end
 --- Initialize the player for starting the game
 function InitPlayer()
 	---@type Player
-	Player = {
+	_Player = {
 		grid_cursor = { 3, 3 },
 		score = 0,
 		initLevelScore = 0,
-		levelThreshold = LEVEL_1_THRESHOLD,
+		levelThreshold = _L1Threshold,
 		level = 1,
 		lives = 3,
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 		letterIDs = { 1, 1, 1 },
 		placement = 0,
-		hs_cursor = HS_POSITIONS.first,
+		score_cursor = _ScorePositions.first,
 	}
 end
 
@@ -123,28 +126,26 @@ function LoadLeaderboard()
 		if rawScoreData[1] == 0 then
 			rawScoreData = { 1, 1, 1, (11 - score_idx) * 100 }
 		end
-		printh(rawScoreData[1])
-		printh(rawScoreData[2])
-		printh(rawScoreData[3])
-		printh(rawScoreData[4])
-		Leaderboard[score_idx] = {
-			initials = INITIAL_CHARS[rawScoreData[1]]
-				.. INITIAL_CHARS[rawScoreData[2]]
-				.. INITIAL_CHARS[rawScoreData[3]],
+		-- printh(rawScoreData[1])
+		-- printh(rawScoreData[2])
+		-- printh(rawScoreData[3])
+		-- printh(rawScoreData[4])
+		_Leaderboard[score_idx] = {
+			initials = _Initials[rawScoreData[1]] .. _Initials[rawScoreData[2]] .. _Initials[rawScoreData[3]],
 			score = rawScoreData[4],
 		}
 	end
 end
 
 function UpdateLeaderboard()
-	local first = INITIAL_CHARS[Player.letterIDs[1]]
-	local second = INITIAL_CHARS[Player.letterIDs[2]]
-	local third = INITIAL_CHARS[Player.letterIDs[3]]
+	local first = _Initials[_Player.letterIDs[1]]
+	local second = _Initials[_Player.letterIDs[2]]
+	local third = _Initials[_Player.letterIDs[3]]
 	---@type HighScore
-	local newHighScore = { initials = first .. second .. third, score = Player.score }
-	if 1 <= Player.placement and Player.placement <= 10 then
-		add(Leaderboard, newHighScore, Player.placement)
-		Leaderboard[11] = nil
+	local newHighScore = { initials = first .. second .. third, score = _Player.score }
+	if 1 <= _Player.placement and _Player.placement <= 10 then
+		add(_Leaderboard, newHighScore, _Player.placement)
+		_Leaderboard[11] = nil
 	end
 end
 
@@ -160,12 +161,12 @@ function FindInString(str, wantChar)
 end
 
 function SaveLeaderboard()
-	for score_idx, score in ipairs(Leaderboard) do
-		local first = FindInString(INITIAL_CHARS, score.initials[1])
+	for score_idx, score in ipairs(_Leaderboard) do
+		local first = FindInString(_Initials, score.initials[1])
 		dset(4 * (score_idx - 1) + 0, first)
-		local second = FindInString(INITIAL_CHARS, score.initials[2])
+		local second = FindInString(_Initials, score.initials[2])
 		dset(4 * (score_idx - 1) + 1, second)
-		local third = FindInString(INITIAL_CHARS, score.initials[3])
+		local third = FindInString(_Initials, score.initials[3])
 		dset(4 * (score_idx - 1) + 2, third)
 		dset(4 * (score_idx - 1) + 3, score.score)
 	end
@@ -175,9 +176,9 @@ end
 ---@param gem1 Coords
 ---@param gem2 Coords
 function SwapGems(gem1, gem2)
-	local temp = Grid[gem1[1]][gem1[2]]
-	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
-	Grid[gem2[1]][gem2[2]] = temp
+	local temp = _Grid[gem1[1]][gem1[2]]
+	_Grid[gem1[1]][gem1[2]] = _Grid[gem2[1]][gem2[2]]
+	_Grid[gem2[1]][gem2[2]] = temp
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -185,24 +186,24 @@ end
 ---@param byPlayer boolean whether the clearing was by the player or automatic
 ---@return boolean # whether the match clearing was successful
 function ClearMatching(coords, byPlayer)
-	if Grid[coords[1]][coords[2]] == 0 then
+	if _Grid[coords[1]][coords[2]] == 0 then
 		return false
 	end
 	local matchList = FloodMatch(coords, {})
 	if #matchList >= 3 then
-		local gemColor = GEM_COLORS[Grid[coords[1]][coords[2]]]
+		local gemColor = _GemColors[_Grid[coords[1]][coords[2]]]
 		for _, matchCoord in pairs(matchList) do
-			Grid[matchCoord[1]][matchCoord[2]] = 0
+			_Grid[matchCoord[1]][matchCoord[2]] = 0
 		end
 		if byPlayer then
-			Player.combo = Player.combo + 1
-			local moveScore = Player.level * Player.combo * BASE_MATCH_PTS * (#matchList - 2)
-			Player.score = Player.score + moveScore
-			Player.last_match = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
+			_Player.combo = _Player.combo + 1
+			local moveScore = _Player.level * _Player.combo * _BaseMatchPts * (#matchList - 2)
+			_Player.score = _Player.score + moveScore
+			_Player.last_match = { move_score = moveScore, x = coords[2], y = coords[1], color = gemColor }
 		end
 		return true
 	end
-	Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
+	_Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
 	return false
 end
 
@@ -248,7 +249,7 @@ function FloodMatch(gemCoords, visited)
 	visited[#visited + 1] = gemCoords
 	for _, neighbor in pairs(Neighbors(gemCoords)) do
 		if not Contains(visited, neighbor) then
-			if Grid[neighbor[1]][neighbor[2]] == Grid[gemCoords[1]][gemCoords[2]] then
+			if _Grid[neighbor[1]][neighbor[2]] == _Grid[gemCoords[1]][gemCoords[2]] then
 				-- do recursion for all non-visited neighbors
 				visited = FloodMatch(neighbor, visited)
 			end
@@ -259,68 +260,69 @@ end
 
 --- Do all cursor updating actions
 function UpdateGridCursor()
-	if CartState == STATES.swap_select then
+	if _CartState == _States.swap_select then
 		-- player has chosen to swap gems
-		if btnp(0) and Player.grid_cursor[2] > 1 then
+		if btnp(0) and _Player.grid_cursor[2] > 1 then
 			-- swap left
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1], Player.grid_cursor[2] - 1 })
-		elseif btnp(1) and Player.grid_cursor[2] < 6 then
+			SwapGems(_Player.grid_cursor, { _Player.grid_cursor[1], _Player.grid_cursor[2] - 1 })
+		elseif btnp(1) and _Player.grid_cursor[2] < 6 then
 			-- swap right
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1], Player.grid_cursor[2] + 1 })
-		elseif btnp(2) and Player.grid_cursor[1] > 1 then
+			SwapGems(_Player.grid_cursor, { _Player.grid_cursor[1], _Player.grid_cursor[2] + 1 })
+		elseif btnp(2) and _Player.grid_cursor[1] > 1 then
 			-- swap up
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1] - 1, Player.grid_cursor[2] })
-		elseif btnp(3) and Player.grid_cursor[1] < 6 then
+			SwapGems(_Player.grid_cursor, { _Player.grid_cursor[1] - 1, _Player.grid_cursor[2] })
+		elseif btnp(3) and _Player.grid_cursor[1] < 6 then
 			-- swap down
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1] + 1, Player.grid_cursor[2] })
+			SwapGems(_Player.grid_cursor, { _Player.grid_cursor[1] + 1, _Player.grid_cursor[2] })
 		end
 		if btnp(0) or btnp(1) or btnp(2) or btnp(3) then
-			MatchFrame = Frame
-			CartState = STATES.player_matching
+			_CartState = _States.player_matching
 		end
 	end
 	-- move the cursor around the board while swapping or idle
-	if btnp(0) and Player.grid_cursor[2] > 1 then
+	if btnp(0) and _Player.grid_cursor[2] > 1 then
 		-- move left
-		Player.grid_cursor[2] = Player.grid_cursor[2] - 1
-	elseif btnp(1) and Player.grid_cursor[2] < 6 then
+		_Player.grid_cursor[2] = _Player.grid_cursor[2] - 1
+	elseif btnp(1) and _Player.grid_cursor[2] < 6 then
 		-- move right
-		Player.grid_cursor[2] = Player.grid_cursor[2] + 1
-	elseif btnp(2) and Player.grid_cursor[1] > 1 then
+		_Player.grid_cursor[2] = _Player.grid_cursor[2] + 1
+	elseif btnp(2) and _Player.grid_cursor[1] > 1 then
 		-- move up
-		Player.grid_cursor[1] = Player.grid_cursor[1] - 1
-	elseif btnp(3) and Player.grid_cursor[1] < 6 then
+		_Player.grid_cursor[1] = _Player.grid_cursor[1] - 1
+	elseif btnp(3) and _Player.grid_cursor[1] < 6 then
 		-- move down
-		Player.grid_cursor[1] = Player.grid_cursor[1] + 1
+		_Player.grid_cursor[1] = _Player.grid_cursor[1] + 1
 	end
 	-- idle <-> swapping
-	if (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
+	if (btnp(4) or btnp(5)) and _CartState == _States.game_idle then
 		-- idle to swapping
-		CartState = STATES.swap_select
-	elseif (btnp(4) or btnp(5)) and CartState == STATES.swap_select then
+		_CartState = _States.swap_select
+	elseif (btnp(4) or btnp(5)) and _CartState == _States.swap_select then
 		-- swapping to idle
-		CartState = STATES.game_idle
+		_CartState = _States.game_idle
 	end
 end
 
 function UpdateScoreCursor()
-	if Player.hs_cursor ~= HS_POSITIONS.first and btnp(0) then
+	if _Player.score_cursor ~= _ScorePositions.first and btnp(0) then
 		-- move left
-		Player.hs_cursor = Player.hs_cursor - 1
-	elseif Player.hs_cursor ~= HS_POSITIONS.ok and btnp(1) then
+		_Player.score_cursor = _Player.score_cursor - 1
+	elseif _Player.score_cursor ~= _ScorePositions.ok and btnp(1) then
 		-- move right
-		Player.hs_cursor = Player.hs_cursor + 1
-	elseif Player.hs_cursor ~= HS_POSITIONS.ok and btnp(2) then
+		_Player.score_cursor = _Player.score_cursor + 1
+	elseif _Player.score_cursor ~= _ScorePositions.ok and btnp(2) then
 		-- increment letter
-		Player.letterIDs[Player.hs_cursor] = max((Player.letterIDs[Player.hs_cursor] + 1) % (#INITIAL_CHARS + 1), 1)
-	elseif Player.hs_cursor ~= HS_POSITIONS.ok and btnp(3) then
+		_Player.letterIDs[_Player.score_cursor] =
+			max((_Player.letterIDs[_Player.score_cursor] + 1) % (#_Initials + 1), 1)
+	elseif _Player.score_cursor ~= _ScorePositions.ok and btnp(3) then
 		-- decrement letter
-		Player.letterIDs[Player.hs_cursor] = max((Player.letterIDs[Player.hs_cursor] - 1) % (#INITIAL_CHARS + 1), 1)
-	elseif Player.hs_cursor == HS_POSITIONS.ok and (btnp(4) or btnp(5)) then
+		_Player.letterIDs[_Player.score_cursor] =
+			max((_Player.letterIDs[_Player.score_cursor] - 1) % (#_Initials + 1), 1)
+	elseif _Player.score_cursor == _ScorePositions.ok and (btnp(4) or btnp(5)) then
 		-- all done typing score
 		UpdateLeaderboard()
 		SaveLeaderboard()
-		CartState = STATES.high_scores
+		_CartState = _States.high_scores
 	end
 end
 
@@ -331,20 +333,20 @@ function DrawCursor()
 	-- 1100 -> C
 	-- 1100 -> C
 	local color = 7
-	if CartState == STATES.swap_select then
+	if _CartState == _States.swap_select then
 		color = 11
 	end
 	rect(
-		16 * Player.grid_cursor[2],
-		16 * Player.grid_cursor[1],
-		16 * Player.grid_cursor[2] + 15,
-		16 * Player.grid_cursor[1] + 15,
+		16 * _Player.grid_cursor[2],
+		16 * _Player.grid_cursor[1],
+		16 * _Player.grid_cursor[2] + 15,
+		16 * _Player.grid_cursor[1] + 15,
 		color
 	)
 end
 
 function DrawGameBG()
-	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
+	fillp(_BGPatterns[1 + flr(time() % #_BGPatterns)])
 	rectfill(0, 0, 128, 128, 0x21)
 	fillp(0)
 	rectfill(14, 14, 113, 113, 0)
@@ -354,7 +356,7 @@ end
 function DrawGems()
 	for y = 1, 6 do
 		for x = 1, 6 do
-			local color = Grid[y][x]
+			local color = _Grid[y][x]
 			if color ~= 0 then
 				sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
 			end
@@ -363,16 +365,16 @@ function DrawGems()
 	end
 end
 
-function GridHasMatches()
-	for y = 1, 6 do
-		for x = 1, 6 do
-			if #FloodMatch({ y, x }, {}) >= 3 then
-				return true
-			end
-		end
-	end
-	return false
-end
+-- function GridHasMatches()
+-- 	for y = 1, 6 do
+-- 		for x = 1, 6 do
+-- 			if #FloodMatch({ y, x }, {}) >= 3 then
+-- 				return true
+-- 			end
+-- 		end
+-- 	end
+-- 	return false
+-- end
 
 --- Clear the matches on the grid.
 ---@param byPlayer boolean whether the match is made by the player
@@ -387,16 +389,16 @@ function ClearGridMatches(byPlayer)
 	return hadMatches
 end
 
-function GridHasHoles()
-	for y = 1, 6 do
-		for x = 1, 6 do
-			if Grid[y][x] == 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
+-- function GridHasHoles()
+-- 	for y = 1, 6 do
+-- 		for x = 1, 6 do
+-- 			if _Grid[y][x] == 0 then
+-- 				return true
+-- 			end
+-- 		end
+-- 	end
+-- 	return false
+-- end
 
 --- Fill holes in the grid by dropping gems.
 ---@return boolean # whether the grid has any holes
@@ -404,14 +406,14 @@ function FillGridHoles()
 	local hasHoles = false
 	for y = 6, 1, -1 do
 		for x = 1, 6 do
-			if Grid[y][x] == 0 then
+			if _Grid[y][x] == 0 then
 				if y == 1 then
-					Grid[y][x] = 1 + flr(rnd(N_GEMS))
+					_Grid[y][x] = 1 + flr(rnd(_NGems))
 				else
 					hasHoles = true
 					-- printh("Found a hole at " .. x .. "," .. y)
-					Grid[y][x] = Grid[y - 1][x]
-					Grid[y - 1][x] = 0
+					_Grid[y][x] = _Grid[y - 1][x]
+					_Grid[y - 1][x] = 0
 				end
 			end
 		end
@@ -421,12 +423,12 @@ end
 
 --- Draw the HUD (score, lives, level progress bar, etc) on the screen
 function DrawHUD()
-	print("score:" .. Player.score, 17, 9, 7)
-	print("lives:" .. Player.lives, 73, 9, 8)
-	print("level:" .. Player.level, 49, 121, 7)
-	print("combo:" .. Player.combo, 0, 0, 7)
+	print("score:" .. _Player.score, 17, 9, 7)
+	print("lives:" .. _Player.lives, 73, 9, 8)
+	print("level:" .. _Player.level, 49, 121, 7)
+	print("combo:" .. _Player.combo, 0, 0, 7)
 	-- calculate level completion ratio
-	local levelRatio = (Player.score - Player.initLevelScore) / (Player.levelThreshold - Player.initLevelScore)
+	local levelRatio = (_Player.score - _Player.initLevelScore) / (_Player.levelThreshold - _Player.initLevelScore)
 	levelRatio = min(levelRatio, 1)
 	local rectlen = (93 * levelRatio)
 	rectfill(17, 114, 17 + rectlen, 117, 7)
@@ -451,7 +453,7 @@ function DrawTitleBG()
 end
 
 function DrawHighScores()
-	for i, score in ipairs(Leaderboard) do
+	for i, score in ipairs(_Leaderboard) do
 		local padded = "" .. i
 		if #padded ~= 2 then
 			padded = " " .. padded
@@ -466,12 +468,12 @@ function DrawTitleFG()
 	sspr(
 		0,
 		32,
-		TitleSprite.width,
-		TitleSprite.height,
-		64 - TitleSprite.width / 2,
-		TitleSprite.y_offset,
-		TitleSprite.width,
-		TitleSprite.height
+		_TitleSprite.width,
+		_TitleSprite.height,
+		64 - _TitleSprite.width / 2,
+		_TitleSprite.y_offset,
+		_TitleSprite.width,
+		_TitleSprite.height
 	)
 	print("🅾️: start game", 12, 64, 7)
 	print("❎: high scores", 12, 72, 7)
@@ -479,31 +481,31 @@ end
 
 --- Increase the player level
 function LevelUp()
-	Player.levelThreshold = Player.score + Player.levelThreshold * (Player.level ^ 2)
-	Player.initLevelScore = Player.score
-	Player.level = Player.level + 1
+	_Player.levelThreshold = _Player.score + _Player.levelThreshold * (_Player.level ^ 2)
+	_Player.initLevelScore = _Player.score
+	_Player.level = _Player.level + 1
 	InitGrid()
 end
 
 --- Draw the player's match points where the gems were cleared
 function DrawMatchPoints()
-	if Player.combo ~= 0 then
+	if _Player.combo ~= 0 then
 		print(
-			chr(2) .. "0" .. Player.last_match.move_score,
-			16 * Player.last_match.x + 1,
-			16 * Player.last_match.y + 1,
-			Player.last_match.color
+			chr(2) .. "0" .. _Player.last_match.move_score,
+			16 * _Player.last_match.x + 1,
+			16 * _Player.last_match.y + 1,
+			_Player.last_match.color
 		)
 	end
 end
 
 function PlayerPlacement()
-	for scoreIdx, score in ipairs(Leaderboard) do
-		if Player.score > score.score then
+	for scoreIdx, score in ipairs(_Leaderboard) do
+		if _Player.score > score.score then
 			return scoreIdx
 		end
 	end
-	return NO_PLACEMENT
+	return _NoPlacement
 end
 
 function OrdinalIndicator(place)
@@ -520,10 +522,10 @@ function OrdinalIndicator(place)
 	end
 end
 
----@param hs_state HSPositions
+---@param hs_state ScorePositions
 function HSColor(hs_state)
 	local color = 7
-	if hs_state == Player.hs_cursor then
+	if hs_state == _Player.score_cursor then
 		color = 11
 	end
 	return color
@@ -537,136 +539,117 @@ function _init()
 end
 
 function _draw()
-	if CartState == STATES.title_screen then
+	if _CartState == _States.title_screen then
 		DrawTitleBG()
 		DrawTitleFG()
-	elseif CartState == STATES.game_init then
+	elseif (_CartState == _States.game_init) or (_CartState == _States.generate_board) then
 		DrawGameBG()
 		DrawHUD()
-	elseif CartState == STATES.generate_board then
-		DrawGameBG()
-		DrawHUD()
-	elseif CartState == STATES.game_idle then
+	elseif (_CartState == _States.game_idle) or (_CartState == _States.swap_select) then
 		DrawGameBG()
 		DrawGems()
 		DrawCursor()
 		DrawHUD()
-	elseif CartState == STATES.swap_select then
-		DrawGameBG()
-		DrawGems()
-		DrawCursor()
-		DrawHUD()
-	elseif CartState == STATES.update_board then
+	elseif (_CartState == _States.update_board) or (_CartState == _States.player_matching) then
 		DrawGameBG()
 		DrawGems()
 		DrawHUD()
 		DrawMatchPoints()
-	elseif CartState == STATES.player_matching then
-		DrawGameBG()
-		DrawGems()
-		DrawHUD()
-		DrawMatchPoints()
-	elseif CartState == STATES.level_up then
+	elseif _CartState == _States.level_up then
 		DrawGameBG()
 		DrawHUD()
-		print("level " .. Player.level .. " complete", 16, 16, 7)
-		print("get ready for level " .. Player.level + 1, 16, 22, 7)
-	elseif CartState == STATES.game_over then
+		print("level " .. _Player.level .. " complete", 16, 16, 7)
+		print("get ready for level " .. _Player.level + 1, 16, 22, 7)
+	elseif _CartState == _States.game_over then
 		DrawGameBG()
 		print("game over", 16, 16, 7)
-	elseif CartState == STATES.enter_high_score then
+	elseif _CartState == _States.enter_high_score then
 		DrawGameBG()
 		print("nice job!", 16, 16, 7)
-		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
+		print("you got " .. _Player.placement .. OrdinalIndicator(_Player.placement) .. " place", 16, 22, 7)
 		print("enter your initials", 16, 28, 7)
-		print(INITIAL_CHARS[Player.letterIDs[1]], 16, 36, HSColor(HS_POSITIONS.first))
-		print(INITIAL_CHARS[Player.letterIDs[2]], 21, 36, HSColor(HS_POSITIONS.second))
-		print(INITIAL_CHARS[Player.letterIDs[3]], 26, 36, HSColor(HS_POSITIONS.third))
-		print("ok", 31, 36, HSColor(HS_POSITIONS.ok))
-	elseif CartState == STATES.high_scores then
+		print(_Initials[_Player.letterIDs[1]], 16, 36, HSColor(_ScorePositions.first))
+		print(_Initials[_Player.letterIDs[2]], 21, 36, HSColor(_ScorePositions.second))
+		print(_Initials[_Player.letterIDs[3]], 26, 36, HSColor(_ScorePositions.third))
+		print("ok", 31, 36, HSColor(_ScorePositions.ok))
+	elseif _CartState == _States.high_scores then
 		DrawTitleBG()
 		DrawHighScores()
 	end
 end
 
 function _update()
-	Frame = (Frame + 1) % 30
-	if CartState == STATES.title_screen then
+	if _CartState == _States.title_screen then
 		if btnp(4) then
-			CartState = STATES.game_init
+			_CartState = _States.game_init
 		elseif btnp(5) then
-			CartState = STATES.high_scores
+			_CartState = _States.high_scores
 		end
-	elseif CartState == STATES.game_init then
+	elseif _CartState == _States.game_init then
 		InitPlayer()
 		InitGrid()
-		CartState = STATES.generate_board
-	elseif CartState == STATES.generate_board then
+		_CartState = _States.generate_board
+	elseif _CartState == _States.generate_board then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
-				CartState = STATES.game_idle
+				_CartState = _States.game_idle
 			end
 		end
-	elseif CartState == STATES.game_idle then
+	elseif _CartState == _States.game_idle then
 		UpdateGridCursor()
-		if Player.score >= Player.levelThreshold then
-			CartState = STATES.level_up
-			LevelUpCounter = 0
-		elseif Player.lives == 0 then
-			GameOverCounter = 0
-			CartState = STATES.game_over
+		if _Player.score >= _Player.levelThreshold then
+			_CartState = _States.level_up
+			_FrameCounter = 0
+		elseif _Player.lives == 0 then
+			_CartState = _States.game_over
+			_FrameCounter = 0
 		end
-	elseif CartState == STATES.swap_select then
+	elseif _CartState == _States.swap_select then
 		UpdateGridCursor()
-	elseif CartState == STATES.update_board then
-		if ((ClearMatchFrame - Frame) % 30) % DROP_FRAMES == 0 then
+	elseif _CartState == _States.update_board then
+		if _FrameCounter ~= _MatchFrames then
+			_FrameCounter = _FrameCounter + 1
+		elseif (_FrameCounter - _MatchFrames) % _DropFrames == 0 then
 			if not FillGridHoles() then
-				CartState = STATES.player_matching
+				_CartState = _States.player_matching
 			end
 		end
-	elseif CartState == STATES.player_matching then
+	elseif _CartState == _States.player_matching then
 		if not ClearGridMatches(true) then
-			if Player.combo == 0 then
-				Player.lives = Player.lives - 1
+			if _Player.combo == 0 then
+				_Player.lives = _Player.lives - 1
 			end
-			Player.combo = 0
-			CartState = STATES.game_idle
+			_Player.combo = 0
+			_CartState = _States.game_idle
 		else
-			ClearMatchFrame = Frame
-			CartState = STATES.update_board
+			_CartState = _States.update_board
+			_FrameCounter = 0
 		end
-	elseif CartState == STATES.level_up then
-		if LevelUpCounter ~= 100 then
-			LevelUpCounter = LevelUpCounter + 1
+	elseif _CartState == _States.level_up then
+		if _FrameCounter ~= 100 then
+			_FrameCounter = _FrameCounter + 1
 		else
-			LevelUpCounter = 0
 			LevelUp()
-			CartState = STATES.generate_board
+			_CartState = _States.generate_board
+			_FrameCounter = 0
 		end
-	elseif CartState == STATES.game_over then
-		if GameOverCounter ~= 100 then
-			GameOverCounter = GameOverCounter + 1
-		else
-			if btnp(4) or btnp(5) then
-				Player.placement = PlayerPlacement()
-				printh("Player placement: " .. Player.placement)
-				if Player.placement == NO_PLACEMENT then
-					GameOverCounter = 0
-					CartState = STATES.high_scores
-				else
-					CartState = STATES.enter_high_score
-				end
+	elseif _CartState == _States.game_over then
+		if _FrameCounter ~= 100 then
+			_FrameCounter = _FrameCounter + 1
+		elseif btnp(4) or btnp(5) then
+			_Player.placement = PlayerPlacement()
+			-- printh("Player placement: " .. _Player.placement)
+			if _Player.placement == _NoPlacement then
+				_CartState = _States.high_scores
+			else
+				_CartState = _States.enter_high_score
 			end
 		end
-	elseif CartState == STATES.enter_high_score then
+	elseif _CartState == _States.enter_high_score then
 		UpdateScoreCursor()
-	elseif CartState == STATES.high_scores then
-		if GameOverCounter ~= 100 then
-			GameOverCounter = GameOverCounter + 1
-		else
-			if btnp(4) or btnp(5) then
-				CartState = STATES.title_screen
-			end
+	elseif _CartState == _States.high_scores then
+		if btnp(4) or btnp(5) then
+			_CartState = _States.title_screen
 		end
 	end
 end

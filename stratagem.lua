@@ -4,7 +4,7 @@
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[], placement: integer, hs_cursor: ScorePositions}
+---@alias Player {grid_cursor: Coords, score: integer, initLevelScore: integer, levelThreshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letterIDs: integer[], placement: integer, score_cursor: ScorePositions}
 
 ---@enum States
 _States = {
@@ -34,6 +34,9 @@ _NGems = 8
 
 ---@type integer Number of frames to wait before dropping new gems down
 _DropFrames = 3
+
+---@type integer Number of frames to wait to show the match points
+_MatchFrames = 20
 
 ---@type integer[] main PICO-8 colors of gems
 _GemColors = { 8, 9, 12, 11, 14, 7, 4, 13 }
@@ -77,6 +80,9 @@ _CartState = _States.game_init
 ---@type HighScore[] high score
 _Leaderboard = {}
 
+---@type integer frame counter for state transitions / pauses
+_FrameCounter = 0
+
 --- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
@@ -101,7 +107,7 @@ function InitPlayer()
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 		letterIDs = { 1, 1, 1 },
 		placement = 0,
-		hs_cursor = _ScorePositions.first,
+		score_cursor = _ScorePositions.first,
 	}
 end
 
@@ -117,10 +123,10 @@ function LoadLeaderboard()
 		if rawScoreData[1] == 0 then
 			rawScoreData = { 1, 1, 1, (11 - score_idx) * 100 }
 		end
-		printh(rawScoreData[1])
-		printh(rawScoreData[2])
-		printh(rawScoreData[3])
-		printh(rawScoreData[4])
+		-- printh(rawScoreData[1])
+		-- printh(rawScoreData[2])
+		-- printh(rawScoreData[3])
+		-- printh(rawScoreData[4])
 		_Leaderboard[score_idx] = {
 			initials = _Initials[rawScoreData[1]] .. _Initials[rawScoreData[2]] .. _Initials[rawScoreData[3]],
 			score = rawScoreData[4],
@@ -267,7 +273,6 @@ function UpdateGridCursor()
 			SwapGems(_Player.grid_cursor, { _Player.grid_cursor[1] + 1, _Player.grid_cursor[2] })
 		end
 		if btnp(0) or btnp(1) or btnp(2) or btnp(3) then
-			MatchFrame = Frame
 			_CartState = _States.player_matching
 		end
 	end
@@ -357,16 +362,16 @@ function DrawGems()
 	end
 end
 
-function GridHasMatches()
-	for y = 1, 6 do
-		for x = 1, 6 do
-			if #FloodMatch({ y, x }, {}) >= 3 then
-				return true
-			end
-		end
-	end
-	return false
-end
+-- function GridHasMatches()
+-- 	for y = 1, 6 do
+-- 		for x = 1, 6 do
+-- 			if #FloodMatch({ y, x }, {}) >= 3 then
+-- 				return true
+-- 			end
+-- 		end
+-- 	end
+-- 	return false
+-- end
 
 --- Clear the matches on the grid.
 ---@param byPlayer boolean whether the match is made by the player
@@ -381,16 +386,16 @@ function ClearGridMatches(byPlayer)
 	return hadMatches
 end
 
-function GridHasHoles()
-	for y = 1, 6 do
-		for x = 1, 6 do
-			if _Grid[y][x] == 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
+-- function GridHasHoles()
+-- 	for y = 1, 6 do
+-- 		for x = 1, 6 do
+-- 			if _Grid[y][x] == 0 then
+-- 				return true
+-- 			end
+-- 		end
+-- 	end
+-- 	return false
+-- end
 
 --- Fill holes in the grid by dropping gems.
 ---@return boolean # whether the grid has any holes
@@ -534,28 +539,15 @@ function _draw()
 	if _CartState == _States.title_screen then
 		DrawTitleBG()
 		DrawTitleFG()
-	elseif _CartState == _States.game_init then
+	elseif (_CartState == _States.game_init) or (_CartState == _States.generate_board) then
 		DrawGameBG()
 		DrawHUD()
-	elseif _CartState == _States.generate_board then
-		DrawGameBG()
-		DrawHUD()
-	elseif _CartState == _States.game_idle then
+	elseif (_CartState == _States.game_idle) or (_CartState == _States.swap_select) then
 		DrawGameBG()
 		DrawGems()
 		DrawCursor()
 		DrawHUD()
-	elseif _CartState == _States.swap_select then
-		DrawGameBG()
-		DrawGems()
-		DrawCursor()
-		DrawHUD()
-	elseif _CartState == _States.update_board then
-		DrawGameBG()
-		DrawGems()
-		DrawHUD()
-		DrawMatchPoints()
-	elseif _CartState == _States.player_matching then
+	elseif (_CartState == _States.update_board) or (_CartState == _States.player_matching) then
 		DrawGameBG()
 		DrawGems()
 		DrawHUD()
@@ -584,7 +576,6 @@ function _draw()
 end
 
 function _update()
-	Frame = (Frame + 1) % 30
 	if _CartState == _States.title_screen then
 		if btnp(4) then
 			_CartState = _States.game_init
@@ -605,15 +596,17 @@ function _update()
 		UpdateGridCursor()
 		if _Player.score >= _Player.levelThreshold then
 			_CartState = _States.level_up
-			LevelUpCounter = 0
+			_FrameCounter = 0
 		elseif _Player.lives == 0 then
-			GameOverCounter = 0
 			_CartState = _States.game_over
+			_FrameCounter = 0
 		end
 	elseif _CartState == _States.swap_select then
 		UpdateGridCursor()
 	elseif _CartState == _States.update_board then
-		if ((ClearMatchFrame - Frame) % 30) % _DropFrames == 0 then
+		if _FrameCounter ~= _MatchFrames then
+			_FrameCounter = _FrameCounter + 1
+		elseif (_FrameCounter - _MatchFrames) % _DropFrames == 0 then
 			if not FillGridHoles() then
 				_CartState = _States.player_matching
 			end
@@ -626,41 +619,34 @@ function _update()
 			_Player.combo = 0
 			_CartState = _States.game_idle
 		else
-			ClearMatchFrame = Frame
 			_CartState = _States.update_board
+			_FrameCounter = 0
 		end
 	elseif _CartState == _States.level_up then
-		if LevelUpCounter ~= 100 then
-			LevelUpCounter = LevelUpCounter + 1
+		if _FrameCounter ~= 100 then
+			_FrameCounter = _FrameCounter + 1
 		else
-			LevelUpCounter = 0
 			LevelUp()
 			_CartState = _States.generate_board
+			_FrameCounter = 0
 		end
 	elseif _CartState == _States.game_over then
-		if GameOverCounter ~= 100 then
-			GameOverCounter = GameOverCounter + 1
-		else
-			if btnp(4) or btnp(5) then
-				_Player.placement = PlayerPlacement()
-				printh("Player placement: " .. _Player.placement)
-				if _Player.placement == _NoPlacement then
-					GameOverCounter = 0
-					_CartState = _States.high_scores
-				else
-					_CartState = _States.enter_high_score
-				end
+		if _FrameCounter ~= 100 then
+			_FrameCounter = _FrameCounter + 1
+		elseif btnp(4) or btnp(5) then
+			_Player.placement = PlayerPlacement()
+			-- printh("Player placement: " .. _Player.placement)
+			if _Player.placement == _NoPlacement then
+				_CartState = _States.high_scores
+			else
+				_CartState = _States.enter_high_score
 			end
 		end
 	elseif _CartState == _States.enter_high_score then
 		UpdateScoreCursor()
 	elseif _CartState == _States.high_scores then
-		if GameOverCounter ~= 100 then
-			GameOverCounter = GameOverCounter + 1
-		else
-			if btnp(4) or btnp(5) then
-				_CartState = _States.title_screen
-			end
+		if btnp(4) or btnp(5) then
+			_CartState = _States.title_screen
 		end
 	end
 end

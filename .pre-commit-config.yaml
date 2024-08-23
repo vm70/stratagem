@@ -22,12 +22,7 @@ repos:
         entry: selene
         types: [lua]
         require_serial: true
-      - id: lua-language-server
-        name: lua-language-server
-        description:
-          A language server that offers Lua language support - programmed in Lua
+      - id: make
+        name: make
         language: system
-        entry: lua-language-server --check .
-        types: [lua]
-        require_serial: true
-        pass_filenames: false
+        entry: make build-cart

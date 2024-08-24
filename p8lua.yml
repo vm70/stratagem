@@ -123,3 +123,10 @@ globals:
         required: false
       - type: number
         required: false
+  music:
+    args:
+      - type: number
+      - type: number
+        required: false
+      - type: number
+        required: false

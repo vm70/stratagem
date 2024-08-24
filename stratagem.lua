@@ -363,17 +363,6 @@ function DrawGems()
 	end
 end
 
--- function GridHasMatches()
--- 	for y = 1, 6 do
--- 		for x = 1, 6 do
--- 			if #FloodMatch({ y, x }, {}) >= 3 then
--- 				return true
--- 			end
--- 		end
--- 	end
--- 	return false
--- end
-
 --- Clear the matches on the grid.
 ---@param byPlayer boolean whether the match is made by the player
 ---@return boolean # whether any matches were cleared
@@ -386,17 +375,6 @@ function ClearGridMatches(byPlayer)
 	end
 	return had_matches
 end
-
--- function GridHasHoles()
--- 	for y = 1, 6 do
--- 		for x = 1, 6 do
--- 			if _Grid[y][x] == 0 then
--- 				return true
--- 			end
--- 		end
--- 	end
--- 	return false
--- end
 
 --- Fill holes in the grid by dropping gems.
 ---@return boolean # whether the grid has any holes

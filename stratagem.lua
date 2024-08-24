@@ -4,7 +4,7 @@
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, lives: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer, score_cursor: ScorePositions}
+---@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer, score_cursor: ScorePositions}
 
 ---@enum States
 STATES = {
@@ -102,7 +102,7 @@ function InitPlayer()
 		init_level_score = 0,
 		level_threshold = L1_THRESHOLD,
 		level = 1,
-		lives = 3,
+		chances = 3,
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 		letter_ids = { 1, 1, 1 },
@@ -194,7 +194,7 @@ function ClearMatching(coords, byPlayer)
 		end
 		if byPlayer then
 			Player.combo = Player.combo + 1
-			sfx(min(Player.combo, 7))
+			sfx(min(Player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
 			local move_score = Player.level * Player.combo * BASE_MATCH_PTS * (#match_list - 2)
 			Player.score = Player.score + move_score
 			Player.last_match = { move_score = move_score, x = coords[2], y = coords[1], color = gem_color }
@@ -397,10 +397,10 @@ function FillGridHoles()
 	return has_holes
 end
 
---- Draw the HUD (score, lives, level progress bar, etc) on the screen
+--- Draw the HUD (score, chances, level progress bar, etc) on the screen
 function DrawHUD()
 	print("score:" .. Player.score, 17, 9, 7)
-	print("lives:" .. Player.lives, 73, 9, 8)
+	print("chances:" .. max(Player.chances, 0), 73, 9, 8)
 	print("level:" .. Player.level, 49, 121, 7)
 	print("combo:" .. Player.combo, 0, 0, 7)
 	-- calculate level completion ratio
@@ -565,6 +565,7 @@ function _update()
 		InitPlayer()
 		InitGrid()
 		CartState = STATES.generate_board
+		music(8)
 	elseif CartState == STATES.generate_board then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
@@ -576,7 +577,9 @@ function _update()
 		if Player.score >= Player.level_threshold then
 			CartState = STATES.level_up
 			FrameCounter = 0
-		elseif Player.lives == 0 then
+		elseif Player.chances == -1 then
+			Player.chances = 0
+			music(0)
 			CartState = STATES.game_over
 			FrameCounter = 0
 		end
@@ -593,8 +596,8 @@ function _update()
 	elseif CartState == STATES.player_matching then
 		if not ClearGridMatches(true) then
 			if Player.combo == 0 then
-				sfx(0)
-				Player.lives = Player.lives - 1
+				sfx(0, -1, 0, 3) -- "error" sound effect
+				Player.chances = Player.chances - 1
 			end
 			Player.combo = 0
 			CartState = STATES.game_idle

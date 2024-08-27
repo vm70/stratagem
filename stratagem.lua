@@ -45,7 +45,7 @@ GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 BASE_MATCH_PTS = 3
 
 ---@type integer How many points needed to get to level 2
-L1_THRESHOLD = 80
+L1_THRESHOLD = 50 * BASE_MATCH_PTS
 
 ---@type string Allowed initial characters for high scores
 INITIALS = "abcdefghijklmnopqrstuvwxyz0123456789 "

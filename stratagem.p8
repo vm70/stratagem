@@ -14,7 +14,7 @@ VERSION = {
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer, score_cursor: ScorePositions}
+---@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer | nil, score_cursor: ScorePositions}
 
 ---@enum States
 STATES = {
@@ -65,9 +65,6 @@ L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 
 ---@type string Allowed initial characters for high scores
 INITIALS = "abcdefghijklmnopqrstuvwxyz0123456789 "
-
----@type integer value for no high score
-NO_PLACEMENT = 11
 
 ---@type integer[][] game grid
 Grid = {}
@@ -122,7 +119,7 @@ function InitPlayer()
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 		letter_ids = { 1, 1, 1 },
-		placement = 0,
+		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,
 	}
 end
@@ -146,6 +143,7 @@ function LoadLeaderboard()
 	end
 end
 
+--- Add the player's new high score to the leaderboard
 function UpdateLeaderboard()
 	local first = INITIALS[Player.letter_ids[1]]
 	local second = INITIALS[Player.letter_ids[2]]
@@ -158,24 +156,27 @@ function UpdateLeaderboard()
 	end
 end
 
+--- equivalent of `string.find` in vanilla Lua's standard library
 ---@param str string
 ---@param wantChar string
-function FindInString(str, wantChar)
+---@return integer | nil
+function StringFind(str, wantChar)
 	for idx = 1, #str do
 		if str[idx] == wantChar then
 			return idx
 		end
 	end
-	return -1
+	return nil
 end
 
+--- Save the leaderboard to the cartridge memory
 function SaveLeaderboard()
 	for score_idx, score in ipairs(Leaderboard) do
-		local first = FindInString(INITIALS, score.initials[1])
+		local first = StringFind(INITIALS, score.initials[1])
 		dset(4 * (score_idx - 1) + 0, first)
-		local second = FindInString(INITIALS, score.initials[2])
+		local second = StringFind(INITIALS, score.initials[2])
 		dset(4 * (score_idx - 1) + 1, second)
-		local third = FindInString(INITIALS, score.initials[3])
+		local third = StringFind(INITIALS, score.initials[3])
 		dset(4 * (score_idx - 1) + 2, third)
 		dset(4 * (score_idx - 1) + 3, score.score)
 	end
@@ -270,7 +271,7 @@ function FloodMatch(gemCoords, visited)
 	return visited
 end
 
---- Do all cursor updating actions
+--- Do all cursor updating actions (during gameplay)
 function UpdateGridCursor()
 	if CartState == STATES.swap_select then
 		-- player has chosen to swap gems
@@ -315,6 +316,7 @@ function UpdateGridCursor()
 	end
 end
 
+--- Do all cursor updating actions (during high score entry)
 function UpdateScoreCursor()
 	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
 		-- move left
@@ -356,6 +358,7 @@ function DrawCursor()
 	)
 end
 
+--- draw the moving game background
 function DrawGameBG()
 	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
 	rectfill(0, 0, 128, 128, 0x21)
@@ -364,6 +367,7 @@ function DrawGameBG()
 	map(0, 0, 0, 0, 16, 16, 0)
 end
 
+--- draw the gems in the grid
 function DrawGems()
 	for y = 1, 6 do
 		for x = 1, 6 do
@@ -473,15 +477,17 @@ function DrawTitleFG()
 	print("❎: high scores", 12, 72, 7)
 end
 
---- Increase the player level
+--- Increase the player level and perform associated actions
 function LevelUp()
-	Player.level_threshold = Player.score + (L1_MATCHES + (20 * Player.level)) * (Player.level + 1) * BASE_MATCH_PTS
-	Player.init_level_score = Player.score
 	Player.level = Player.level + 1
+	Player.init_level_score = Player.score
+	Player.level_threshold = (
+		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * Player.level * BASE_MATCH_PTS
+	)
 	InitGrid()
 end
 
---- Draw the player's match points where the gems were cleared
+--- Draw the point numbers for the player's match where the gems were cleared
 function DrawMatchPoints()
 	if Player.combo ~= 0 then
 		print(
@@ -493,15 +499,20 @@ function DrawMatchPoints()
 	end
 end
 
+--- Calculate the player's placement in the leaderboard.
+---@return integer | nil # which placement (1-10) if the player got a high score; nil otherwise
 function PlayerPlacement()
 	for scoreIdx, score in ipairs(Leaderboard) do
 		if Player.score > score.score then
 			return scoreIdx
 		end
 	end
-	return NO_PLACEMENT
+	return nil
 end
 
+--- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
+---@param place integer
+---@return string
 function OrdinalIndicator(place)
 	if place == 1 then
 		return "st"
@@ -516,15 +527,17 @@ function OrdinalIndicator(place)
 	end
 end
 
----@param hs_state ScorePositions
-function HSColor(hs_state)
+--- Get the color of the score position for drawing the high score UI
+---@param score_position ScorePositions
+function HSColor(score_position)
 	local color = 7
-	if hs_state == Player.score_cursor then
+	if score_position == Player.score_cursor then
 		color = 11
 	end
 	return color
 end
 
+--- Play the corresponding music for the given level number
 ---@param level integer current level number
 function PlayLevelMusic(level)
 	local musicID = (level % #LEVEL_MUSIC) + 1
@@ -643,7 +656,7 @@ function _update()
 			FrameCounter = FrameCounter + 1
 		elseif btnp(4) or btnp(5) then
 			Player.placement = PlayerPlacement()
-			if Player.placement == NO_PLACEMENT then
+			if Player.placement == nil then
 				CartState = STATES.high_scores
 				music(24)
 			else

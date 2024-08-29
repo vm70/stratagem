@@ -29,6 +29,9 @@ SCORE_POSITIONS = {
 	ok = 4,
 }
 
+---@type integer[] List of level music starting positions
+LEVEL_MUSIC = { 2, 8 }
+
 ---@type integer Number of gems in the game (max 8)
 N_GEMS = 8
 
@@ -75,7 +78,7 @@ TITLE_SPRITE = {
 }
 
 ---@type States current state of the cartridge
-CartState = STATES.game_init
+CartState = STATES.title_screen
 
 ---@type HighScore[] high score
 Leaderboard = {}
@@ -123,10 +126,6 @@ function LoadLeaderboard()
 		if raw_score_data[1] == 0 then
 			raw_score_data = { 1, 1, 1, (11 - score_idx) * 100 }
 		end
-		-- printh(rawScoreData[1])
-		-- printh(rawScoreData[2])
-		-- printh(rawScoreData[3])
-		-- printh(rawScoreData[4])
 		Leaderboard[score_idx] = {
 			initials = INITIALS[raw_score_data[1]] .. INITIALS[raw_score_data[2]] .. INITIALS[raw_score_data[3]],
 			score = raw_score_data[4],
@@ -321,6 +320,7 @@ function UpdateScoreCursor()
 		UpdateLeaderboard()
 		SaveLeaderboard()
 		CartState = STATES.high_scores
+		music(24)
 	end
 end
 
@@ -507,8 +507,15 @@ function HSColor(hs_state)
 	return color
 end
 
+---@param level integer current level number
+function PlayLevelMusic(level)
+	local musicID = (level % #LEVEL_MUSIC) + 1
+	music(LEVEL_MUSIC[musicID])
+end
+
 function _init()
 	cls(0)
+	music(24)
 	InitPlayer()
 	InitGrid()
 	LoadLeaderboard()
@@ -565,11 +572,11 @@ function _update()
 		InitPlayer()
 		InitGrid()
 		CartState = STATES.generate_board
-		music(8)
 	elseif CartState == STATES.generate_board then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
 				CartState = STATES.game_idle
+				PlayLevelMusic(Player.level)
 			end
 		end
 	elseif CartState == STATES.game_idle then
@@ -618,9 +625,9 @@ function _update()
 			FrameCounter = FrameCounter + 1
 		elseif btnp(4) or btnp(5) then
 			Player.placement = PlayerPlacement()
-			-- printh("Player placement: " .. _Player.placement)
 			if Player.placement == NO_PLACEMENT then
 				CartState = STATES.high_scores
+				music(24)
 			else
 				CartState = STATES.enter_high_score
 			end

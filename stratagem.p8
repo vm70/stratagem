@@ -4,6 +4,13 @@ __lua__
 -- stratagem
 -- by VM70
 
+---@type {major: integer, minor: integer, patch: integer} semantic version number
+VERSION = {
+	major = 0,
+	minor = 0,
+	patch = 7,
+}
+
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
@@ -455,6 +462,12 @@ function DrawTitleFG()
 		TITLE_SPRITE.y_offset,
 		TITLE_SPRITE.width,
 		TITLE_SPRITE.height
+	)
+	print(
+		"V" .. VERSION.major .. "." .. VERSION.minor .. "." .. VERSION.patch,
+		64 - TITLE_SPRITE.width / 2,
+		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
+		7
 	)
 	print("🅾️: start game", 12, 64, 7)
 	print("❎: high scores", 12, 72, 7)

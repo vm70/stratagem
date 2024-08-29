@@ -50,8 +50,11 @@ GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 ---@type integer How many points a three-gem match scores on level 1
 BASE_MATCH_PTS = 3
 
+---@type integer How many three-gem matches without combos should get you to level 2
+L1_MATCHES = 50
+
 ---@type integer How many points needed to get to level 2
-L1_THRESHOLD = 50 * BASE_MATCH_PTS
+L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 
 ---@type string Allowed initial characters for high scores
 INITIALS = "abcdefghijklmnopqrstuvwxyz0123456789 "
@@ -405,7 +408,6 @@ function DrawHUD()
 	print("score:" .. Player.score, 17, 9, 7)
 	print("chances:" .. max(Player.chances, 0), 73, 9, 8)
 	print("level:" .. Player.level, 49, 121, 7)
-	print("combo:" .. Player.combo, 0, 0, 7)
 	-- calculate level completion ratio
 	local level_ratio = (Player.score - Player.init_level_score) / (Player.level_threshold - Player.init_level_score)
 	level_ratio = min(level_ratio, 1)
@@ -460,7 +462,7 @@ end
 
 --- Increase the player level
 function LevelUp()
-	Player.level_threshold = Player.score + Player.level_threshold * (Player.level ^ 2)
+	Player.level_threshold = Player.score + (L1_MATCHES + (20 * Player.level)) * (Player.level + 1) * BASE_MATCH_PTS
 	Player.init_level_score = Player.score
 	Player.level = Player.level + 1
 	InitGrid()

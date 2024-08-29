@@ -1,30 +1,5 @@
 {
   "runtime.version": "Lua 5.2",
-  "diagnostics.globals": [
-    "_draw",
-    "_init",
-    "_update",
-    "btnp",
-    "cartdata",
-    "chr",
-    "cls",
-    "cos",
-    "dget",
-    "dset",
-    "fillp",
-    "flip",
-    "flr",
-    "map",
-    "max",
-    "min",
-    "printh",
-    "pset",
-    "rect",
-    "rectfill",
-    "rnd",
-    "sin",
-    "spr",
-    "sspr",
-    "time"
-  ]
+  "diagnostics.disable": ["undefined-global"],
+  "diagnostics.globals": ["_draw", "_init", "_update"]
 }

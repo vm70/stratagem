@@ -1,0 +1,28 @@
+# Pre-commit:  A framework for managing and maintaining multi-language pre-commit hooks.
+# Pre-commit Website: https://pre-commit.com/
+repos:
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v0.20.0
+    hooks:
+      - id: stylua
+        name: stylua
+        description: An opinionated Lua code formatter
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        description: Prettier is an opinionated code formatter.
+        language: system
+        entry: prettier --write --ignore-unknown
+        types: [text]
+      - id: selene
+        name: selene
+        description: A blazing-fast modern Lua linter written in Rust
+        language: lua
+        entry: selene
+        types: [lua]
+        require_serial: true
+      - id: make
+        name: make
+        language: system
+        entry: make build-cart

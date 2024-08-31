@@ -1,10 +1,17 @@
 -- stratagem
 -- by VM70
 
+---@type {major: integer, minor: integer, patch: integer} semantic version number
+VERSION = {
+	major = 0,
+	minor = 0,
+	patch = 7,
+}
+
 ---@alias Coords [integer, integer]
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer, score_cursor: ScorePositions}
+---@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer | nil, score_cursor: ScorePositions}
 
 ---@enum States
 STATES = {
@@ -55,9 +62,6 @@ L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 
 ---@type string Allowed initial characters for high scores
 INITIALS = "abcdefghijklmnopqrstuvwxyz0123456789 "
-
----@type integer value for no high score
-NO_PLACEMENT = 11
 
 ---@type integer[][] game grid
 Grid = {}
@@ -112,7 +116,7 @@ function InitPlayer()
 		combo = 0,
 		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
 		letter_ids = { 1, 1, 1 },
-		placement = 0,
+		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,
 	}
 end
@@ -136,6 +140,7 @@ function LoadLeaderboard()
 	end
 end
 
+--- Add the player's new high score to the leaderboard
 function UpdateLeaderboard()
 	local first = INITIALS[Player.letter_ids[1]]
 	local second = INITIALS[Player.letter_ids[2]]
@@ -148,24 +153,27 @@ function UpdateLeaderboard()
 	end
 end
 
+--- equivalent of `string.find` in vanilla Lua's standard library
 ---@param str string
 ---@param wantChar string
-function FindInString(str, wantChar)
+---@return integer | nil
+function StringFind(str, wantChar)
 	for idx = 1, #str do
 		if str[idx] == wantChar then
 			return idx
 		end
 	end
-	return -1
+	return nil
 end
 
+--- Save the leaderboard to the cartridge memory
 function SaveLeaderboard()
 	for score_idx, score in ipairs(Leaderboard) do
-		local first = FindInString(INITIALS, score.initials[1])
+		local first = StringFind(INITIALS, score.initials[1])
 		dset(4 * (score_idx - 1) + 0, first)
-		local second = FindInString(INITIALS, score.initials[2])
+		local second = StringFind(INITIALS, score.initials[2])
 		dset(4 * (score_idx - 1) + 1, second)
-		local third = FindInString(INITIALS, score.initials[3])
+		local third = StringFind(INITIALS, score.initials[3])
 		dset(4 * (score_idx - 1) + 2, third)
 		dset(4 * (score_idx - 1) + 3, score.score)
 	end
@@ -260,7 +268,7 @@ function FloodMatch(gemCoords, visited)
 	return visited
 end
 
---- Do all cursor updating actions
+--- Do all cursor updating actions (during gameplay)
 function UpdateGridCursor()
 	if CartState == STATES.swap_select then
 		-- player has chosen to swap gems
@@ -305,6 +313,31 @@ function UpdateGridCursor()
 	end
 end
 
+--- Cycle through the initials' indices.
+---@param letterID integer # current letter ID (1 to #INITIALS inclusive)
+---@param isForward boolean whether the step is forward
+---@return integer # next / previous letter ID
+function StepInitials(letterID, isForward)
+	if letterID > #INITIALS then
+		error("letter ID must be less than or equal to " .. #INITIALS)
+	elseif letterID < 1 then
+		error("letter ID must be greater than or equal to 1")
+	end
+
+	-- undo 1-based indexing for modulo arithmetic
+	local letterID_0 = letterID - 1
+	if isForward then
+		local step_0 = (letterID_0 + 1) % #INITIALS
+		-- redo 1-based indexing
+		return step_0 + 1
+	else
+		local step_0 = (letterID_0 - 1) % #INITIALS
+		-- redo 1-based indexing
+		return step_0 + 1
+	end
+end
+
+--- Do all cursor updating actions (during high score entry)
 function UpdateScoreCursor()
 	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
 		-- move left
@@ -314,10 +347,10 @@ function UpdateScoreCursor()
 		Player.score_cursor = Player.score_cursor + 1
 	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(2) then
 		-- increment letter
-		Player.letter_ids[Player.score_cursor] = max((Player.letter_ids[Player.score_cursor] + 1) % (#INITIALS + 1), 1)
+		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], true)
 	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(3) then
 		-- decrement letter
-		Player.letter_ids[Player.score_cursor] = max((Player.letter_ids[Player.score_cursor] - 1) % (#INITIALS + 1), 1)
+		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
 	elseif Player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
 		-- all done typing score
 		UpdateLeaderboard()
@@ -329,10 +362,11 @@ end
 
 --- draw the cursor on the grid
 function DrawCursor()
-	-- 0011 -> 3
-	-- 0011 -> 3
-	-- 1100 -> C
-	-- 1100 -> C
+	-- fillp(0x33CC)
+	-- -- 0011 -> 3
+	-- -- 0011 -> 3
+	-- -- 1100 -> C
+	-- -- 1100 -> C
 	local color = 7
 	if CartState == STATES.swap_select then
 		color = 11
@@ -346,6 +380,7 @@ function DrawCursor()
 	)
 end
 
+--- draw the moving game background
 function DrawGameBG()
 	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
 	rectfill(0, 0, 128, 128, 0x21)
@@ -354,6 +389,7 @@ function DrawGameBG()
 	map(0, 0, 0, 0, 16, 16, 0)
 end
 
+--- draw the gems in the grid
 function DrawGems()
 	for y = 1, 6 do
 		for x = 1, 6 do
@@ -430,14 +466,32 @@ function DrawTitleBG()
 	map(16, 0, 0, 0, 16, 16)
 end
 
-function DrawHighScores()
-	for i, score in ipairs(Leaderboard) do
-		local padded = "" .. i
-		if #padded ~= 2 then
-			padded = " " .. padded
-		end
-		print(padded .. ". " .. score.initials .. " " .. score.score, 64, 2 + 6 * i, 7)
+---@param str string | integer
+---@param pad string
+---@param length integer
+function LeftPad(str, pad, length)
+	if length < #str then
+		error("desired length is less than input string")
 	end
+	local padded = "" .. str
+	while #padded < length do
+		padded = pad .. padded
+	end
+	return padded
+end
+
+--- draw the leaderboard
+function DrawLeaderboard()
+	-- 11 chars * 3 + 10 gaps = 43 px
+	print("high scores", 42, 8, 7)
+	for i, score in ipairs(Leaderboard) do
+		-- use the format "XX. AAA: #####" for each score
+		-- 14 chars * 3 + 13 gaps = 55 px
+		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
+		local padded_score = LeftPad(tostr(score.score), " ", 5)
+		print(padded_place .. score.initials .. " " .. padded_score, 36, 12 + 6 * i, 7)
+	end
+	print("\142/\151: return to title", 20, 94, 7)
 end
 
 -- Draw the title screen
@@ -453,19 +507,27 @@ function DrawTitleFG()
 		TITLE_SPRITE.width,
 		TITLE_SPRITE.height
 	)
-	print("\142: start game", 12, 64, 7)
-	print("\151: high scores", 12, 72, 7)
+	print(
+		"V" .. VERSION.major .. "." .. VERSION.minor .. "." .. VERSION.patch,
+		64 - TITLE_SPRITE.width / 2,
+		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
+		7
+	)
+	print("\142: start game", 36, 64, 7)
+	print("\151: high scores", 36, 72, 7)
 end
 
---- Increase the player level
+--- Increase the player level and perform associated actions
 function LevelUp()
-	Player.level_threshold = Player.score + (L1_MATCHES + (20 * Player.level)) * (Player.level + 1) * BASE_MATCH_PTS
-	Player.init_level_score = Player.score
 	Player.level = Player.level + 1
+	Player.init_level_score = Player.score
+	Player.level_threshold = (
+		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * Player.level * BASE_MATCH_PTS
+	)
 	InitGrid()
 end
 
---- Draw the player's match points where the gems were cleared
+--- Draw the point numbers for the player's match where the gems were cleared
 function DrawMatchPoints()
 	if Player.combo ~= 0 then
 		print(
@@ -477,15 +539,20 @@ function DrawMatchPoints()
 	end
 end
 
+--- Calculate the player's placement in the leaderboard.
+---@return integer | nil # which placement (1-10) if the player got a high score; nil otherwise
 function PlayerPlacement()
 	for scoreIdx, score in ipairs(Leaderboard) do
 		if Player.score > score.score then
 			return scoreIdx
 		end
 	end
-	return NO_PLACEMENT
+	return nil
 end
 
+--- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
+---@param place integer
+---@return string
 function OrdinalIndicator(place)
 	if place == 1 then
 		return "st"
@@ -500,19 +567,40 @@ function OrdinalIndicator(place)
 	end
 end
 
----@param hs_state ScorePositions
-function HSColor(hs_state)
+--- Get the color of the score position for drawing the high score UI
+---@param score_position ScorePositions
+function HSColor(score_position)
 	local color = 7
-	if hs_state == Player.score_cursor then
+	if score_position == Player.score_cursor then
 		color = 11
 	end
 	return color
 end
 
+--- Play the corresponding music for the given level number
 ---@param level integer current level number
 function PlayLevelMusic(level)
 	local musicID = (level % #LEVEL_MUSIC) + 1
 	music(LEVEL_MUSIC[musicID])
+end
+
+function DrawInitialEntering()
+	print(INITIALS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
+	if Player.score_cursor == SCORE_POSITIONS.first then
+		rect(16, 36 + 6, 16 + 2, 36 + 6, 11)
+	end
+	print(INITIALS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
+	if Player.score_cursor == SCORE_POSITIONS.second then
+		rect(21, 36 + 6, 21 + 2, 36 + 6, 11)
+	end
+	print(INITIALS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
+	if Player.score_cursor == SCORE_POSITIONS.third then
+		rect(26, 36 + 6, 26 + 2, 36 + 6, 11)
+	end
+	print("ok", 31, 36, HSColor(SCORE_POSITIONS.ok))
+	if Player.score_cursor == SCORE_POSITIONS.ok then
+		rect(31, 36 + 6, 31 + 6, 36 + 6, 11)
+	end
 end
 
 function _init()
@@ -547,19 +635,18 @@ function _draw()
 		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
-		print("game over", 16, 16, 7)
+		DrawHUD()
+		print("game over", 46, 61, 7)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
+		DrawHUD()
 		print("nice job!", 16, 16, 7)
 		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
 		print("enter your initials", 16, 28, 7)
-		print(INITIALS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
-		print(INITIALS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
-		print(INITIALS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
-		print("ok", 31, 36, HSColor(SCORE_POSITIONS.ok))
+		DrawInitialEntering()
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
-		DrawHighScores()
+		DrawLeaderboard()
 	end
 end
 
@@ -625,9 +712,9 @@ function _update()
 	elseif CartState == STATES.game_over then
 		if FrameCounter ~= 100 then
 			FrameCounter = FrameCounter + 1
-		elseif btnp(4) or btnp(5) then
+		elseif btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
 			Player.placement = PlayerPlacement()
-			if Player.placement == NO_PLACEMENT then
+			if Player.placement == nil then
 				CartState = STATES.high_scores
 				music(24)
 			else

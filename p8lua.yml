@@ -130,3 +130,8 @@ globals:
         required: false
       - type: number
         required: false
+  tostr:
+    args:
+      - type: number
+      - type: number
+        required: false

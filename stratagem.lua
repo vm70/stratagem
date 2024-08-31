@@ -592,9 +592,11 @@ function _draw()
 		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
+		DrawHUD()
 		print("game over", 16, 16, 7)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
+		DrawHUD()
 		print("nice job!", 16, 16, 7)
 		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
 		print("enter your initials", 16, 28, 7)

@@ -9,9 +9,6 @@ are in the same row or column.
 While you can make any move on the board that swaps two touching gems, you can
 only make three moves that don't clear groups of gems before the game is over.
 
-> [!WARNING]  
-> This game will not be ready to play until release version 0.1.0.
-
 ## Special Thanks
 
 - [Cameron](https://cmrn.io/)

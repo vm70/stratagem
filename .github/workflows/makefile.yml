@@ -2,26 +2,21 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: configure
-      run: ./configure
-
-    - name: Install dependencies
-      run: make
-
-    - name: Run check
-      run: make check
-
-    - name: Run distcheck
-      run: make distcheck
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build PICO-8 Cart
+        run: make build-cart
+      - name: Archive PICO-8 Cart Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stratagem.p8
+          path: stratagem.p8

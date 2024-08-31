@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
--- stratagem v0.1.0
+-- stratagem v0.1.1
 -- (c) 2019-2024 vincent "vm" mercator
 
 -- distributed under gpl3 license

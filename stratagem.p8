@@ -715,7 +715,7 @@ function _update()
 	elseif CartState == STATES.game_over then
 		if FrameCounter ~= 100 then
 			FrameCounter = FrameCounter + 1
-		elseif btnp(4) or btnp(5) then
+		elseif btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
 			Player.placement = PlayerPlacement()
 			if Player.placement == nil then
 				CartState = STATES.high_scores

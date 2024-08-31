@@ -458,12 +458,16 @@ end
 
 --- draw the leaderboard
 function DrawLeaderboard()
+	-- 11 chars * 3 + 10 gaps = 43 px
+	print("high scores", 42, 8, 7)
 	for i, score in ipairs(Leaderboard) do
 		-- use the format "XX. AAA: #####" for each score
+		-- 14 chars * 3 + 13 gaps = 55 px
 		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
 		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		print(padded_place .. score.initials .. " " .. padded_score, 64, 2 + 6 * i, 7)
+		print(padded_place .. score.initials .. " " .. padded_score, 36, 12 + 6 * i, 7)
 	end
+	print("\142/\151: return to title", 20, 94, 7)
 end
 
 -- Draw the title screen
@@ -485,8 +489,8 @@ function DrawTitleFG()
 		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
 		7
 	)
-	print("\142: start game", 12, 64, 7)
-	print("\151: high scores", 12, 72, 7)
+	print("\142: start game", 36, 64, 7)
+	print("\151: high scores", 36, 72, 7)
 end
 
 --- Increase the player level and perform associated actions

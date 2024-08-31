@@ -1,11 +1,8 @@
--- stratagem
--- by VM70
-
 ---@type {major: integer, minor: integer, patch: integer} semantic version number
 VERSION = {
 	major = 0,
-	minor = 0,
-	patch = 7,
+	minor = 1,
+	patch = 0,
 }
 
 ---@alias Coords [integer, integer]

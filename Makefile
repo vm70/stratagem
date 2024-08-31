@@ -3,12 +3,12 @@ SHELL = /bin/sh
 .SUFFIXES: .lua .p8
 
 build-cart:
-	p8tool build stratagem.p8 \
-		--lua stratagem.lua \
-		--gfx stratagem-art.p8 \
-		--map stratagem-art.p8 \
-		--sfx stratagem-art.p8 \
-		--music stratagem-art.p8
-
+	rm -f stratagem.p8
+	touch stratagem.p8
+	cat src/header.txt >> stratagem.p8
+	cat src/main.lua >> stratagem.p8
+	sed -n '1,2!p' assets/art.p8 >> stratagem.p8
+	sed -n '1,2!p' assets/sound.p8 >> stratagem.p8
+	
 run-cart: build-cart
 	pico8 -run stratagem.p8

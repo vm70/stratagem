@@ -1,4 +1,7 @@
 std = "p8lua"
+
 [config]
+
 [lints]
+
 unscoped_variables = "allow"

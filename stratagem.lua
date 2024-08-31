@@ -338,10 +338,11 @@ end
 
 --- draw the cursor on the grid
 function DrawCursor()
-	-- 0011 -> 3
-	-- 0011 -> 3
-	-- 1100 -> C
-	-- 1100 -> C
+	-- fillp(0x33CC)
+	-- -- 0011 -> 3
+	-- -- 0011 -> 3
+	-- -- 1100 -> C
+	-- -- 1100 -> C
 	local color = 7
 	if CartState == STATES.swap_select then
 		color = 11
@@ -441,13 +442,27 @@ function DrawTitleBG()
 	map(16, 0, 0, 0, 16, 16)
 end
 
-function DrawHighScores()
+---@param str string | integer
+---@param pad string
+---@param length integer
+function LeftPad(str, pad, length)
+	if length < #str then
+		error("desired length is less than input string")
+	end
+	local padded = "" .. str
+	while #padded < length do
+		padded = pad .. padded
+	end
+	return padded
+end
+
+--- draw the leaderboard
+function DrawLeaderboard()
 	for i, score in ipairs(Leaderboard) do
-		local padded = "" .. i
-		if #padded ~= 2 then
-			padded = " " .. padded
-		end
-		print(padded .. ". " .. score.initials .. " " .. score.score, 64, 2 + 6 * i, 7)
+		-- use the format "XX. AAA: #####" for each score
+		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
+		local padded_score = LeftPad(tostr(score.score), " ", 5)
+		print(padded_place .. score.initials .. " " .. padded_score, 64, 2 + 6 * i, 7)
 	end
 end
 
@@ -585,7 +600,7 @@ function _draw()
 		print("ok", 31, 36, HSColor(SCORE_POSITIONS.ok))
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
-		DrawHighScores()
+		DrawLeaderboard()
 	end
 end
 

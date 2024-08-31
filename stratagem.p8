@@ -316,6 +316,30 @@ function UpdateGridCursor()
 	end
 end
 
+--- Cycle through the initials' indices.
+---@param letterID integer # current letter ID (1 to #INITIALS inclusive)
+---@param isForward boolean whether the step is forward
+---@return integer # next / previous letter ID
+function StepInitials(letterID, isForward)
+	if letterID > #INITIALS then
+		error("letter ID must be less than or equal to " .. #INITIALS)
+	elseif letterID < 1 then
+		error("letter ID must be greater than or equal to 1")
+	end
+
+	-- undo 1-based indexing for modulo arithmetic
+	local letterID_0 = letterID - 1
+	if isForward then
+		local step_0 = (letterID_0 + 1) % #INITIALS
+		-- redo 1-based indexing
+		return step_0 + 1
+	else
+		local step_0 = (letterID_0 - 1) % #INITIALS
+		-- redo 1-based indexing
+		return step_0 + 1
+	end
+end
+
 --- Do all cursor updating actions (during high score entry)
 function UpdateScoreCursor()
 	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
@@ -326,10 +350,10 @@ function UpdateScoreCursor()
 		Player.score_cursor = Player.score_cursor + 1
 	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(2) then
 		-- increment letter
-		Player.letter_ids[Player.score_cursor] = max((Player.letter_ids[Player.score_cursor] + 1) % (#INITIALS + 1), 1)
+		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], true)
 	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(3) then
 		-- decrement letter
-		Player.letter_ids[Player.score_cursor] = max((Player.letter_ids[Player.score_cursor] - 1) % (#INITIALS + 1), 1)
+		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
 	elseif Player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
 		-- all done typing score
 		UpdateLeaderboard()

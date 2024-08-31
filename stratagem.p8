@@ -563,6 +563,25 @@ function PlayLevelMusic(level)
 	music(LEVEL_MUSIC[musicID])
 end
 
+function DrawInitialEntering()
+	print(INITIALS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
+	if Player.score_cursor == SCORE_POSITIONS.first then
+		rect(16, 36 + 6, 16 + 2, 36 + 6, 11)
+	end
+	print(INITIALS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
+	if Player.score_cursor == SCORE_POSITIONS.second then
+		rect(21, 36 + 6, 21 + 2, 36 + 6, 11)
+	end
+	print(INITIALS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
+	if Player.score_cursor == SCORE_POSITIONS.third then
+		rect(26, 36 + 6, 26 + 2, 36 + 6, 11)
+	end
+	print("ok", 31, 36, HSColor(SCORE_POSITIONS.ok))
+	if Player.score_cursor == SCORE_POSITIONS.ok then
+		rect(31, 36 + 6, 31 + 6, 36 + 6, 11)
+	end
+end
+
 function _init()
 	cls(0)
 	music(24)
@@ -596,17 +615,14 @@ function _draw()
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawHUD()
-		print("game over", 16, 16, 7)
+		print("game over", 46, 61, 7)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD()
 		print("nice job!", 16, 16, 7)
 		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
 		print("enter your initials", 16, 28, 7)
-		print(INITIALS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
-		print(INITIALS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
-		print(INITIALS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
-		print("ok", 31, 36, HSColor(SCORE_POSITIONS.ok))
+		DrawInitialEntering()
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
 		DrawLeaderboard()

@@ -1,8 +1,8 @@
 ---@type {major: integer, minor: integer, patch: integer} semantic version number
 VERSION = {
 	major = 0,
-	minor = 1,
-	patch = 1,
+	minor = 2,
+	patch = 0,
 }
 
 ---@alias Coords [integer, integer]

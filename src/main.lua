@@ -1,5 +1,5 @@
 -- stratagem v0.2.0
--- by vincent mercator et al.
+-- by vincent "vm" mercator et al.
 
 ---@type {major: integer, minor: integer, patch: integer} semantic version number
 VERSION = {
@@ -16,16 +16,17 @@ VERSION = {
 ---@enum States
 STATES = {
 	title_screen = 1,
-	game_init = 2,
-	generate_board = 3,
-	game_idle = 4,
-	swap_select = 5,
-	player_matching = 6,
-	update_board = 7,
-	level_up = 8,
-	game_over = 9,
-	enter_high_score = 10,
-	high_scores = 11,
+	credits = 2,
+	game_init = 3,
+	generate_board = 4,
+	game_idle = 5,
+	swap_select = 6,
+	player_matching = 7,
+	update_board = 8,
+	level_up = 9,
+	game_over = 10,
+	enter_high_score = 11,
+	high_scores = 12,
 }
 
 ---@enum ScorePositions
@@ -494,6 +495,14 @@ function DrawLeaderboard()
 	print("\142/\151: return to title", 20, 94, 7)
 end
 
+function DrawCredits()
+	-- 7 chars * 3 + 6 gaps = 27
+	print("credits", 64 - 13.5, 8, 7)
+	print('vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art', 64 - 47, 24, 7)
+	print("...and players like you.\nthank you!", 64 - 47, 78, 7)
+	print("\142/\151: return to title", 20, 94, 7)
+end
+
 -- Draw the title screen
 function DrawTitleFG()
 	-- draw foreground title
@@ -513,8 +522,10 @@ function DrawTitleFG()
 		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
 		7
 	)
-	print("\142: start game", 36, 64, 7)
-	print("\151: high scores", 36, 72, 7)
+	print('by vincent "vm" mercator', 64 - 47, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
+	print("\142: start game", 36, 72, 7)
+	print("\151: high scores", 36, 80, 7)
+	print("\131: credits", 36, 88, 7)
 end
 
 --- Increase the player level and perform associated actions
@@ -615,6 +626,9 @@ function _draw()
 	if CartState == STATES.title_screen then
 		DrawTitleBG()
 		DrawTitleFG()
+	elseif CartState == STATES.credits then
+		DrawTitleBG()
+		DrawCredits()
 	elseif (CartState == STATES.game_init) or (CartState == STATES.generate_board) then
 		DrawGameBG()
 		DrawHUD()
@@ -656,6 +670,12 @@ function _update()
 			CartState = STATES.game_init
 		elseif btnp(5) then
 			CartState = STATES.high_scores
+		elseif btnp(3) then
+			CartState = STATES.credits
+		end
+	elseif (CartState == STATES.credits) or (CartState == STATES.high_scores) then
+		if btnp(4) or btnp(5) then
+			CartState = STATES.title_screen
 		end
 	elseif CartState == STATES.game_init then
 		InitPlayer()
@@ -723,9 +743,7 @@ function _update()
 		end
 	elseif CartState == STATES.enter_high_score then
 		UpdateScoreCursor()
-	elseif CartState == STATES.high_scores then
-		if btnp(4) or btnp(5) then
-			CartState = STATES.title_screen
-		end
+	else
+		error("invalid state")
 	end
 end

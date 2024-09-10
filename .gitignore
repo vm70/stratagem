@@ -1,2 +1,11 @@
+# Python environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
 # Prevent version-controlling pico-tool outputs
-stratagem.p8
+build

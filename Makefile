@@ -31,6 +31,13 @@ build-cart:
 	$(PICO8_PATH) $(BUILD_DIR)/stratagem.p8 -export $(BUILD_DIR)/stratagem.p8.png
 	# Convert back to P8 format
 	$(PICO8_PATH) $(BUILD_DIR)/stratagem.p8.png -export $(BUILD_DIR)/stratagem.p8
+	# Assemble ZIP file
+	zip $(BUILD_DIR)/stratagem.zip \
+		README.md \
+		CONTRIBUTING.md \
+		LICENSE \
+		$(BUILD_DIR)/stratagem.p8.png \
+		$(BUILD_DIR)/stratagem.p8.zip
 
 run-cart: build-cart
 	$(PICO8_PATH) -run $(BUILD_DIR)/stratagem.p8

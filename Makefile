@@ -6,7 +6,7 @@ BUILD_DIR := ./build
 .SUFFIXES: .lua .p8
 
 # Do everything
-stratagem: setup build run
+everything: setup build-cart run-cart
 
 # Set up development environment
 setup:
@@ -25,8 +25,11 @@ build-cart:
 		--map assets/art.p8 \
 		--sfx assets/sound.p8 \
 		--music assets/sound.p8
+	# Append label image
 	cat assets/label.txt >> $(BUILD_DIR)/stratagem.p8
+	# Assemble P8.PNG cart
 	$(PICO8_PATH) $(BUILD_DIR)/stratagem.p8 -export $(BUILD_DIR)/stratagem.p8.png
+	# Convert back to P8 format
 	$(PICO8_PATH) $(BUILD_DIR)/stratagem.p8.png -export $(BUILD_DIR)/stratagem.p8
 
 run-cart: build-cart

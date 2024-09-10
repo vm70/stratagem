@@ -28,7 +28,7 @@ make
 Contributions are welcome. If you find a bug or would like to request a feature,
 please report it through Stratagem's
 [issues](https://github.com/vm70/stratagem/issues) page on its GitHub
-repository.
+repository. For more information, see `CONTRIBUTING.md`.
 
 Contributors:
 

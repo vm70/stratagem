@@ -1,6 +1,7 @@
 SHELL = /bin/sh
 PICO8_PATH := pico8
 BUILD_DIR := ./build
+PYTHON_VENV := ./.venv
 
 .SUFFIXES:
 .SUFFIXES: .lua .p8
@@ -11,15 +12,15 @@ everything: setup build-cart run-cart
 # Set up development environment
 setup:
 	# Install pico-tool in an isolated Python environment
-	/usr/bin/python3 -m venv .venv
-	.venv/bin/pip install git+https://github.com/dansanderson/picotool.git
+	/usr/bin/python3 -m venv $(PYTHON_VENV)
+	$(PYTHON_VENV)/bin/pip install git+https://github.com/dansanderson/picotool.git
 
 # Build the cart and place results in the 'build' directory
 build-cart:
 	# Create folder if not exists
 	mkdir -p $(BUILD_DIR)
 	# Assemble P8 cart
-	.venv/bin/p8tool build $(BUILD_DIR)/stratagem.p8 \
+	$(PYTHON_VENV)/bin/p8tool build $(BUILD_DIR)/stratagem.p8 \
 		--lua src/main.lua \
 		--gfx assets/art.p8 \
 		--map assets/art.p8 \

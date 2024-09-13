@@ -1,5 +1,5 @@
 -- stratagem v0.2.0
--- by vincent "vm" mercator et al.
+-- by vincent "vm" mercator & co.
 
 ---@type {major: integer, minor: integer, patch: integer} semantic version number
 VERSION = {
@@ -18,11 +18,11 @@ STATES = {
 	title_screen = 1,
 	credits = 2,
 	game_init = 3,
-	generate_board = 4,
+	generate_grid = 4,
 	game_idle = 5,
 	swap_select = 6,
 	player_matching = 7,
-	update_board = 8,
+	update_grid = 8,
 	level_up = 9,
 	game_over = 10,
 	enter_high_score = 11,
@@ -290,7 +290,7 @@ function UpdateGridCursor()
 			CartState = STATES.player_matching
 		end
 	end
-	-- move the cursor around the board while swapping or idle
+	-- move the cursor around the grid while swapping or idle
 	if btnp(0) and Player.grid_cursor[2] > 1 then
 		-- move left
 		Player.grid_cursor[2] = Player.grid_cursor[2] - 1
@@ -629,7 +629,7 @@ function _draw()
 	elseif CartState == STATES.credits then
 		DrawTitleBG()
 		DrawCredits()
-	elseif (CartState == STATES.game_init) or (CartState == STATES.generate_board) then
+	elseif (CartState == STATES.game_init) or (CartState == STATES.generate_grid) then
 		DrawGameBG()
 		DrawHUD()
 	elseif (CartState == STATES.game_idle) or (CartState == STATES.swap_select) then
@@ -637,7 +637,7 @@ function _draw()
 		DrawGems()
 		DrawCursor()
 		DrawHUD()
-	elseif (CartState == STATES.update_board) or (CartState == STATES.player_matching) then
+	elseif (CartState == STATES.update_grid) or (CartState == STATES.player_matching) then
 		DrawGameBG()
 		DrawGems()
 		DrawHUD()
@@ -680,8 +680,8 @@ function _update()
 	elseif CartState == STATES.game_init then
 		InitPlayer()
 		InitGrid()
-		CartState = STATES.generate_board
-	elseif CartState == STATES.generate_board then
+		CartState = STATES.generate_grid
+	elseif CartState == STATES.generate_grid then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
 				CartState = STATES.game_idle
@@ -701,7 +701,7 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select then
 		UpdateGridCursor()
-	elseif CartState == STATES.update_board then
+	elseif CartState == STATES.update_grid then
 		if FrameCounter ~= MATCH_FRAMES then
 			FrameCounter = FrameCounter + 1
 		elseif (FrameCounter - MATCH_FRAMES) % DROP_FRAMES == 0 then
@@ -718,7 +718,7 @@ function _update()
 			Player.combo = 0
 			CartState = STATES.game_idle
 		else
-			CartState = STATES.update_board
+			CartState = STATES.update_grid
 			FrameCounter = 0
 		end
 	elseif CartState == STATES.level_up then
@@ -726,7 +726,7 @@ function _update()
 			FrameCounter = FrameCounter + 1
 		else
 			LevelUp()
-			CartState = STATES.generate_board
+			CartState = STATES.generate_grid
 			FrameCounter = 0
 		end
 	elseif CartState == STATES.game_over then

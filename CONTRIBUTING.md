@@ -4,9 +4,9 @@ This file contains important information about contributing to Stratagem.
 
 ## Pre-Commit & Linting Tools
 
-This project uses [`pre-commit`](https://www.dansanderson.com/) to enforce style
-guide consistency with `stylua`, `prettier`, and `selene`. Please install it and
-its project-related dependencies using the following shell commands before
+This project uses [`pre-commit`](https://pre-commit.com/) to enforce style guide
+consistency with `stylua`, `prettier`, and `selene`. Please install it and its
+project-related dependencies using the following shell commands before
 contributing documentation or Lua code.
 
 ```bash
@@ -18,6 +18,11 @@ pre-commit install
 
 This project also uses [Lua LS](https://luals.github.io) to enforce type
 hinting.
+
+## Semantic Versioning
+
+This project uses [semantic versioning](https://semver.org/) for determining
+version numbers.
 
 ## Directory Structure
 

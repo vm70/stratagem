@@ -11,9 +11,9 @@ only make three moves that don't clear groups of gems before the game is over.
 
 ## Build Instructions
 
-The included Makefile uses
-[`picotool`](https://www.dansanderson.com/projects/picotool/) to assemble and
-apply operations to the cartridge parts. Simply run the following code to
+The included Makefile automatically downloads and installs
+[`picotool`](https://www.dansanderson.com/projects/picotool/) for assembling and
+modifying the PICO-8 cartridge's parts. You can run the following script to
 download and run Stratagem on your machine (assuming the PICO-8 executable is on
 your PATH).
 
@@ -43,11 +43,14 @@ Contributors:
 - [Cameron](https://cmrn.io/)
   ([@spriterights](https://www.lexaloffle.com/bbs/?uid=18643),
   [@z6v](https://x.com/z6v)), creator of
-  ["Match-3"](https://www.lexaloffle.com/bbs/?pid=42523)
+  [_Match-3_](https://www.lexaloffle.com/bbs/?pid=42523)
 - [@Grumpydev](https://www.lexaloffle.com/bbs/?uid=31046), creator of
-  ["Persistent High Score Table Demo"](https://www.lexaloffle.com/bbs/?tid=31901)
+  [_Persistent High Score Table Demo_](https://www.lexaloffle.com/bbs/?tid=31901)
 - Jason Kapalka & Heather Hazen, original creators of _Bejeweled_
 - [Dan Sanderson](https://www.dansanderson.com/), creator of `pico-tool`
+- Brook ([@gamedevbrook](https://twitter.com/gamedevbrook),
+  [@brook.p8](https://itch.io/profile/gamedevbrook)), creator of
+  [_Pushamo_](https://gamedevbrook.itch.io/pushamo)
 
 ## License
 

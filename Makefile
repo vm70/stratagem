@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-PICO8_PATH := pico8
+PICO8_PATH := $(shell command -v pico8 2> /dev/null)
 BUILD_DIR := ./build
 PYTHON_VENV := ./.venv
 
@@ -26,7 +26,7 @@ setup:
 
 # Build the cart and place results in the 'build' directory
 build-cart:
-	echo "Building Stratagem v$(stratagem_version)"
+	echo "Building Stratagem $(stratagem_version)"
 	# Create folder if not exists
 	mkdir -p $(BUILD_DIR)
 	# Assemble P8 cart
@@ -36,6 +36,12 @@ build-cart:
 		--map assets/art.p8 \
 		--sfx assets/sound.p8 \
 		--music assets/sound.p8
+
+# Use the PICO-8 executable itself to modify the cart
+modify-cart: build-cart
+ifndef PICO8_PATH
+	$(error "PICO-8 is not available on your PATH.")
+endif
 	# Append label image
 	cat assets/label.txt >> $(p8_file)
 	# Assemble P8.PNG cart
@@ -50,7 +56,7 @@ build-cart:
 		$(p8_file) \
 		$(p8png_file)
 
-run-cart: build-cart
+run-cart: build-cart modify-cart
 	$(PICO8_PATH) -run $(p8_file)
 
 clean:

@@ -126,7 +126,7 @@ end
 
 --- Initialize the high scores by reading from persistent memory
 function LoadLeaderboard()
-	cartdata("vm70_stratagem")
+	cartdata("vm70_stratagem_v" .. VERSION.major .. "_" .. VERSION.minor .. "_" .. VERSION.patch)
 	for score_idx = 1, 10 do
 		---@type integer[]
 		local raw_score_data = {}

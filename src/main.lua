@@ -639,7 +639,7 @@ function _draw()
 		DrawGems()
 		DrawCursor()
 		DrawHUD()
-	elseif CartState == STATES.fill_grid then
+	elseif (CartState == STATES.player_matching) or (CartState == STATES.fill_grid) then
 		DrawGameBG()
 		DrawGems()
 		DrawHUD()
@@ -699,31 +699,30 @@ function _update()
 	elseif CartState == STATES.game_idle then
 		UpdateGridCursor()
 		if Player.score >= Player.level_threshold then
-			CartState = STATES.level_up
 			FrameCounter = 0
+			CartState = STATES.level_up
 		elseif Player.chances == -1 then
 			Player.chances = 0
 			music(0)
-			CartState = STATES.game_over
 			FrameCounter = 0
+			CartState = STATES.game_over
 		end
 	elseif CartState == STATES.swap_select then
 		UpdateGridCursor()
 	elseif CartState == STATES.player_matching then
 		if ClearGridMatches(true) then
+			FrameCounter = 0
 			CartState = STATES.show_match_points
-			FrameCounter = 0
 		else
-			CartState = STATES.fill_grid
 			FrameCounter = 0
+			CartState = STATES.fill_grid
 		end
 	elseif CartState == STATES.show_match_points then
-		if FrameCounter ~= MATCH_FRAMES then
-			FrameCounter = FrameCounter + 1
-		else
+		if FrameCounter == MATCH_FRAMES then
 			CartState = STATES.player_matching
 			FrameCounter = 0
 		end
+		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.fill_grid then
 		if FrameCounter % DROP_FRAMES == 0 then
 			if not FillGridHoles() then
@@ -733,6 +732,7 @@ function _update()
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.combo_check then
 		if ClearGridMatches(true) then
+			FrameCounter = 0
 			CartState = STATES.show_match_points
 		else
 			if Player.combo == 0 then
@@ -743,13 +743,12 @@ function _update()
 			CartState = STATES.game_idle
 		end
 	elseif CartState == STATES.level_up then
-		if FrameCounter ~= 100 then
-			FrameCounter = FrameCounter + 1
-		else
+		if FrameCounter == 100 then
 			LevelUp()
 			CartState = STATES.generate_grid
 			FrameCounter = 0
 		end
+		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then
 		if FrameCounter ~= 100 then
 			FrameCounter = FrameCounter + 1

@@ -22,11 +22,13 @@ STATES = {
 	game_idle = 5,
 	swap_select = 6,
 	player_matching = 7,
-	update_grid = 8,
-	level_up = 9,
-	game_over = 10,
-	enter_high_score = 11,
-	high_scores = 12,
+	show_match_points = 8,
+	fill_grid = 9,
+	combo_check = 10,
+	level_up = 11,
+	game_over = 12,
+	enter_high_score = 13,
+	high_scores = 14,
 }
 
 ---@enum ScorePositions
@@ -44,7 +46,7 @@ LEVEL_MUSIC = { 2, 8 }
 N_GEMS = 8
 
 ---@type integer Number of frames to wait before dropping new gems down
-DROP_FRAMES = 3
+DROP_FRAMES = 2
 
 ---@type integer Number of frames to wait to show the match points
 MATCH_FRAMES = 20
@@ -637,7 +639,11 @@ function _draw()
 		DrawGems()
 		DrawCursor()
 		DrawHUD()
-	elseif (CartState == STATES.update_grid) or (CartState == STATES.player_matching) then
+	elseif CartState == STATES.fill_grid then
+		DrawGameBG()
+		DrawGems()
+		DrawHUD()
+	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawGems()
 		DrawHUD()
@@ -662,6 +668,8 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard()
 	end
+	-- print(tostr(CartState), 1, 1, 7)
+	-- print(tostr(FrameCounter), 1, 7, 7)
 end
 
 function _update()
@@ -701,25 +709,38 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select then
 		UpdateGridCursor()
-	elseif CartState == STATES.update_grid then
+	elseif CartState == STATES.player_matching then
+		if ClearGridMatches(true) then
+			CartState = STATES.show_match_points
+			FrameCounter = 0
+		else
+			CartState = STATES.fill_grid
+			FrameCounter = 0
+		end
+	elseif CartState == STATES.show_match_points then
 		if FrameCounter ~= MATCH_FRAMES then
 			FrameCounter = FrameCounter + 1
-		elseif (FrameCounter - MATCH_FRAMES) % DROP_FRAMES == 0 then
+		else
+			CartState = STATES.player_matching
+			FrameCounter = 0
+		end
+	elseif CartState == STATES.fill_grid then
+		if FrameCounter % DROP_FRAMES == 0 then
 			if not FillGridHoles() then
-				CartState = STATES.player_matching
+				CartState = STATES.combo_check
 			end
 		end
-	elseif CartState == STATES.player_matching then
-		if not ClearGridMatches(true) then
+		FrameCounter = FrameCounter + 1
+	elseif CartState == STATES.combo_check then
+		if ClearGridMatches(true) then
+			CartState = STATES.show_match_points
+		else
 			if Player.combo == 0 then
 				sfx(0, -1, 0, 3) -- "error" sound effect
 				Player.chances = Player.chances - 1
 			end
 			Player.combo = 0
 			CartState = STATES.game_idle
-		else
-			CartState = STATES.update_grid
-			FrameCounter = 0
 		end
 	elseif CartState == STATES.level_up then
 		if FrameCounter ~= 100 then

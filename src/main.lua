@@ -143,6 +143,15 @@ function LoadLeaderboard()
 	end
 end
 
+function ResetLeaderboard()
+	for score_idx = 1, 10 do
+		Leaderboard[score_idx] = {
+			initials = INITIALS[1] .. INITIALS[1] .. INITIALS[1],
+			score = (11 - score_idx) * 100,
+		}
+	end
+end
+
 --- Add the player's new high score to the leaderboard
 function UpdateLeaderboard()
 	local first = INITIALS[Player.letter_ids[1]]
@@ -622,6 +631,7 @@ function _init()
 	InitPlayer()
 	InitGrid()
 	LoadLeaderboard()
+	menuitem(1, "reset scores", ResetLeaderboard)
 end
 
 function _draw()

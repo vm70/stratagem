@@ -1,8 +1,11 @@
+-- stratagem v0.2.0
+-- by vincent "vm" mercator & co.
+
 ---@type {major: integer, minor: integer, patch: integer} semantic version number
 VERSION = {
 	major = 0,
-	minor = 1,
-	patch = 1,
+	minor = 2,
+	patch = 0,
 }
 
 ---@alias Coords [integer, integer]
@@ -13,16 +16,19 @@ VERSION = {
 ---@enum States
 STATES = {
 	title_screen = 1,
-	game_init = 2,
-	generate_board = 3,
-	game_idle = 4,
-	swap_select = 5,
-	player_matching = 6,
-	update_board = 7,
-	level_up = 8,
-	game_over = 9,
-	enter_high_score = 10,
-	high_scores = 11,
+	credits = 2,
+	game_init = 3,
+	generate_grid = 4,
+	game_idle = 5,
+	swap_select = 6,
+	player_matching = 7,
+	show_match_points = 8,
+	fill_grid = 9,
+	combo_check = 10,
+	level_up = 11,
+	game_over = 12,
+	enter_high_score = 13,
+	high_scores = 14,
 }
 
 ---@enum ScorePositions
@@ -40,7 +46,7 @@ LEVEL_MUSIC = { 2, 8 }
 N_GEMS = 8
 
 ---@type integer Number of frames to wait before dropping new gems down
-DROP_FRAMES = 3
+DROP_FRAMES = 2
 
 ---@type integer Number of frames to wait to show the match points
 MATCH_FRAMES = 20
@@ -120,7 +126,7 @@ end
 
 --- Initialize the high scores by reading from persistent memory
 function LoadLeaderboard()
-	cartdata("vm70_stratagem")
+	cartdata("vm70_stratagem_v" .. VERSION.major .. "_" .. VERSION.minor .. "_" .. VERSION.patch)
 	for score_idx = 1, 10 do
 		---@type integer[]
 		local raw_score_data = {}
@@ -133,6 +139,15 @@ function LoadLeaderboard()
 		Leaderboard[score_idx] = {
 			initials = INITIALS[raw_score_data[1]] .. INITIALS[raw_score_data[2]] .. INITIALS[raw_score_data[3]],
 			score = raw_score_data[4],
+		}
+	end
+end
+
+function ResetLeaderboard()
+	for score_idx = 1, 10 do
+		Leaderboard[score_idx] = {
+			initials = INITIALS[1] .. INITIALS[1] .. INITIALS[1],
+			score = (11 - score_idx) * 100,
 		}
 	end
 end
@@ -286,7 +301,7 @@ function UpdateGridCursor()
 			CartState = STATES.player_matching
 		end
 	end
-	-- move the cursor around the board while swapping or idle
+	-- move the cursor around the grid while swapping or idle
 	if btnp(0) and Player.grid_cursor[2] > 1 then
 		-- move left
 		Player.grid_cursor[2] = Player.grid_cursor[2] - 1
@@ -491,6 +506,14 @@ function DrawLeaderboard()
 	print("\142/\151: return to title", 20, 94, 7)
 end
 
+function DrawCredits()
+	-- 7 chars * 3 + 6 gaps = 27
+	print("credits", 64 - 13.5, 8, 7)
+	print('vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art', 64 - 47, 24, 7)
+	print("...and players like you.\nthank you!", 64 - 47, 78, 7)
+	print("\142/\151: return to title", 20, 94, 7)
+end
+
 -- Draw the title screen
 function DrawTitleFG()
 	-- draw foreground title
@@ -510,8 +533,10 @@ function DrawTitleFG()
 		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
 		7
 	)
-	print("\142: start game", 36, 64, 7)
-	print("\151: high scores", 36, 72, 7)
+	print('by vincent "vm" mercator', 64 - 47, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
+	print("\142: start game", 36, 72, 7)
+	print("\151: high scores", 36, 80, 7)
+	print("\131: credits", 36, 88, 7)
 end
 
 --- Increase the player level and perform associated actions
@@ -606,13 +631,17 @@ function _init()
 	InitPlayer()
 	InitGrid()
 	LoadLeaderboard()
+	menuitem(1, "reset scores", ResetLeaderboard)
 end
 
 function _draw()
 	if CartState == STATES.title_screen then
 		DrawTitleBG()
 		DrawTitleFG()
-	elseif (CartState == STATES.game_init) or (CartState == STATES.generate_board) then
+	elseif CartState == STATES.credits then
+		DrawTitleBG()
+		DrawCredits()
+	elseif (CartState == STATES.game_init) or (CartState == STATES.generate_grid) then
 		DrawGameBG()
 		DrawHUD()
 	elseif (CartState == STATES.game_idle) or (CartState == STATES.swap_select) then
@@ -620,7 +649,11 @@ function _draw()
 		DrawGems()
 		DrawCursor()
 		DrawHUD()
-	elseif (CartState == STATES.update_board) or (CartState == STATES.player_matching) then
+	elseif (CartState == STATES.player_matching) or (CartState == STATES.fill_grid) then
+		DrawGameBG()
+		DrawGems()
+		DrawHUD()
+	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawGems()
 		DrawHUD()
@@ -645,6 +678,8 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard()
 	end
+	-- print(tostr(CartState), 1, 1, 7)
+	-- print(tostr(FrameCounter), 1, 7, 7)
 end
 
 function _update()
@@ -653,12 +688,18 @@ function _update()
 			CartState = STATES.game_init
 		elseif btnp(5) then
 			CartState = STATES.high_scores
+		elseif btnp(3) then
+			CartState = STATES.credits
+		end
+	elseif (CartState == STATES.credits) or (CartState == STATES.high_scores) then
+		if btnp(4) or btnp(5) then
+			CartState = STATES.title_screen
 		end
 	elseif CartState == STATES.game_init then
 		InitPlayer()
 		InitGrid()
-		CartState = STATES.generate_board
-	elseif CartState == STATES.generate_board then
+		CartState = STATES.generate_grid
+	elseif CartState == STATES.generate_grid then
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
 				CartState = STATES.game_idle
@@ -668,44 +709,56 @@ function _update()
 	elseif CartState == STATES.game_idle then
 		UpdateGridCursor()
 		if Player.score >= Player.level_threshold then
-			CartState = STATES.level_up
 			FrameCounter = 0
+			CartState = STATES.level_up
 		elseif Player.chances == -1 then
 			Player.chances = 0
 			music(0)
-			CartState = STATES.game_over
 			FrameCounter = 0
+			CartState = STATES.game_over
 		end
 	elseif CartState == STATES.swap_select then
 		UpdateGridCursor()
-	elseif CartState == STATES.update_board then
-		if FrameCounter ~= MATCH_FRAMES then
-			FrameCounter = FrameCounter + 1
-		elseif (FrameCounter - MATCH_FRAMES) % DROP_FRAMES == 0 then
+	elseif CartState == STATES.player_matching then
+		if ClearGridMatches(true) then
+			FrameCounter = 0
+			CartState = STATES.show_match_points
+		else
+			FrameCounter = 0
+			CartState = STATES.fill_grid
+		end
+	elseif CartState == STATES.show_match_points then
+		if FrameCounter == MATCH_FRAMES then
+			CartState = STATES.player_matching
+			FrameCounter = 0
+		end
+		FrameCounter = FrameCounter + 1
+	elseif CartState == STATES.fill_grid then
+		if FrameCounter % DROP_FRAMES == 0 then
 			if not FillGridHoles() then
-				CartState = STATES.player_matching
+				CartState = STATES.combo_check
 			end
 		end
-	elseif CartState == STATES.player_matching then
-		if not ClearGridMatches(true) then
+		FrameCounter = FrameCounter + 1
+	elseif CartState == STATES.combo_check then
+		if ClearGridMatches(true) then
+			FrameCounter = 0
+			CartState = STATES.show_match_points
+		else
 			if Player.combo == 0 then
 				sfx(0, -1, 0, 3) -- "error" sound effect
 				Player.chances = Player.chances - 1
 			end
 			Player.combo = 0
 			CartState = STATES.game_idle
-		else
-			CartState = STATES.update_board
-			FrameCounter = 0
 		end
 	elseif CartState == STATES.level_up then
-		if FrameCounter ~= 100 then
-			FrameCounter = FrameCounter + 1
-		else
+		if FrameCounter == 100 then
 			LevelUp()
-			CartState = STATES.generate_board
+			CartState = STATES.generate_grid
 			FrameCounter = 0
 		end
+		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then
 		if FrameCounter ~= 100 then
 			FrameCounter = FrameCounter + 1
@@ -720,9 +773,7 @@ function _update()
 		end
 	elseif CartState == STATES.enter_high_score then
 		UpdateScoreCursor()
-	elseif CartState == STATES.high_scores then
-		if btnp(4) or btnp(5) then
-			CartState = STATES.title_screen
-		end
+	else
+		error("invalid state")
 	end
 end

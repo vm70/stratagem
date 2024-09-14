@@ -9,13 +9,48 @@ are in the same row or column.
 While you can make any move on the board that swaps two touching gems, you can
 only make three moves that don't clear groups of gems before the game is over.
 
+## Build Instructions
+
+The included Makefile automatically downloads and installs
+[`picotool`](https://www.dansanderson.com/projects/picotool/) for assembling and
+modifying the PICO-8 cartridge's parts. You can run the following script to
+download and run Stratagem on your machine (assuming the PICO-8 executable is on
+your PATH).
+
+```bash
+git clone github.com/vm70/stratagem
+cd stratagem
+make
+```
+
+## Contributing
+
+Contributions are welcome. If you find a bug or would like to request a feature,
+please report it through Stratagem's
+[issues](https://github.com/vm70/stratagem/issues) page on its GitHub
+repository. For more information, see `CONTRIBUTING.md`.
+
+Contributors:
+
+- Vincent "VM" Mercator ([@vm70](https://github.com/vm70/)): Lead
+  Developer/Artist/Musician
+- MattSquare ([@squaremango](https://github.com/squaremango)): Gem Sprite Artist
+
+...and players like you. Thank you!
+
 ## Special Thanks
 
 - [Cameron](https://cmrn.io/)
-  ([@spriterights](https://www.lexaloffle.com/bbs/?uid=18643) on Lexaloffle BBS,
-  [@z6v](https://x.com/z6v) on Twitter/X), whose cartridge
-  [Match-3](https://www.lexaloffle.com/bbs/?pid=42523) was used as inspiration
-  for this project.
+  ([@spriterights](https://www.lexaloffle.com/bbs/?uid=18643),
+  [@z6v](https://x.com/z6v)), creator of
+  [_Match-3_](https://www.lexaloffle.com/bbs/?pid=42523)
+- [@Grumpydev](https://www.lexaloffle.com/bbs/?uid=31046), creator of
+  [_Persistent High Score Table Demo_](https://www.lexaloffle.com/bbs/?tid=31901)
+- Jason Kapalka & Heather Hazen, original creators of _Bejeweled_
+- [Dan Sanderson](https://www.dansanderson.com/), creator of `pico-tool`
+- Brook ([@gamedevbrook](https://twitter.com/gamedevbrook),
+  [@brook.p8](https://itch.io/profile/gamedevbrook)), creator of
+  [_Pushamo_](https://gamedevbrook.itch.io/pushamo)
 
 ## License
 

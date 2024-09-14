@@ -135,3 +135,10 @@ globals:
       - type: number
       - type: number
         required: false
+  menuitem:
+    args:
+      - type: number
+      - type: string
+        required: false
+      - type: function
+        required: false

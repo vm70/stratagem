@@ -13,10 +13,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Set up Python environment
+        run: make setup
       - name: Build PICO-8 Cart
         run: make build-cart
       - name: Archive PICO-8 Cart Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: stratagem.p8
-          path: stratagem.p8
+          name: stratagem.p8.png
+          path: build/stratagem.p8.png

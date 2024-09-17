@@ -1,10 +1,10 @@
--- stratagem v0.2.0
+-- stratagem v0.3.0
 -- by vincent "vm" mercator & co.
 
 ---@type {major: integer, minor: integer, patch: integer} semantic version number
 VERSION = {
 	major = 0,
-	minor = 2,
+	minor = 3,
 	patch = 0,
 }
 

@@ -128,7 +128,7 @@ function ClearMatching(coords, byPlayer)
 		if byPlayer then
 			Player.combo = Player.combo + 1
 			sfx(min(Player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
-			local move_score = Player.level * Player.combo * BASE_MATCH_PTS * (#match_list - 2)
+			local move_score = MoveScore(Player.level, Player.combo, #match_list)
 			Player.score = Player.score + move_score
 			Player.last_match = { move_score = move_score, x = coords.x, y = coords.y, color = gem_color }
 		end
@@ -138,6 +138,14 @@ function ClearMatching(coords, byPlayer)
 		Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
 	end
 	return false
+end
+
+function MoveScore(level, combo, match_size)
+	local level_bonus = 2 * (level - 1)
+	local base_level_points = level_bonus + BASE_MATCH_PTS
+	local size_bonus = level_bonus * (match_size - 3)
+	local combo_bonus = min(combo - 1, 6) * base_level_points
+	return base_level_points + size_bonus + combo_bonus
 end
 
 --- Get the neighbors of the given coordinate
@@ -318,7 +326,7 @@ function LevelUp()
 	Player.level = Player.level + 1
 	Player.init_level_score = Player.score
 	Player.level_threshold = (
-		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * Player.level * BASE_MATCH_PTS
+		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * (2 * (Player.level - 1) + BASE_MATCH_PTS)
 	)
 end
 

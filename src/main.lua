@@ -439,7 +439,7 @@ end
 
 --- Draw the HUD (score, chances, level progress bar, etc) on the screen
 function DrawHUD()
-	print("score:" .. Player.score, 17, 9, 7)
+	print("score:" .. LeftPad(tostr(Player.score), " ", 5), 17, 9, 7)
 	print("chances:" .. max(Player.chances, 0), 73, 9, 8)
 	print("level:" .. Player.level, 49, 121, 7)
 	-- calculate level completion ratio
@@ -467,7 +467,8 @@ function DrawTitleBG()
 	map(16, 0, 0, 0, 16, 16)
 end
 
----@param str string | integer
+-- left-pad / right-justify text.
+---@param str string
 ---@param pad string
 ---@param length integer
 function LeftPad(str, pad, length)
@@ -535,7 +536,6 @@ function LevelUp()
 	Player.level_threshold = (
 		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * Player.level * BASE_MATCH_PTS
 	)
-	InitGrid()
 end
 
 --- Draw the point numbers for the player's match where the gems were cleared
@@ -789,6 +789,7 @@ function _update()
 		-- state transitions
 		if FrameCounter == 100 then
 			LevelUp()
+			InitGrid()
 			CartState = STATES.generate_grid
 			FrameCounter = 0
 		end

@@ -364,16 +364,13 @@ function IsDoneEntering()
 end
 
 --- draw the cursor on the grid
-function DrawCursor()
+---@param color integer
+function DrawCursor(color)
 	-- fillp(0x33CC)
 	-- -- 0011 -> 3
 	-- -- 0011 -> 3
 	-- -- 1100 -> C
 	-- -- 1100 -> C
-	local color = 7
-	if CartState == STATES.swap_select then
-		color = 11
-	end
 	rect(
 		16 * Player.grid_cursor.x,
 		16 * Player.grid_cursor.y,
@@ -381,6 +378,7 @@ function DrawCursor()
 		16 * Player.grid_cursor.y + 15,
 		color
 	)
+	-- fillp(0)
 end
 
 --- draw the moving game background
@@ -625,6 +623,7 @@ function _init()
 	menuitem(1, "reset scores", ResetLeaderboard)
 end
 
+-- selene: allow(if_same_then_else)
 function _draw()
 	if CartState == STATES.title_screen then
 		DrawTitleBG()
@@ -632,23 +631,38 @@ function _draw()
 	elseif CartState == STATES.credits then
 		DrawTitleBG()
 		DrawCredits()
-	elseif (CartState == STATES.game_init) or (CartState == STATES.generate_grid) then
+	elseif CartState == STATES.game_init then
 		DrawGameBG()
 		DrawHUD()
-	elseif (CartState == STATES.game_idle) or (CartState == STATES.swap_select) then
+	elseif CartState == STATES.generate_grid then
 		DrawGameBG()
+		DrawHUD()
+	elseif CartState == STATES.game_idle then
+		DrawGameBG()
+		DrawHUD()
 		DrawGems()
-		DrawCursor()
-		DrawHUD()
-	elseif (CartState == STATES.player_matching) or (CartState == STATES.fill_grid) then
+		DrawCursor(7)
+	elseif CartState == STATES.swap_select then
 		DrawGameBG()
-		DrawGems()
 		DrawHUD()
+		DrawGems()
+		DrawCursor(11)
+	elseif CartState == STATES.player_matching then
+		DrawGameBG()
+		DrawHUD()
+		DrawGems()
+		DrawCursor(1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
-		DrawGems()
 		DrawHUD()
+		DrawGems()
+		DrawCursor(1)
 		DrawMatchPoints()
+	elseif CartState == STATES.fill_grid then
+		DrawGameBG()
+		DrawHUD()
+		DrawGems()
+		DrawCursor(1)
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawHUD()
@@ -675,6 +689,7 @@ end
 
 function _update()
 	if CartState == STATES.title_screen then
+		-- state transitions
 		if btnp(4) then
 			CartState = STATES.game_init
 		elseif btnp(5) then
@@ -683,14 +698,18 @@ function _update()
 			CartState = STATES.credits
 		end
 	elseif (CartState == STATES.credits) or (CartState == STATES.high_scores) then
+		-- state transitions
 		if btnp(4) or btnp(5) then
 			CartState = STATES.title_screen
 		end
 	elseif CartState == STATES.game_init then
+		-- state actions
 		InitPlayer()
 		InitGrid()
+		-- state transitions
 		CartState = STATES.generate_grid
 	elseif CartState == STATES.generate_grid then
+		-- state actions & transitions
 		if not FillGridHoles() then
 			if not ClearGridMatches(false) then
 				CartState = STATES.game_idle
@@ -698,7 +717,9 @@ function _update()
 			end
 		end
 	elseif CartState == STATES.game_idle then
+		-- state actions
 		MoveGridCursor()
+		-- state transitions
 		if Player.chances == -1 then
 			Player.chances = 0
 			music(0)
@@ -711,7 +732,9 @@ function _update()
 			CartState = STATES.swap_select
 		end
 	elseif CartState == STATES.swap_select then
+		-- state actions
 		local swapping_gem = SelectSwapping()
+		-- state transitions
 		if btnp(4) or btnp(5) then
 			CartState = STATES.game_idle
 		elseif swapping_gem ~= nil then
@@ -720,6 +743,9 @@ function _update()
 			CartState = STATES.player_matching
 		end
 	elseif CartState == STATES.player_matching then
+		-- state actions
+		MoveGridCursor()
+		-- state transitions
 		if ClearGridMatches(true) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
@@ -728,12 +754,18 @@ function _update()
 			CartState = STATES.fill_grid
 		end
 	elseif CartState == STATES.show_match_points then
+		-- state actions
+		MoveGridCursor()
+		-- state transitions
 		if FrameCounter == MATCH_FRAMES then
 			CartState = STATES.player_matching
 			FrameCounter = 0
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.fill_grid then
+		-- state actions
+		MoveGridCursor()
+		-- state actions & transitions
 		if FrameCounter % DROP_FRAMES == 0 then
 			if not FillGridHoles() then
 				CartState = STATES.combo_check
@@ -741,6 +773,7 @@ function _update()
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.combo_check then
+		-- state actions & transitions
 		if ClearGridMatches(true) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
@@ -753,6 +786,7 @@ function _update()
 			CartState = STATES.game_idle
 		end
 	elseif CartState == STATES.level_up then
+		-- state transitions
 		if FrameCounter == 100 then
 			LevelUp()
 			CartState = STATES.generate_grid
@@ -760,6 +794,7 @@ function _update()
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then
+		-- state actions & transitions
 		if FrameCounter ~= 100 then
 			FrameCounter = FrameCounter + 1
 		elseif btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
@@ -772,7 +807,9 @@ function _update()
 			end
 		end
 	elseif CartState == STATES.enter_high_score then
+		-- state actions
 		MoveScoreCursor()
+		-- state transitions
 		if IsDoneEntering() then
 			UpdateLeaderboard()
 			SaveLeaderboard()

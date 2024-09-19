@@ -119,7 +119,12 @@ end
 function DrawCredits()
 	-- 7 chars * 3 + 6 gaps = 27
 	print("credits", 64 - 13.5, 8, 7)
-	print('vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art', 64 - 47, 24, 7)
+	print(
+		'vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting',
+		64 - 47,
+		24,
+		7
+	)
 	print("...and players like you.\nthank you!", 64 - 47, 78, 7)
 	print("\142/\151: return to title", 20, 94, 7)
 end

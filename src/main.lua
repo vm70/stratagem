@@ -349,8 +349,8 @@ function StepInitials(letterID, isForward)
 	end
 end
 
---- Do all cursor updating actions (during high score entry)
-function UpdateScoreCursor()
+-- Do all cursor moving actions for entering the high score
+function MoveScoreCursor()
 	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
 		-- move left
 		Player.score_cursor = Player.score_cursor - 1
@@ -363,13 +363,16 @@ function UpdateScoreCursor()
 	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(3) then
 		-- decrement letter
 		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
-	elseif Player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
-		-- all done typing score
-		UpdateLeaderboard()
-		SaveLeaderboard()
-		CartState = STATES.high_scores
-		music(24)
 	end
+end
+
+---@return boolean # true if the player is done entering high score, false if not
+function IsDoneEntering()
+	if Player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
+		-- all done typing score
+		return true
+	end
+	return false
 end
 
 --- draw the cursor on the grid
@@ -772,7 +775,13 @@ function _update()
 			end
 		end
 	elseif CartState == STATES.enter_high_score then
-		UpdateScoreCursor()
+		MoveScoreCursor()
+		if IsDoneEntering() then
+			UpdateLeaderboard()
+			SaveLeaderboard()
+			music(24)
+			CartState = STATES.high_scores
+		end
 	else
 		error("invalid state")
 	end

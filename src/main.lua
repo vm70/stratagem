@@ -59,9 +59,6 @@ L1_MATCHES = 50
 ---@type integer How many points needed to get to level 2
 L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 
----@type string Allowed initial characters for high scores
-ALLOWED_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789 "
-
 ---@type integer[][] game grid
 Grid = {}
 
@@ -103,75 +100,6 @@ function InitPlayer()
 		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,
 	}
-end
-
---- Initialize the high scores by reading from persistent memory
-function LoadLeaderboard()
-	cartdata("vm70_stratagem_v" .. VERSION.major .. "_" .. VERSION.minor .. "_" .. VERSION.patch)
-	for score_idx = 1, 10 do
-		---@type integer[]
-		local raw_score_data = {}
-		for word = 1, 4 do
-			raw_score_data[word] = dget(4 * (score_idx - 1) + word - 1)
-		end
-		if raw_score_data[1] == 0 then
-			raw_score_data = { 1, 1, 1, (11 - score_idx) * 100 }
-		end
-		Leaderboard[score_idx] = {
-			initials = ALLOWED_LETTERS[raw_score_data[1]]
-				.. ALLOWED_LETTERS[raw_score_data[2]]
-				.. ALLOWED_LETTERS[raw_score_data[3]],
-			score = raw_score_data[4],
-		}
-	end
-end
-
-function ResetLeaderboard()
-	for score_idx = 1, 10 do
-		Leaderboard[score_idx] = {
-			initials = ALLOWED_LETTERS[1] .. ALLOWED_LETTERS[1] .. ALLOWED_LETTERS[1],
-			score = (11 - score_idx) * 100,
-		}
-	end
-end
-
---- Add the player's new high score to the leaderboard
-function UpdateLeaderboard()
-	local first = ALLOWED_LETTERS[Player.letter_ids[1]]
-	local second = ALLOWED_LETTERS[Player.letter_ids[2]]
-	local third = ALLOWED_LETTERS[Player.letter_ids[3]]
-	---@type HighScore
-	local new_high_score = { initials = first .. second .. third, score = Player.score }
-	if 1 <= Player.placement and Player.placement <= 10 then
-		add(Leaderboard, new_high_score, Player.placement)
-		Leaderboard[11] = nil
-	end
-end
-
---- equivalent of `string.find` in vanilla Lua's standard library
----@param str string
----@param wantChar string
----@return integer | nil
-function StringFind(str, wantChar)
-	for idx = 1, #str do
-		if str[idx] == wantChar then
-			return idx
-		end
-	end
-	return nil
-end
-
---- Save the leaderboard to the cartridge memory
-function SaveLeaderboard()
-	for score_idx, score in ipairs(Leaderboard) do
-		local first = StringFind(ALLOWED_LETTERS, score.initials[1])
-		dset(4 * (score_idx - 1) + 0, first)
-		local second = StringFind(ALLOWED_LETTERS, score.initials[2])
-		dset(4 * (score_idx - 1) + 1, second)
-		local third = StringFind(ALLOWED_LETTERS, score.initials[3])
-		dset(4 * (score_idx - 1) + 2, third)
-		dset(4 * (score_idx - 1) + 3, score.score)
-	end
 end
 
 --- swap the two gems (done by the player)
@@ -394,17 +322,6 @@ function LevelUp()
 	)
 end
 
---- Calculate the player's placement in the leaderboard.
----@return integer | nil # which placement (1-10) if the player got a high score; nil otherwise
-function PlayerPlacement()
-	for scoreIdx, score in ipairs(Leaderboard) do
-		if Player.score > score.score then
-			return scoreIdx
-		end
-	end
-	return nil
-end
-
 --- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
 ---@param place integer
 ---@return string
@@ -463,8 +380,10 @@ function _init()
 	music(24)
 	InitPlayer()
 	InitGrid()
-	LoadLeaderboard()
-	menuitem(1, "reset scores", ResetLeaderboard)
+	LoadLeaderboard(Leaderboard, VERSION)
+	menuitem(1, "reset scores", function()
+		ResetLeaderboard(Leaderboard)
+	end)
 end
 
 -- selene: allow(if_same_then_else)
@@ -643,7 +562,7 @@ function _update()
 		if FrameCounter ~= 100 then
 			FrameCounter = FrameCounter + 1
 		elseif btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
-			Player.placement = PlayerPlacement()
+			Player.placement = FindPlacement(Leaderboard, Player.score)
 			if Player.placement == nil then
 				CartState = STATES.high_scores
 				music(24)
@@ -656,8 +575,8 @@ function _update()
 		MoveScoreCursor()
 		-- state transitions
 		if IsDoneEntering() then
-			UpdateLeaderboard()
-			SaveLeaderboard()
+			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.score)
+			SaveLeaderboard(Leaderboard)
 			music(24)
 			CartState = STATES.high_scores
 		end

@@ -4,3 +4,5 @@ __lua__
 #include main.lua
 -->8
 #include ui.lua
+-->8
+#include leaderboard.lua

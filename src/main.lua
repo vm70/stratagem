@@ -36,7 +36,7 @@ SCORE_POSITIONS = {
 }
 
 ---@type integer[] List of level music starting positions
-LEVEL_MUSIC = { 2, 8 }
+LEVEL_MUSIC = { 2, 8, 32 }
 
 ---@type integer Number of gems in the game (max 8)
 N_GEMS = 8

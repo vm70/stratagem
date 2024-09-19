@@ -60,7 +60,7 @@ L1_MATCHES = 50
 L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 
 ---@type string Allowed initial characters for high scores
-INITIALS = "abcdefghijklmnopqrstuvwxyz0123456789 "
+ALLOWED_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789 "
 
 ---@type integer[][] game grid
 Grid = {}
@@ -118,7 +118,9 @@ function LoadLeaderboard()
 			raw_score_data = { 1, 1, 1, (11 - score_idx) * 100 }
 		end
 		Leaderboard[score_idx] = {
-			initials = INITIALS[raw_score_data[1]] .. INITIALS[raw_score_data[2]] .. INITIALS[raw_score_data[3]],
+			initials = ALLOWED_LETTERS[raw_score_data[1]]
+				.. ALLOWED_LETTERS[raw_score_data[2]]
+				.. ALLOWED_LETTERS[raw_score_data[3]],
 			score = raw_score_data[4],
 		}
 	end
@@ -127,7 +129,7 @@ end
 function ResetLeaderboard()
 	for score_idx = 1, 10 do
 		Leaderboard[score_idx] = {
-			initials = INITIALS[1] .. INITIALS[1] .. INITIALS[1],
+			initials = ALLOWED_LETTERS[1] .. ALLOWED_LETTERS[1] .. ALLOWED_LETTERS[1],
 			score = (11 - score_idx) * 100,
 		}
 	end
@@ -135,9 +137,9 @@ end
 
 --- Add the player's new high score to the leaderboard
 function UpdateLeaderboard()
-	local first = INITIALS[Player.letter_ids[1]]
-	local second = INITIALS[Player.letter_ids[2]]
-	local third = INITIALS[Player.letter_ids[3]]
+	local first = ALLOWED_LETTERS[Player.letter_ids[1]]
+	local second = ALLOWED_LETTERS[Player.letter_ids[2]]
+	local third = ALLOWED_LETTERS[Player.letter_ids[3]]
 	---@type HighScore
 	local new_high_score = { initials = first .. second .. third, score = Player.score }
 	if 1 <= Player.placement and Player.placement <= 10 then
@@ -162,11 +164,11 @@ end
 --- Save the leaderboard to the cartridge memory
 function SaveLeaderboard()
 	for score_idx, score in ipairs(Leaderboard) do
-		local first = StringFind(INITIALS, score.initials[1])
+		local first = StringFind(ALLOWED_LETTERS, score.initials[1])
 		dset(4 * (score_idx - 1) + 0, first)
-		local second = StringFind(INITIALS, score.initials[2])
+		local second = StringFind(ALLOWED_LETTERS, score.initials[2])
 		dset(4 * (score_idx - 1) + 1, second)
-		local third = StringFind(INITIALS, score.initials[3])
+		local third = StringFind(ALLOWED_LETTERS, score.initials[3])
 		dset(4 * (score_idx - 1) + 2, third)
 		dset(4 * (score_idx - 1) + 3, score.score)
 	end
@@ -304,8 +306,8 @@ end
 ---@param isForward boolean whether the step is forward
 ---@return integer # next / previous letter ID
 function StepInitials(letterID, isForward)
-	if letterID > #INITIALS then
-		error("letter ID must be less than or equal to " .. #INITIALS)
+	if letterID > #ALLOWED_LETTERS then
+		error("letter ID must be less than or equal to " .. #ALLOWED_LETTERS)
 	elseif letterID < 1 then
 		error("letter ID must be greater than or equal to 1")
 	end
@@ -313,11 +315,11 @@ function StepInitials(letterID, isForward)
 	-- undo 1-based indexing for modulo arithmetic
 	local letterID_0 = letterID - 1
 	if isForward then
-		local step_0 = (letterID_0 + 1) % #INITIALS
+		local step_0 = (letterID_0 + 1) % #ALLOWED_LETTERS
 		-- redo 1-based indexing
 		return step_0 + 1
 	else
-		local step_0 = (letterID_0 - 1) % #INITIALS
+		local step_0 = (letterID_0 - 1) % #ALLOWED_LETTERS
 		-- redo 1-based indexing
 		return step_0 + 1
 	end
@@ -438,15 +440,15 @@ function PlayLevelMusic(level)
 end
 
 function DrawInitialEntering()
-	print(INITIALS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
+	print(ALLOWED_LETTERS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
 	if Player.score_cursor == SCORE_POSITIONS.first then
 		rect(16, 36 + 6, 16 + 2, 36 + 6, 11)
 	end
-	print(INITIALS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
+	print(ALLOWED_LETTERS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
 	if Player.score_cursor == SCORE_POSITIONS.second then
 		rect(21, 36 + 6, 21 + 2, 36 + 6, 11)
 	end
-	print(INITIALS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
+	print(ALLOWED_LETTERS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
 	if Player.score_cursor == SCORE_POSITIONS.third then
 		rect(26, 36 + 6, 26 + 2, 36 + 6, 11)
 	end

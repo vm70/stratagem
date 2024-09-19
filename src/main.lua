@@ -8,7 +8,7 @@ VERSION = {
 	patch = 0,
 }
 
----@alias Coords [integer, integer]
+---@alias Coords {x: integer, y: integer}
 ---@alias HighScore {initials: string, score: integer}
 ---@alias Match {move_score: integer, x: integer, y: integer, color: integer}
 ---@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer | nil, score_cursor: ScorePositions}
@@ -110,7 +110,7 @@ end
 function InitPlayer()
 	---@type Player
 	Player = {
-		grid_cursor = { 3, 3 },
+		grid_cursor = { x = 3, y = 3 },
 		score = 0,
 		init_level_score = 0,
 		level_threshold = L1_THRESHOLD,
@@ -195,9 +195,9 @@ end
 ---@param gem1 Coords
 ---@param gem2 Coords
 function SwapGems(gem1, gem2)
-	local temp = Grid[gem1[1]][gem1[2]]
-	Grid[gem1[1]][gem1[2]] = Grid[gem2[1]][gem2[2]]
-	Grid[gem2[1]][gem2[2]] = temp
+	local temp = Grid[gem1.y][gem1.x]
+	Grid[gem1.y][gem1.x] = Grid[gem2.y][gem2.x]
+	Grid[gem2.y][gem2.x] = temp
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -205,21 +205,21 @@ end
 ---@param byPlayer boolean whether the clearing was by the player or automatic
 ---@return boolean # whether the match clearing was successful
 function ClearMatching(coords, byPlayer)
-	if Grid[coords[1]][coords[2]] == 0 then
+	if Grid[coords.y][coords.x] == 0 then
 		return false
 	end
 	local match_list = FloodMatch(coords, {})
 	if #match_list >= 3 then
-		local gem_color = GEM_COLORS[Grid[coords[1]][coords[2]]]
+		local gem_color = GEM_COLORS[Grid[coords.y][coords.x]]
 		for _, matchCoord in pairs(match_list) do
-			Grid[matchCoord[1]][matchCoord[2]] = 0
+			Grid[matchCoord.y][matchCoord.x] = 0
 		end
 		if byPlayer then
 			Player.combo = Player.combo + 1
 			sfx(min(Player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
 			local move_score = Player.level * Player.combo * BASE_MATCH_PTS * (#match_list - 2)
 			Player.score = Player.score + move_score
-			Player.last_match = { move_score = move_score, x = coords[2], y = coords[1], color = gem_color }
+			Player.last_match = { move_score = move_score, x = coords.x, y = coords.y, color = gem_color }
 		end
 		return true
 	end
@@ -234,17 +234,17 @@ end
 ---@return Coords[] # array of neighbor coordinates
 function Neighbors(gemCoords)
 	local neighbors = {}
-	if gemCoords[1] ~= 1 then
-		neighbors[#neighbors + 1] = { gemCoords[1] - 1, gemCoords[2] }
+	if gemCoords.y ~= 1 then
+		neighbors[#neighbors + 1] = { y = gemCoords.y - 1, x = gemCoords.x }
 	end
-	if gemCoords[1] ~= 6 then
-		neighbors[#neighbors + 1] = { gemCoords[1] + 1, gemCoords[2] }
+	if gemCoords.y ~= 6 then
+		neighbors[#neighbors + 1] = { y = gemCoords.y + 1, x = gemCoords.x }
 	end
-	if gemCoords[2] ~= 1 then
-		neighbors[#neighbors + 1] = { gemCoords[1], gemCoords[2] - 1 }
+	if gemCoords.x ~= 1 then
+		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x - 1 }
 	end
-	if gemCoords[2] ~= 6 then
-		neighbors[#neighbors + 1] = { gemCoords[1], gemCoords[2] + 1 }
+	if gemCoords.x ~= 6 then
+		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x + 1 }
 	end
 	return neighbors
 end
@@ -255,7 +255,7 @@ end
 ---@return boolean # whether the coords was in the coords list
 function Contains(coordsList, coords)
 	for _, item in pairs(coordsList) do
-		if item[1] == coords[1] and item[2] == coords[2] then
+		if item.y == coords.y and item.x == coords.x then
 			return true
 		end
 	end
@@ -271,7 +271,7 @@ function FloodMatch(gemCoords, visited)
 	visited[#visited + 1] = gemCoords
 	for _, neighbor in pairs(Neighbors(gemCoords)) do
 		if not Contains(visited, neighbor) then
-			if Grid[neighbor[1]][neighbor[2]] == Grid[gemCoords[1]][gemCoords[2]] then
+			if Grid[neighbor.y][neighbor.x] == Grid[gemCoords.y][gemCoords.x] then
 				-- do recursion for all non-visited neighbors
 				visited = FloodMatch(neighbor, visited)
 			end
@@ -284,36 +284,36 @@ end
 function UpdateGridCursor()
 	if CartState == STATES.swap_select then
 		-- player has chosen to swap gems
-		if btnp(0) and Player.grid_cursor[2] > 1 then
+		if btnp(0) and Player.grid_cursor.x > 1 then
 			-- swap left
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1], Player.grid_cursor[2] - 1 })
-		elseif btnp(1) and Player.grid_cursor[2] < 6 then
+			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y, x = Player.grid_cursor.x - 1 })
+		elseif btnp(1) and Player.grid_cursor.x < 6 then
 			-- swap right
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1], Player.grid_cursor[2] + 1 })
-		elseif btnp(2) and Player.grid_cursor[1] > 1 then
+			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y, x = Player.grid_cursor.x + 1 })
+		elseif btnp(2) and Player.grid_cursor.y > 1 then
 			-- swap up
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1] - 1, Player.grid_cursor[2] })
-		elseif btnp(3) and Player.grid_cursor[1] < 6 then
+			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y - 1, x = Player.grid_cursor.x })
+		elseif btnp(3) and Player.grid_cursor.y < 6 then
 			-- swap down
-			SwapGems(Player.grid_cursor, { Player.grid_cursor[1] + 1, Player.grid_cursor[2] })
+			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y + 1, x = Player.grid_cursor.x })
 		end
 		if btnp(0) or btnp(1) or btnp(2) or btnp(3) then
 			CartState = STATES.player_matching
 		end
 	end
 	-- move the cursor around the grid while swapping or idle
-	if btnp(0) and Player.grid_cursor[2] > 1 then
+	if btnp(0) and Player.grid_cursor.x > 1 then
 		-- move left
-		Player.grid_cursor[2] = Player.grid_cursor[2] - 1
-	elseif btnp(1) and Player.grid_cursor[2] < 6 then
+		Player.grid_cursor.x = Player.grid_cursor.x - 1
+	elseif btnp(1) and Player.grid_cursor.x < 6 then
 		-- move right
-		Player.grid_cursor[2] = Player.grid_cursor[2] + 1
-	elseif btnp(2) and Player.grid_cursor[1] > 1 then
+		Player.grid_cursor.x = Player.grid_cursor.x + 1
+	elseif btnp(2) and Player.grid_cursor.y > 1 then
 		-- move up
-		Player.grid_cursor[1] = Player.grid_cursor[1] - 1
-	elseif btnp(3) and Player.grid_cursor[1] < 6 then
+		Player.grid_cursor.y = Player.grid_cursor.y - 1
+	elseif btnp(3) and Player.grid_cursor.y < 6 then
 		-- move down
-		Player.grid_cursor[1] = Player.grid_cursor[1] + 1
+		Player.grid_cursor.y = Player.grid_cursor.y + 1
 	end
 	-- idle <-> swapping
 	if (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
@@ -384,10 +384,10 @@ function DrawCursor()
 		color = 11
 	end
 	rect(
-		16 * Player.grid_cursor[2],
-		16 * Player.grid_cursor[1],
-		16 * Player.grid_cursor[2] + 15,
-		16 * Player.grid_cursor[1] + 15,
+		16 * Player.grid_cursor.x,
+		16 * Player.grid_cursor.y,
+		16 * Player.grid_cursor.x + 15,
+		16 * Player.grid_cursor.y + 15,
 		color
 	)
 end
@@ -421,7 +421,7 @@ function ClearGridMatches(byPlayer)
 	local had_matches = false
 	for y = 1, 6 do
 		for x = 1, 6 do
-			had_matches = had_matches or ClearMatching({ y, x }, byPlayer)
+			had_matches = had_matches or ClearMatching({ y = y, x = x }, byPlayer)
 		end
 	end
 	return had_matches

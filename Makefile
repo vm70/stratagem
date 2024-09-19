@@ -31,7 +31,7 @@ build-cart:
 	mkdir -p $(BUILD_DIR)
 	# Assemble P8 cart
 	$(PYTHON_VENV)/bin/p8tool build $(p8_file) \
-		--lua src/main.lua \
+		--lua src/main.p8 \
 		--gfx assets/art.p8 \
 		--map assets/art.p8 \
 		--sfx assets/sound.p8 \

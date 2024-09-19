@@ -1,7 +1,8 @@
 -- stratagem v0.3.0
 -- by vincent "vm" mercator & co.
 
----@type {major: integer, minor: integer, patch: integer} semantic version number
+--# selene: allow(undefined_variable)
+
 VERSION = {
 	major = 0,
 	minor = 3,
@@ -66,21 +67,6 @@ Grid = {}
 
 ---@type Player table containing player information
 Player = {}
-
----@type integer[] background patterns
--- herringbone pattern
--- 0100 -> 4
--- 1110 -> E
--- 0111 -> 7
--- 0010 -> 2
-BGPatterns = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
-
----@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
-TITLE_SPRITE = {
-	width = 82,
-	height = 31,
-	y_offset = 10,
-}
 
 ---@type States current state of the cartridge
 CartState = STATES.title_screen
@@ -363,46 +349,6 @@ function IsDoneEntering()
 	return false
 end
 
---- draw the cursor on the grid
----@param color integer
-function DrawCursor(color)
-	-- fillp(0x33CC)
-	-- -- 0011 -> 3
-	-- -- 0011 -> 3
-	-- -- 1100 -> C
-	-- -- 1100 -> C
-	rect(
-		16 * Player.grid_cursor.x,
-		16 * Player.grid_cursor.y,
-		16 * Player.grid_cursor.x + 15,
-		16 * Player.grid_cursor.y + 15,
-		color
-	)
-	-- fillp(0)
-end
-
---- draw the moving game background
-function DrawGameBG()
-	fillp(BGPatterns[1 + flr(time() % #BGPatterns)])
-	rectfill(0, 0, 128, 128, 0x21)
-	fillp(0)
-	rectfill(14, 14, 113, 113, 0)
-	map(0, 0, 0, 0, 16, 16, 0)
-end
-
---- draw the gems in the grid
-function DrawGems()
-	for y = 1, 6 do
-		for x = 1, 6 do
-			local color = Grid[y][x]
-			if color ~= 0 then
-				sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
-			end
-			-- print(color, 16 * x, 16 * y, 11)
-		end
-	end
-end
-
 --- Clear the matches on the grid.
 ---@param byPlayer boolean whether the match is made by the player
 ---@return boolean # whether any matches were cleared
@@ -437,98 +383,6 @@ function FillGridHoles()
 	return has_holes
 end
 
---- Draw the HUD (score, chances, level progress bar, etc) on the screen
-function DrawHUD()
-	print("score:" .. LeftPad(tostr(Player.score), " ", 5), 17, 9, 7)
-	print("chances:" .. max(Player.chances, 0), 73, 9, 8)
-	print("level:" .. Player.level, 49, 121, 7)
-	-- calculate level completion ratio
-	local level_ratio = (Player.score - Player.init_level_score) / (Player.level_threshold - Player.init_level_score)
-	level_ratio = min(level_ratio, 1)
-	local rect_length = (93 * level_ratio)
-	rectfill(17, 114, 17 + rect_length, 117, 7)
-end
-
-function DrawTitleBG()
-	rectfill(0, 0, 128, 128, 1)
-	-- draw wobbly function background
-	for x = 0, 128, 3 do
-		for y = 0, 128, 3 do
-			local color = 1
-			if
-				cos(27 / 39 * x / 61 + y / 47 + time() / 23 + cos(29 / 31 * y / 67 + time() / 27))
-				> sin(22 / 41 * x / 68 + y / 57 * time() / 32)
-			then
-				color = 2
-			end
-			pset(x, y, color)
-		end
-	end
-	map(16, 0, 0, 0, 16, 16)
-end
-
--- left-pad / right-justify text.
----@param str string
----@param pad string
----@param length integer
-function LeftPad(str, pad, length)
-	if length < #str then
-		error("desired length is less than input string")
-	end
-	local padded = "" .. str
-	while #padded < length do
-		padded = pad .. padded
-	end
-	return padded
-end
-
---- draw the leaderboard
-function DrawLeaderboard()
-	-- 11 chars * 3 + 10 gaps = 43 px
-	print("high scores", 42, 8, 7)
-	for i, score in ipairs(Leaderboard) do
-		-- use the format "XX. AAA: #####" for each score
-		-- 14 chars * 3 + 13 gaps = 55 px
-		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
-		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		print(padded_place .. score.initials .. " " .. padded_score, 36, 12 + 6 * i, 7)
-	end
-	print("\142/\151: return to title", 20, 94, 7)
-end
-
-function DrawCredits()
-	-- 7 chars * 3 + 6 gaps = 27
-	print("credits", 64 - 13.5, 8, 7)
-	print('vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art', 64 - 47, 24, 7)
-	print("...and players like you.\nthank you!", 64 - 47, 78, 7)
-	print("\142/\151: return to title", 20, 94, 7)
-end
-
--- Draw the title screen
-function DrawTitleFG()
-	-- draw foreground title
-	sspr(
-		0,
-		32,
-		TITLE_SPRITE.width,
-		TITLE_SPRITE.height,
-		64 - TITLE_SPRITE.width / 2,
-		TITLE_SPRITE.y_offset,
-		TITLE_SPRITE.width,
-		TITLE_SPRITE.height
-	)
-	print(
-		"V" .. VERSION.major .. "." .. VERSION.minor .. "." .. VERSION.patch,
-		64 - TITLE_SPRITE.width / 2,
-		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
-		7
-	)
-	print('by vincent "vm" mercator', 64 - 47, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
-	print("\142: start game", 36, 72, 7)
-	print("\151: high scores", 36, 80, 7)
-	print("\131: credits", 36, 88, 7)
-end
-
 --- Increase the player level and perform associated actions
 function LevelUp()
 	Player.level = Player.level + 1
@@ -536,18 +390,6 @@ function LevelUp()
 	Player.level_threshold = (
 		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * Player.level * BASE_MATCH_PTS
 	)
-end
-
---- Draw the point numbers for the player's match where the gems were cleared
-function DrawMatchPoints()
-	if Player.combo ~= 0 then
-		print(
-			chr(2) .. "0" .. Player.last_match.move_score,
-			16 * Player.last_match.x + 1,
-			16 * Player.last_match.y + 1,
-			Player.last_match.color
-		)
-	end
 end
 
 --- Calculate the player's placement in the leaderboard.
@@ -627,61 +469,61 @@ end
 function _draw()
 	if CartState == STATES.title_screen then
 		DrawTitleBG()
-		DrawTitleFG()
+		DrawTitleFG(VERSION)
 	elseif CartState == STATES.credits then
 		DrawTitleBG()
 		DrawCredits()
 	elseif CartState == STATES.game_init then
 		DrawGameBG()
-		DrawHUD()
+		DrawHUD(Player)
 	elseif CartState == STATES.generate_grid then
 		DrawGameBG()
-		DrawHUD()
+		DrawHUD(Player)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
-		DrawHUD()
-		DrawGems()
-		DrawCursor(7)
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawCursor(Player, 7)
 	elseif CartState == STATES.swap_select then
 		DrawGameBG()
-		DrawHUD()
-		DrawGems()
-		DrawCursor(11)
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawCursor(Player, 11)
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
-		DrawHUD()
-		DrawGems()
-		DrawCursor(1)
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawCursor(Player, 1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
-		DrawHUD()
-		DrawGems()
-		DrawCursor(1)
-		DrawMatchPoints()
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawCursor(Player, 1)
+		DrawMatchPoints(Player)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
-		DrawHUD()
-		DrawGems()
-		DrawCursor(1)
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawCursor(Player, 1)
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
-		DrawHUD()
+		DrawHUD(Player)
 		print("level " .. Player.level .. " complete", 16, 16, 7)
 		print("get ready for level " .. Player.level + 1, 16, 22, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
-		DrawHUD()
+		DrawHUD(Player)
 		print("game over", 46, 61, 7)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
-		DrawHUD()
+		DrawHUD(Player)
 		print("nice job!", 16, 16, 7)
 		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
 		print("enter your initials", 16, 28, 7)
 		DrawInitialEntering()
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
-		DrawLeaderboard()
+		DrawLeaderboard(Leaderboard)
 	end
 	-- print(tostr(CartState), 1, 1, 7)
 	-- print(tostr(FrameCounter), 1, 7, 7)

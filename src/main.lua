@@ -8,11 +8,6 @@ VERSION = {
 	patch = 0,
 }
 
----@alias Coords {x: integer, y: integer}
----@alias HighScore {initials: string, score: integer}
----@alias Match {move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer | nil, score_cursor: ScorePositions}
-
 ---@enum States
 STATES = {
 	title_screen = 1,
@@ -280,28 +275,8 @@ function FloodMatch(gemCoords, visited)
 	return visited
 end
 
---- Do all cursor updating actions (during gameplay)
-function UpdateGridCursor()
-	if CartState == STATES.swap_select then
-		-- player has chosen to swap gems
-		if btnp(0) and Player.grid_cursor.x > 1 then
-			-- swap left
-			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y, x = Player.grid_cursor.x - 1 })
-		elseif btnp(1) and Player.grid_cursor.x < 6 then
-			-- swap right
-			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y, x = Player.grid_cursor.x + 1 })
-		elseif btnp(2) and Player.grid_cursor.y > 1 then
-			-- swap up
-			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y - 1, x = Player.grid_cursor.x })
-		elseif btnp(3) and Player.grid_cursor.y < 6 then
-			-- swap down
-			SwapGems(Player.grid_cursor, { y = Player.grid_cursor.y + 1, x = Player.grid_cursor.x })
-		end
-		if btnp(0) or btnp(1) or btnp(2) or btnp(3) then
-			CartState = STATES.player_matching
-		end
-	end
-	-- move the cursor around the grid while swapping or idle
+-- do all actions for moving the grid cursor
+function MoveGridCursor()
 	if btnp(0) and Player.grid_cursor.x > 1 then
 		-- move left
 		Player.grid_cursor.x = Player.grid_cursor.x - 1
@@ -315,14 +290,27 @@ function UpdateGridCursor()
 		-- move down
 		Player.grid_cursor.y = Player.grid_cursor.y + 1
 	end
-	-- idle <-> swapping
-	if (btnp(4) or btnp(5)) and CartState == STATES.game_idle then
-		-- idle to swapping
-		CartState = STATES.swap_select
-	elseif (btnp(4) or btnp(5)) and CartState == STATES.swap_select then
-		-- swapping to idle
-		CartState = STATES.game_idle
+end
+
+-- do all actions for selecting which gem to swap
+---@return Coords | nil # which gem was chosen to swap with the player's cursor
+function SelectSwapping()
+	---@type Coords | nil
+	local swapping_gem = nil
+	if btnp(0) and Player.grid_cursor.x > 1 then
+		-- swap left
+		swapping_gem = { y = Player.grid_cursor.y, x = Player.grid_cursor.x - 1 }
+	elseif btnp(1) and Player.grid_cursor.x < 6 then
+		-- swap right
+		swapping_gem = { y = Player.grid_cursor.y, x = Player.grid_cursor.x + 1 }
+	elseif btnp(2) and Player.grid_cursor.y > 1 then
+		-- swap up
+		swapping_gem = { y = Player.grid_cursor.y - 1, x = Player.grid_cursor.x }
+	elseif btnp(3) and Player.grid_cursor.y < 6 then
+		-- swap down
+		swapping_gem = { y = Player.grid_cursor.y + 1, x = Player.grid_cursor.x }
 	end
+	return swapping_gem
 end
 
 --- Cycle through the initials' indices.
@@ -710,18 +698,27 @@ function _update()
 			end
 		end
 	elseif CartState == STATES.game_idle then
-		UpdateGridCursor()
-		if Player.score >= Player.level_threshold then
-			FrameCounter = 0
-			CartState = STATES.level_up
-		elseif Player.chances == -1 then
+		MoveGridCursor()
+		if Player.chances == -1 then
 			Player.chances = 0
 			music(0)
 			FrameCounter = 0
 			CartState = STATES.game_over
+		elseif Player.score >= Player.level_threshold then
+			FrameCounter = 0
+			CartState = STATES.level_up
+		elseif btnp(4) or btnp(5) then
+			CartState = STATES.swap_select
 		end
 	elseif CartState == STATES.swap_select then
-		UpdateGridCursor()
+		local swapping_gem = SelectSwapping()
+		if btnp(4) or btnp(5) then
+			CartState = STATES.game_idle
+		elseif swapping_gem ~= nil then
+			SwapGems(Player.grid_cursor, swapping_gem)
+			Player.grid_cursor = swapping_gem
+			CartState = STATES.player_matching
+		end
 	elseif CartState == STATES.player_matching then
 		if ClearGridMatches(true) then
 			FrameCounter = 0

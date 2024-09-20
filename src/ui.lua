@@ -5,6 +5,17 @@ TITLE_SPRITE = {
 	y_offset = 10,
 }
 
+---@type integer[] main PICO-8 colors of gems
+GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
+
+---@enum ScorePositions
+SCORE_POSITIONS = {
+	first = 1,
+	second = 2,
+	third = 3,
+	ok = 4,
+}
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -119,7 +130,12 @@ end
 function DrawCredits()
 	-- 7 chars * 3 + 6 gaps = 27
 	print("credits", 64 - 13.5, 8, 7)
-	print('vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art', 64 - 47, 24, 7)
+	print(
+		'vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting',
+		64 - 47,
+		24,
+		7
+	)
 	print("...and players like you.\nthank you!", 64 - 47, 78, 7)
 	print("\142/\151: return to title", 20, 94, 7)
 end
@@ -157,7 +173,57 @@ function DrawMatchPoints(player)
 			chr(2) .. "0" .. player.last_match.move_score,
 			16 * player.last_match.x + 1,
 			16 * player.last_match.y + 1,
-			player.last_match.color
+			GEM_COLORS[player.last_match.gem_type]
 		)
 	end
+end
+
+---@param player Player
+---@return boolean # true if the player is done entering high score, false if not
+function IsDoneEntering(player)
+	if player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
+		-- all done typing score
+		return true
+	end
+	return false
+end
+
+-- do all actions for moving the grid cursor
+---@param player Player
+function MoveGridCursor(player)
+	if btnp(0) and player.grid_cursor.x > 1 then
+		-- move left
+		player.grid_cursor.x = player.grid_cursor.x - 1
+	elseif btnp(1) and player.grid_cursor.x < 6 then
+		-- move right
+		player.grid_cursor.x = player.grid_cursor.x + 1
+	elseif btnp(2) and player.grid_cursor.y > 1 then
+		-- move up
+		player.grid_cursor.y = player.grid_cursor.y - 1
+	elseif btnp(3) and player.grid_cursor.y < 6 then
+		-- move down
+		player.grid_cursor.y = player.grid_cursor.y + 1
+	end
+end
+
+-- do all actions for selecting which gem to swap
+---@param player Player
+---@return Coords | nil # which gem was chosen to swap with the player's cursor
+function SelectSwapping(player)
+	---@type Coords | nil
+	local swapping_gem = nil
+	if btnp(0) and player.grid_cursor.x > 1 then
+		-- swap left
+		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
+	elseif btnp(1) and player.grid_cursor.x < 6 then
+		-- swap right
+		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
+	elseif btnp(2) and player.grid_cursor.y > 1 then
+		-- swap up
+		swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
+	elseif btnp(3) and player.grid_cursor.y < 6 then
+		-- swap down
+		swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
+	end
+	return swapping_gem
 end

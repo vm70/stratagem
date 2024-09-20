@@ -1,3 +1,5 @@
+-- UI elements.
+
 ---@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
 TITLE_SPRITE = {
 	width = 82,
@@ -24,7 +26,7 @@ SCORE_POSITIONS = {
 -- 0010 -> 2
 BG_PATTERNS = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 
---- draw the cursor on the grid
+-- draw the cursor on the grid
 ---@param player Player
 ---@param color integer
 function DrawCursor(player, color)
@@ -43,7 +45,7 @@ function DrawCursor(player, color)
 	-- fillp(0)
 end
 
---- draw the moving game background
+-- draw the moving game background
 function DrawGameBG()
 	fillp(BG_PATTERNS[1 + flr(time() % #BG_PATTERNS)])
 	rectfill(0, 0, 128, 128, 0x21)
@@ -52,7 +54,7 @@ function DrawGameBG()
 	map(0, 0, 0, 0, 16, 16, 0)
 end
 
---- draw the gems in the grid
+-- draw the gems in the grid
 ---@param grid integer[][]
 function DrawGems(grid)
 	for y = 1, 6 do
@@ -81,7 +83,7 @@ function LeftPad(str, pad, length)
 	return padded
 end
 
---- Draw the HUD (score, chances, level progress bar, etc) on the screen
+-- Draw the HUD (score, chances, level progress bar, etc) on the screen
 ---@param player Player
 function DrawHUD(player)
 	print("score:" .. LeftPad(tostr(player.score), " ", 5), 17, 9, 7)
@@ -112,7 +114,7 @@ function DrawTitleBG()
 	map(16, 0, 0, 0, 16, 16)
 end
 
---- draw the leaderboard
+-- draw the leaderboard
 ---@param leaderboard HighScore[]
 function DrawLeaderboard(leaderboard)
 	-- 11 chars * 3 + 10 gaps = 43 px
@@ -166,7 +168,7 @@ function DrawTitleFG(version)
 	print("\131: credits", 36, 88, 7)
 end
 
---- Draw the point numbers for the player's match where the gems were cleared
+-- Draw the point numbers for the player's match where the gems were cleared
 function DrawMatchPoints(player)
 	if player.combo ~= 0 then
 		print(

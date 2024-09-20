@@ -3,6 +3,7 @@
 
 --# selene: allow(undefined_variable)
 
+---@type Version
 VERSION = {
 	major = 0,
 	minor = 3,
@@ -54,7 +55,7 @@ Leaderboard = {}
 ---@type integer frame counter for state transitions / pauses
 FrameCounter = 0
 
---- Initialize the grid with all holes
+-- Initialize the grid with all holes
 function InitGrid()
 	for y = 1, 6 do
 		Grid[y] = {}
@@ -64,7 +65,7 @@ function InitGrid()
 	end
 end
 
---- Initialize the player for starting the game
+-- Initialize the player for starting the game
 function InitPlayer()
 	---@type Player
 	Player = {
@@ -82,7 +83,7 @@ function InitPlayer()
 	}
 end
 
---- Cycle through the initials' indices.
+-- Cycle through the initials' indices.
 ---@param letterID integer # current letter ID (1 to #INITIALS inclusive)
 ---@param isForward boolean whether the step is forward
 ---@return integer # next / previous letter ID
@@ -123,7 +124,7 @@ function MoveScoreCursor()
 	end
 end
 
---- Fill holes in the grid by dropping gems.
+-- Fill holes in the grid by dropping gems.
 ---@return boolean # whether the grid has any holes
 function FillGridHoles()
 	local has_holes = false
@@ -144,7 +145,7 @@ function FillGridHoles()
 	return has_holes
 end
 
---- Increase the player level and perform associated actions
+-- Increase the player level and perform associated actions
 ---@param player Player
 function LevelUp(player)
 	player.level = player.level + 1
@@ -154,7 +155,7 @@ function LevelUp(player)
 	)
 end
 
---- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
+-- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
 ---@param place integer
 ---@return string
 function OrdinalIndicator(place)
@@ -171,7 +172,7 @@ function OrdinalIndicator(place)
 	end
 end
 
---- Get the color of the score position for drawing the high score UI
+-- Get the color of the score position for drawing the high score UI
 ---@param score_position ScorePositions
 function HSColor(score_position)
 	local color = 7
@@ -181,7 +182,7 @@ function HSColor(score_position)
 	return color
 end
 
---- Play the corresponding music for the given level number
+-- Play the corresponding music for the given level number
 ---@param level integer current level number
 function PlayLevelMusic(level)
 	local musicID = (level % #LEVEL_MUSIC) + 1

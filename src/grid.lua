@@ -1,3 +1,5 @@
+-- Grid functions.
+
 ---@type integer How many points a three-gem match scores on level 1
 BASE_MATCH_PTS = 3
 
@@ -7,7 +9,7 @@ L1_MATCHES = 50
 ---@type integer How many points needed to get to level 2
 L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 
---- swap the two gems (done by the player)
+-- swap the two gems (done by the player)
 ---@param grid integer[][]
 ---@param gem1 Coords
 ---@param gem2 Coords
@@ -17,7 +19,7 @@ function SwapGems(grid, gem1, gem2)
 	grid[gem2.y][gem2.x] = temp
 end
 
---- Clear the first match on the grid, starting from the top-left corner.
+-- Clear the first match on the grid, starting from the top-left corner.
 ---@param grid integer[][]
 ---@param player? Player whether the match is made by the player
 ---@return boolean # whether any matches were cleared
@@ -33,7 +35,7 @@ function ClearFirstGridMatch(grid, player)
 	return false
 end
 
---- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
+-- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
 ---@param coords Coords coordinates of a single gem in the match
 ---@param player? Player
 ---@return boolean # whether the match clearing was successful
@@ -59,7 +61,7 @@ function ClearMatching(grid, coords, player)
 	return false
 end
 
---- Get the neighbors of the given coordinate
+-- Get the neighbors of the given coordinate
 ---@param gemCoords Coords
 ---@return Coords[] # array of neighbor coordinates
 function Neighbors(gemCoords)
@@ -79,7 +81,7 @@ function Neighbors(gemCoords)
 	return neighbors
 end
 
---- Check whether a coordinate pair is in a coordinate list
+-- Check whether a coordinate pair is in a coordinate list
 ---@param coordsList Coords[] list of coordinate pairs to search
 ---@param coords Coords coordinate pair to search for
 ---@return boolean # whether the coords was in the coords list
@@ -92,7 +94,7 @@ function Contains(coordsList, coords)
 	return false
 end
 
---- Find the list of gems that are in the same match as the given gem coordinate using flood filling
+-- Find the list of gems that are in the same match as the given gem coordinate using flood filling
 ---@param grid integer[][]
 ---@param gemCoords Coords current coordinates to search
 ---@param visited Coords[] list of visited coordinates. Start with "{}" if new match

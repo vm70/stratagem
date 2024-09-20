@@ -1,7 +1,9 @@
+-- Leaderboard elements.
+
 ---@type string Allowed initial characters for high scores
 ALLOWED_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789 "
 
---- equivalent of `string.find` in vanilla Lua's standard library
+-- equivalent of `string.find` in vanilla Lua's standard library
 ---@param str string
 ---@param wantChar string
 ---@return integer | nil
@@ -14,7 +16,7 @@ function StringFind(str, wantChar)
 	return nil
 end
 
---- Initialize the high scores by reading from persistent memory
+-- Initialize the high scores by reading from persistent memory
 ---@param leaderboard HighScore[]
 ---@param version Version
 function LoadLeaderboard(leaderboard, version)
@@ -47,7 +49,7 @@ function ResetLeaderboard(leaderboard)
 	end
 end
 
---- Add the player's new high score to the leaderboard
+-- Add the player's new high score to the leaderboard
 ---@param leaderboard HighScore[]
 ---@param letter_ids integer[]
 function UpdateLeaderboard(leaderboard, letter_ids, score)
@@ -63,7 +65,7 @@ function UpdateLeaderboard(leaderboard, letter_ids, score)
 	end
 end
 
---- Save the leaderboard to the cartridge memory
+-- Save the leaderboard to the cartridge memory
 ---@param leaderboard HighScore[]
 function SaveLeaderboard(leaderboard)
 	for score_idx, score in ipairs(leaderboard) do
@@ -77,7 +79,7 @@ function SaveLeaderboard(leaderboard)
 	end
 end
 
---- Calculate a score's placement in the leaderboard.
+-- Calculate a score's placement in the leaderboard.
 ---@param leaderboard HighScore[]
 ---@param player_score integer
 ---@return integer | nil # which placement (1-10) if the player got a high score; nil otherwise

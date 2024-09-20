@@ -187,3 +187,43 @@ function IsDoneEntering(player)
 	end
 	return false
 end
+
+-- do all actions for moving the grid cursor
+---@param player Player
+function MoveGridCursor(player)
+	if btnp(0) and player.grid_cursor.x > 1 then
+		-- move left
+		player.grid_cursor.x = player.grid_cursor.x - 1
+	elseif btnp(1) and player.grid_cursor.x < 6 then
+		-- move right
+		player.grid_cursor.x = player.grid_cursor.x + 1
+	elseif btnp(2) and player.grid_cursor.y > 1 then
+		-- move up
+		player.grid_cursor.y = player.grid_cursor.y - 1
+	elseif btnp(3) and player.grid_cursor.y < 6 then
+		-- move down
+		player.grid_cursor.y = player.grid_cursor.y + 1
+	end
+end
+
+-- do all actions for selecting which gem to swap
+---@param player Player
+---@return Coords | nil # which gem was chosen to swap with the player's cursor
+function SelectSwapping(player)
+	---@type Coords | nil
+	local swapping_gem = nil
+	if btnp(0) and player.grid_cursor.x > 1 then
+		-- swap left
+		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
+	elseif btnp(1) and player.grid_cursor.x < 6 then
+		-- swap right
+		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
+	elseif btnp(2) and player.grid_cursor.y > 1 then
+		-- swap up
+		swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
+	elseif btnp(3) and player.grid_cursor.y < 6 then
+		-- swap down
+		swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
+	end
+	return swapping_gem
+end

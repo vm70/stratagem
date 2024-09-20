@@ -82,44 +82,6 @@ function InitPlayer()
 	}
 end
 
--- do all actions for moving the grid cursor
-function MoveGridCursor()
-	if btnp(0) and Player.grid_cursor.x > 1 then
-		-- move left
-		Player.grid_cursor.x = Player.grid_cursor.x - 1
-	elseif btnp(1) and Player.grid_cursor.x < 6 then
-		-- move right
-		Player.grid_cursor.x = Player.grid_cursor.x + 1
-	elseif btnp(2) and Player.grid_cursor.y > 1 then
-		-- move up
-		Player.grid_cursor.y = Player.grid_cursor.y - 1
-	elseif btnp(3) and Player.grid_cursor.y < 6 then
-		-- move down
-		Player.grid_cursor.y = Player.grid_cursor.y + 1
-	end
-end
-
--- do all actions for selecting which gem to swap
----@return Coords | nil # which gem was chosen to swap with the player's cursor
-function SelectSwapping()
-	---@type Coords | nil
-	local swapping_gem = nil
-	if btnp(0) and Player.grid_cursor.x > 1 then
-		-- swap left
-		swapping_gem = { y = Player.grid_cursor.y, x = Player.grid_cursor.x - 1 }
-	elseif btnp(1) and Player.grid_cursor.x < 6 then
-		-- swap right
-		swapping_gem = { y = Player.grid_cursor.y, x = Player.grid_cursor.x + 1 }
-	elseif btnp(2) and Player.grid_cursor.y > 1 then
-		-- swap up
-		swapping_gem = { y = Player.grid_cursor.y - 1, x = Player.grid_cursor.x }
-	elseif btnp(3) and Player.grid_cursor.y < 6 then
-		-- swap down
-		swapping_gem = { y = Player.grid_cursor.y + 1, x = Player.grid_cursor.x }
-	end
-	return swapping_gem
-end
-
 --- Cycle through the initials' indices.
 ---@param letterID integer # current letter ID (1 to #INITIALS inclusive)
 ---@param isForward boolean whether the step is forward
@@ -183,11 +145,12 @@ function FillGridHoles()
 end
 
 --- Increase the player level and perform associated actions
-function LevelUp()
-	Player.level = Player.level + 1
-	Player.init_level_score = Player.score
-	Player.level_threshold = (
-		Player.init_level_score + (L1_MATCHES + 20 * (Player.level - 1)) * (2 * (Player.level - 1) + BASE_MATCH_PTS)
+---@param player Player
+function LevelUp(player)
+	player.level = player.level + 1
+	player.init_level_score = player.score
+	player.level_threshold = (
+		player.init_level_score + (L1_MATCHES + 20 * (player.level - 1)) * (2 * (player.level - 1) + BASE_MATCH_PTS)
 	)
 end
 
@@ -350,7 +313,7 @@ function _update()
 		end
 	elseif CartState == STATES.game_idle then
 		-- state actions
-		MoveGridCursor()
+		MoveGridCursor(Player)
 		-- state transitions
 		if Player.chances == -1 then
 			Player.chances = 0
@@ -365,7 +328,7 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select then
 		-- state actions
-		local swapping_gem = SelectSwapping()
+		local swapping_gem = SelectSwapping(Player)
 		-- state transitions
 		if btnp(4) or btnp(5) then
 			CartState = STATES.game_idle
@@ -376,7 +339,7 @@ function _update()
 		end
 	elseif CartState == STATES.player_matching then
 		-- state actions
-		MoveGridCursor()
+		MoveGridCursor(Player)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
@@ -387,7 +350,7 @@ function _update()
 		end
 	elseif CartState == STATES.show_match_points then
 		-- state actions
-		MoveGridCursor()
+		MoveGridCursor(Player)
 		-- state transitions
 		if FrameCounter == MATCH_FRAMES then
 			CartState = STATES.player_matching
@@ -396,7 +359,7 @@ function _update()
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.fill_grid then
 		-- state actions
-		MoveGridCursor()
+		MoveGridCursor(Player)
 		-- state actions & transitions
 		if FrameCounter % DROP_FRAMES == 0 then
 			if not FillGridHoles() then
@@ -420,7 +383,7 @@ function _update()
 	elseif CartState == STATES.level_up then
 		-- state transitions
 		if FrameCounter == 100 then
-			LevelUp()
+			LevelUp(Player)
 			InitGrid()
 			CartState = STATES.generate_grid
 			FrameCounter = 0

@@ -39,18 +39,6 @@ DROP_FRAMES = 2
 ---@type integer Number of frames to wait to show the match points
 MATCH_FRAMES = 20
 
----@type integer[] main PICO-8 colors of gems
-GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
-
----@type integer How many points a three-gem match scores on level 1
-BASE_MATCH_PTS = 3
-
----@type integer How many three-gem matches without combos should get you to level 2
-L1_MATCHES = 50
-
----@type integer How many points needed to get to level 2
-L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
-
 ---@type integer[][] game grid
 Grid = {}
 
@@ -87,99 +75,11 @@ function InitPlayer()
 		level = 1,
 		chances = 3,
 		combo = 0,
-		last_match = { move_score = 0, x = 0, y = 0, color = 0 },
+		last_match = { move_score = 0, x = 0, y = 0, gem_type = 1 },
 		letter_ids = { 1, 1, 1 },
 		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,
 	}
-end
-
---- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
----@param coords Coords coordinates of a single gem in the match
----@param byPlayer boolean whether the clearing was by the player or automatic
----@return boolean # whether the match clearing was successful
-function ClearMatching(coords, byPlayer)
-	if Grid[coords.y][coords.x] == 0 then
-		return false
-	end
-	local match_list = FloodMatch(coords, {})
-	if #match_list >= 3 then
-		local gem_color = GEM_COLORS[Grid[coords.y][coords.x]]
-		for _, matchCoord in pairs(match_list) do
-			Grid[matchCoord.y][matchCoord.x] = 0
-		end
-		if byPlayer then
-			Player.combo = Player.combo + 1
-			sfx(min(Player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
-			local move_score = MoveScore(Player.level, Player.combo, #match_list)
-			Player.score = Player.score + move_score
-			Player.last_match = { move_score = move_score, x = coords.x, y = coords.y, color = gem_color }
-		end
-		return true
-	end
-	if byPlayer then
-		Player.last_match = { move_score = 0, x = 0, y = 0, color = 0 }
-	end
-	return false
-end
-
-function MoveScore(level, combo, match_size)
-	local level_bonus = 2 * (level - 1)
-	local base_level_points = level_bonus + BASE_MATCH_PTS
-	local size_bonus = level_bonus * (match_size - 3)
-	local combo_bonus = min(combo - 1, 6) * base_level_points
-	return base_level_points + size_bonus + combo_bonus
-end
-
---- Get the neighbors of the given coordinate
----@param gemCoords Coords
----@return Coords[] # array of neighbor coordinates
-function Neighbors(gemCoords)
-	local neighbors = {}
-	if gemCoords.y ~= 1 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y - 1, x = gemCoords.x }
-	end
-	if gemCoords.y ~= 6 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y + 1, x = gemCoords.x }
-	end
-	if gemCoords.x ~= 1 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x - 1 }
-	end
-	if gemCoords.x ~= 6 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x + 1 }
-	end
-	return neighbors
-end
-
---- Check whether a coordinate pair is in a coordinate list
----@param coordsList Coords[] list of coordinate pairs to search
----@param coords Coords coordinate pair to search for
----@return boolean # whether the coords was in the coords list
-function Contains(coordsList, coords)
-	for _, item in pairs(coordsList) do
-		if item.y == coords.y and item.x == coords.x then
-			return true
-		end
-	end
-	return false
-end
-
---- Find the list of gems that are in the same match as the given gem coordinate using flood filling
----@param gemCoords Coords current coordinates to search
----@param visited Coords[] list of visited coordinates. Start with "{}" if new match
----@return Coords[] # list of coordinates in the match
-function FloodMatch(gemCoords, visited)
-	-- mark the current cell as visited
-	visited[#visited + 1] = gemCoords
-	for _, neighbor in pairs(Neighbors(gemCoords)) do
-		if not Contains(visited, neighbor) then
-			if Grid[neighbor.y][neighbor.x] == Grid[gemCoords.y][gemCoords.x] then
-				-- do recursion for all non-visited neighbors
-				visited = FloodMatch(neighbor, visited)
-			end
-		end
-	end
-	return visited
 end
 
 -- do all actions for moving the grid cursor
@@ -259,21 +159,6 @@ function MoveScoreCursor()
 		-- decrement letter
 		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
 	end
-end
-
---- Clear the first match on the grid, starting from the top-left corner.
----@param byPlayer boolean whether the match is made by the player
----@return boolean # whether any matches were cleared
-function ClearFirstGridMatch(byPlayer)
-	for y = 1, 6 do
-		for x = 1, 6 do
-			-- Only runs `ClearMatching` successfully once
-			if ClearMatching({ y = y, x = x }, byPlayer) then
-				return true
-			end
-		end
-	end
-	return false
 end
 
 --- Fill holes in the grid by dropping gems.
@@ -458,7 +343,7 @@ function _update()
 	elseif CartState == STATES.generate_grid then
 		-- state actions & transitions
 		if not FillGridHoles() then
-			if not ClearFirstGridMatch(false) then
+			if not ClearFirstGridMatch(Grid) then
 				CartState = STATES.game_idle
 				PlayLevelMusic(Player.level)
 			end
@@ -493,7 +378,7 @@ function _update()
 		-- state actions
 		MoveGridCursor()
 		-- state transitions
-		if ClearFirstGridMatch(true) then
+		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		else
@@ -521,7 +406,7 @@ function _update()
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.combo_check then
 		-- state actions & transitions
-		if ClearFirstGridMatch(true) then
+		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		else

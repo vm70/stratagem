@@ -5,3 +5,5 @@ std = "p8lua"
 [lints]
 
 unscoped_variables = "allow"
+unused_variable = "allow"
+# undefined_variable = "allow"

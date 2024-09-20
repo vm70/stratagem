@@ -1,5 +1,28 @@
----@alias Coords {x: integer, y: integer}
----@alias HighScore {initials: string, score: integer}
----@alias Match {move_score: integer, x: integer, y: integer, color: integer}
----@alias Player {grid_cursor: Coords, score: integer, init_level_score: integer, level_threshold: integer, level: integer, chances: integer, combo: integer, last_match: Match, letter_ids: integer[], placement: integer | nil, score_cursor: ScorePositions}
+---@class (strict) Coords
+---@field x integer
+---@field y integer
+
+---@class (strict) HighScore
+---@field initials string
+---@field score integer
+
+---@class (strict) MatchInfo
+---@field move_score integer
+---@field x integer
+---@field y integer
+---@field color integer
+
+---@class Player
+---@field grid_cursor Coords
+---@field score integer
+---@field init_level_score integer
+---@field level_threshold integer
+---@field level integer
+---@field chances integer
+---@field combo integer
+---@field last_match MatchInfo
+---@field letter_ids integer[]
+---@field placement integer | nil
+---@field score_cursor ScorePositions | integer
+
 ---@alias Version {major: integer, minor: integer, patch: integer} # semantic version number

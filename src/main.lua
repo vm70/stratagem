@@ -261,17 +261,19 @@ function MoveScoreCursor()
 	end
 end
 
---- Clear the matches on the grid.
+--- Clear the first match on the grid, starting from the top-left corner.
 ---@param byPlayer boolean whether the match is made by the player
 ---@return boolean # whether any matches were cleared
-function ClearGridMatches(byPlayer)
-	local had_matches = false
+function ClearFirstGridMatch(byPlayer)
 	for y = 1, 6 do
 		for x = 1, 6 do
-			had_matches = had_matches or ClearMatching({ y = y, x = x }, byPlayer)
+			-- Only runs `ClearMatching` successfully once
+			if ClearMatching({ y = y, x = x }, byPlayer) then
+				return true
+			end
 		end
 	end
-	return had_matches
+	return false
 end
 
 --- Fill holes in the grid by dropping gems.
@@ -456,7 +458,7 @@ function _update()
 	elseif CartState == STATES.generate_grid then
 		-- state actions & transitions
 		if not FillGridHoles() then
-			if not ClearGridMatches(false) then
+			if not ClearFirstGridMatch(false) then
 				CartState = STATES.game_idle
 				PlayLevelMusic(Player.level)
 			end
@@ -491,7 +493,7 @@ function _update()
 		-- state actions
 		MoveGridCursor()
 		-- state transitions
-		if ClearGridMatches(true) then
+		if ClearFirstGridMatch(true) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		else
@@ -519,7 +521,7 @@ function _update()
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.combo_check then
 		-- state actions & transitions
-		if ClearGridMatches(true) then
+		if ClearFirstGridMatch(true) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		else

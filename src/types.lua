@@ -10,7 +10,7 @@
 ---@field move_score integer
 ---@field x integer
 ---@field y integer
----@field color integer
+---@field gem_type integer
 
 ---@class Player
 ---@field grid_cursor Coords

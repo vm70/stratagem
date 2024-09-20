@@ -5,6 +5,9 @@ TITLE_SPRITE = {
 	y_offset = 10,
 }
 
+---@type integer[] main PICO-8 colors of gems
+GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
+
 ---@enum ScorePositions
 SCORE_POSITIONS = {
 	first = 1,
@@ -170,7 +173,7 @@ function DrawMatchPoints(player)
 			chr(2) .. "0" .. player.last_match.move_score,
 			16 * player.last_match.x + 1,
 			16 * player.last_match.y + 1,
-			player.last_match.color
+			GEM_COLORS[player.last_match.gem_type]
 		)
 	end
 end

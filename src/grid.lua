@@ -52,7 +52,7 @@ function ClearMatching(grid, coords, player)
 		if player ~= nil then
 			player.combo = player.combo + 1
 			sfx(min(player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
-			local move_score = MoveScore(player.level, player.combo, #match_list)
+			local move_score = MatchScore(player.level, player.combo, #match_list)
 			player.score = player.score + move_score
 			player.last_match = { move_score = move_score, x = coords.x, y = coords.y, gem_type = gem_type }
 		end
@@ -113,7 +113,11 @@ function FloodMatch(grid, gemCoords, visited)
 	return visited
 end
 
-function MoveScore(level, combo, match_size)
+-- Calculate the score for a match.
+---@param level integer
+---@param combo integer
+---@param match_size integer
+function MatchScore(level, combo, match_size)
 	local level_bonus = 2 * (level - 1)
 	local base_level_points = level_bonus + BASE_MATCH_PTS
 	local size_bonus = level_bonus * (match_size - 3)

@@ -5,6 +5,14 @@ TITLE_SPRITE = {
 	y_offset = 10,
 }
 
+---@enum ScorePositions
+SCORE_POSITIONS = {
+	first = 1,
+	second = 2,
+	third = 3,
+	ok = 4,
+}
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -165,4 +173,14 @@ function DrawMatchPoints(player)
 			player.last_match.color
 		)
 	end
+end
+
+---@param player Player
+---@return boolean # true if the player is done entering high score, false if not
+function IsDoneEntering(player)
+	if player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
+		-- all done typing score
+		return true
+	end
+	return false
 end

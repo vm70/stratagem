@@ -27,14 +27,6 @@ STATES = {
 	high_scores = 14,
 }
 
----@enum ScorePositions
-SCORE_POSITIONS = {
-	first = 1,
-	second = 2,
-	third = 3,
-	ok = 4,
-}
-
 ---@type integer[] List of level music starting positions
 LEVEL_MUSIC = { 2, 8, 32 }
 
@@ -276,15 +268,6 @@ function MoveScoreCursor()
 		-- decrement letter
 		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
 	end
-end
-
----@return boolean # true if the player is done entering high score, false if not
-function IsDoneEntering()
-	if Player.score_cursor == SCORE_POSITIONS.ok and (btnp(4) or btnp(5)) then
-		-- all done typing score
-		return true
-	end
-	return false
 end
 
 --- Clear the matches on the grid.
@@ -582,7 +565,7 @@ function _update()
 		-- state actions
 		MoveScoreCursor()
 		-- state transitions
-		if IsDoneEntering() then
+		if IsDoneEntering(Player) then
 			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.score)
 			SaveLeaderboard(Leaderboard)
 			music(24)

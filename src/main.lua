@@ -54,7 +54,7 @@ L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
 ---@type integer[][] game grid
 Grid = {}
 
----@type Player table containing player information
+-- table containing player information
 Player = {}
 
 ---@type States current state of the cartridge
@@ -92,15 +92,6 @@ function InitPlayer()
 		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,
 	}
-end
-
---- swap the two gems (done by the player)
----@param gem1 Coords
----@param gem2 Coords
-function SwapGems(gem1, gem2)
-	local temp = Grid[gem1.y][gem1.x]
-	Grid[gem1.y][gem1.x] = Grid[gem2.y][gem2.x]
-	Grid[gem2.y][gem2.x] = temp
 end
 
 --- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
@@ -492,7 +483,7 @@ function _update()
 		if btnp(4) or btnp(5) then
 			CartState = STATES.game_idle
 		elseif swapping_gem ~= nil then
-			SwapGems(Player.grid_cursor, swapping_gem)
+			SwapGems(Grid, Player.grid_cursor, swapping_gem)
 			Player.grid_cursor = swapping_gem
 			CartState = STATES.player_matching
 		end

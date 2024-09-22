@@ -26,6 +26,16 @@ SCORE_POSITIONS = {
 -- 0010 -> 2
 BG_PATTERNS = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 
+-- print with the anchor at the top-center
+---@param str string
+---@param x integer
+---@param y integer
+---@param col integer
+function Printc(str, x, y, col)
+	local width = print(str, -128, -128) + 128
+	print(str, x - width / 2, y, col)
+end
+---
 -- draw the cursor on the grid
 ---@param player Player
 ---@param color integer
@@ -117,21 +127,19 @@ end
 -- draw the leaderboard
 ---@param leaderboard HighScore[]
 function DrawLeaderboard(leaderboard)
-	-- 11 chars * 3 + 10 gaps = 43 px
-	print("high scores", 42, 8, 7)
+	Printc("high scores", 64, 8, 7)
 	for i, score in ipairs(leaderboard) do
 		-- use the format "XX. AAA: #####" for each score
 		-- 14 chars * 3 + 13 gaps = 55 px
 		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
 		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		print(padded_place .. score.initials .. " " .. padded_score, 36, 12 + 6 * i, 7)
+		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 8, 7)
 	end
-	print("\142/\151: return to title", 20, 94, 7)
+	Printc("\142/\151: return to title", 64, 94, 7)
 end
 
 function DrawCredits()
-	-- 7 chars * 3 + 6 gaps = 27
-	print("credits", 64 - 13.5, 8, 7)
+	Printc("credits", 64, 8, 7)
 	print(
 		'vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting',
 		64 - 47,
@@ -139,7 +147,7 @@ function DrawCredits()
 		7
 	)
 	print("...and players like you.\nthank you!", 64 - 47, 78, 7)
-	print("\142/\151: return to title", 20, 94, 7)
+	Printc("\142/\151: return to title", 64, 94, 7)
 end
 
 -- Draw the title screen
@@ -162,10 +170,10 @@ function DrawTitleFG(version)
 		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
 		7
 	)
-	print('by vincent "vm" mercator', 64 - 47, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
-	print("\142: start game", 36, 72, 7)
-	print("\151: high scores", 36, 80, 7)
-	print("\131: credits", 36, 88, 7)
+	Printc('by vincent "vm" mercator', 64, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
+	Printc("\142: start game ", 64, 72, 7)
+	Printc("\151: high scores", 64, 80, 7)
+	Printc("\131: credits    ", 64, 88, 7)
 end
 
 -- Draw the point numbers for the player's match where the gems were cleared

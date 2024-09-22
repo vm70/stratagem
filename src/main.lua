@@ -124,26 +124,6 @@ function MoveScoreCursor()
 	end
 end
 
--- Fill holes in the grid by dropping gems.
----@return boolean # whether the grid has any holes
-function FillGridHoles()
-	local has_holes = false
-	for y = 6, 1, -1 do
-		for x = 1, 6 do
-			if Grid[y][x] == 0 then
-				if y == 1 then
-					Grid[y][x] = 1 + flr(rnd(N_GEMS))
-				else
-					has_holes = true
-					-- printh("Found a hole at " .. x .. "," .. y)
-					Grid[y][x] = Grid[y - 1][x]
-					Grid[y - 1][x] = 0
-				end
-			end
-		end
-	end
-	return has_holes
-end
 
 -- Increase the player level and perform associated actions
 ---@param player Player
@@ -306,7 +286,7 @@ function _update()
 		CartState = STATES.generate_grid
 	elseif CartState == STATES.generate_grid then
 		-- state actions & transitions
-		if not FillGridHoles() then
+		if not FillGridHoles(Grid) then
 			if not ClearFirstGridMatch(Grid) then
 				CartState = STATES.game_idle
 				PlayLevelMusic(Player.level)
@@ -363,7 +343,7 @@ function _update()
 		MoveGridCursor(Player)
 		-- state actions & transitions
 		if FrameCounter % DROP_FRAMES == 0 then
-			if not FillGridHoles() then
+			if not FillGridHoles(Grid) then
 				CartState = STATES.combo_check
 			end
 		end

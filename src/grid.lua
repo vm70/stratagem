@@ -19,6 +19,28 @@ function SwapGems(grid, gem1, gem2)
 	grid[gem2.y][gem2.x] = temp
 end
 
+-- Fill holes in the grid by dropping gems.
+---@param grid integer[][]
+---@return boolean # whether the grid has any holes
+function FillGridHoles(grid)
+	local has_holes = false
+	for y = 6, 1, -1 do
+		for x = 1, 6 do
+			if grid[y][x] == 0 then
+				if y == 1 then
+					grid[y][x] = 1 + flr(rnd(N_GEMS))
+				else
+					has_holes = true
+					-- printh("Found a hole at " .. x .. "," .. y)
+					grid[y][x] = grid[y - 1][x]
+					grid[y - 1][x] = 0
+				end
+			end
+		end
+	end
+	return has_holes
+end
+
 -- Clear the first match on the grid, starting from the top-left corner.
 ---@param grid integer[][]
 ---@param player? Player whether the match is made by the player

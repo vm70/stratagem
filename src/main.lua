@@ -410,7 +410,7 @@ function _update()
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then
 		-- state actions & transitions
-		if FrameCounter ~= 100 then
+		if FrameCounter ~= LEVEL_UP_FRAMES then
 			FrameCounter = FrameCounter + 1
 		elseif btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
 			Player.placement = FindPlacement(Leaderboard, Player.score)

@@ -29,6 +29,9 @@ SCORE_POSITIONS = {
 -- 0010 -> 2
 BG_PATTERNS = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
 
+---@type Particle[] list of particles for matches
+Particles = {}
+
 -- print with the anchor at the top-center
 ---@param str string
 ---@param x integer
@@ -136,7 +139,7 @@ function DrawLeaderboard(leaderboard)
 	for i, score in ipairs(leaderboard) do
 		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
 		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 8 + 6 * i, 7)
+		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 16 + 6 * i, 7)
 	end
 	Printc("\142/\151: return to title", 64, 94, 7)
 end
@@ -183,8 +186,18 @@ end
 ---@param frame integer
 -- Draw the point numbers for the player's match where the gems were cleared
 function DrawMatchPoints(player, frame)
+	-- initialize particles
+	if frame == 0 then
+		Particles = {}
+		for _, coord in ipairs(player.last_match.match_list) do
+			for i = 1, 8 do
+				add(Particles, { coord = coord, r = 0, theta = 0.125 * i + rnd(0.125), vr = 40, ar = -60 })
+			end
+		end
+	end
 	local fraction_complete = frame / MATCH_FRAMES
 	if player.combo ~= 0 then
+		-- draw gems shrinking
 		for _, coord in ipairs(player.last_match.match_list) do
 			sspr(
 				16 * (player.last_match.gem_type - 1),
@@ -197,6 +210,19 @@ function DrawMatchPoints(player, frame)
 				16 - 16 * fraction_complete
 			)
 		end
+		for _, particle in ipairs(Particles) do
+			local particle_origin = { x = 16 * particle.coord.x + 8, y = 16 * particle.coord.y + 8 }
+			circfill(
+				particle_origin.x + particle.r * cos(particle.theta),
+				particle_origin.y + particle.r * sin(particle.theta),
+				3 - 3 * fraction_complete,
+				GEM_COLORS[player.last_match.gem_type]
+			)
+			particle.vr = particle.vr + 1 / 30 * particle.ar
+			particle.r = particle.r + particle.vr * 1 / 30
+			-- particle.r = particle.r + 30/8
+		end
+		-- draw match point number
 		print(
 			chr(2) .. "0" .. player.last_match.move_score,
 			16 * player.last_match.x + 1,

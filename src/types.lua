@@ -26,4 +26,11 @@
 ---@field placement integer | nil
 ---@field score_cursor ScorePositions | integer
 
+---@class Particle
+---@field coord Coords
+---@field r number
+---@field theta number
+---@field vr number
+---@field ar number
+
 ---@alias Version {major: integer, minor: integer, patch: integer} # semantic version number

@@ -11,6 +11,7 @@
 ---@field x integer
 ---@field y integer
 ---@field gem_type integer
+---@field match_list Coords[]
 
 ---@class Player
 ---@field grid_cursor Coords

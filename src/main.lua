@@ -76,7 +76,7 @@ function InitPlayer()
 		level = 1,
 		chances = 3,
 		combo = 0,
-		last_match = { move_score = 0, x = 0, y = 0, gem_type = 1 },
+		last_match = { move_score = 0, x = 0, y = 0, gem_type = 1, match_list = {} },
 		letter_ids = { 1, 1, 1 },
 		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,

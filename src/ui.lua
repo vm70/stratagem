@@ -21,6 +21,9 @@ SCORE_POSITIONS = {
 	ok = 4,
 }
 
+---@type integer How many frames to wait for level wiping transitions
+WIPE_FRAMES = 10
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -84,6 +87,35 @@ function DrawGems(grid)
 			-- print(color, 16 * x, 16 * y, 11)
 		end
 	end
+end
+
+-- Do 1D linear interpolation (LERP) between two values.
+---@param a number # starting number (output when t = 0)
+---@param b number # ending number (output when t = 1)
+---@param t number # time, expected to be in range [0, 1]
+---@return number
+function Lerp(a, b, t)
+	return a + (b - a) * t
+end
+
+-- Draw an animation wipe on the game grid.
+---@param frame integer # frame counter
+---@param is_up? boolean # whether the wipe goes up or down
+function DrawWipe(frame, is_up)
+	if is_up == nil then
+		is_up = true
+	end
+	local fraction_complete = frame / WIPE_FRAMES
+	local rect_y1 = nil
+	if is_up then
+		rect_y1 = Lerp(112 - 8, 16, fraction_complete)
+	else
+		rect_y1 = Lerp(16, 112 - 8, fraction_complete)
+	end
+	fillp(0x5a5a + 0.5)
+	rectfill(16, rect_y1, 112, rect_y1 + 8, 0)
+	fillp(0)
+	rectfill(16, 16, 112, rect_y1, 0)
 end
 
 -- left-pad / right-justify text.

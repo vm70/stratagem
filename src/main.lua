@@ -15,17 +15,20 @@ STATES = {
 	title_screen = 1,
 	credits = 2,
 	game_init = 3,
-	generate_grid = 4,
-	game_idle = 5,
-	swap_select = 6,
-	player_matching = 7,
-	show_match_points = 8,
-	fill_grid = 9,
-	combo_check = 10,
-	level_up = 11,
-	game_over = 12,
-	enter_high_score = 13,
-	high_scores = 14,
+	prepare_grid = 4,
+	init_level_transition = 5,
+	game_idle = 6,
+	swap_select = 7,
+	player_matching = 8,
+	show_match_points = 9,
+	fill_grid = 10,
+	combo_check = 11,
+	level_up_transition = 12,
+	level_up = 13,
+	game_over_transition = 14,
+	game_over = 15,
+	enter_high_score = 16,
+	high_scores = 17,
 }
 
 ---@type integer[] List of level music starting positions
@@ -36,6 +39,9 @@ N_GEMS = 8
 
 ---@type integer Number of frames to wait before dropping new gems down
 DROP_FRAMES = 2
+
+---@type integer Number of frames to show level-up screen
+LEVEL_UP_FRAMES = 100
 
 ---@type integer[][] game grid
 Grid = {}
@@ -206,9 +212,14 @@ function _draw()
 	elseif CartState == STATES.game_init then
 		DrawGameBG()
 		DrawHUD(Player)
-	elseif CartState == STATES.generate_grid then
+	elseif CartState == STATES.prepare_grid then
 		DrawGameBG()
 		DrawHUD(Player)
+	elseif CartState == STATES.init_level_transition then
+		DrawGameBG()
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawWipe(FrameCounter, true)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -235,11 +246,21 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid)
 		DrawCursor(Player, 1)
+	elseif CartState == STATES.level_up_transition then
+		DrawGameBG()
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawHUD(Player)
 		Printc("level " .. Player.level .. " complete!", 64, 32 - 3, 7)
 		Printc("get ready for level " .. Player.level + 1, 64, 96 - 3, 7)
+	elseif CartState == STATES.game_over_transition then
+		DrawGameBG()
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -279,15 +300,22 @@ function _update()
 		InitPlayer()
 		InitGrid()
 		-- state transitions
-		CartState = STATES.generate_grid
-	elseif CartState == STATES.generate_grid then
+		CartState = STATES.prepare_grid
+	elseif CartState == STATES.prepare_grid then
 		-- state actions & transitions
 		if not FillGridHoles(Grid, N_GEMS) then
 			if not ClearFirstGridMatch(Grid) then
-				CartState = STATES.game_idle
-				PlayLevelMusic(Player.level)
+				FrameCounter = 0
+				CartState = STATES.init_level_transition
 			end
 		end
+	elseif CartState == STATES.init_level_transition then
+		-- state actions & transitions
+		if FrameCounter == WIPE_FRAMES then
+			CartState = STATES.game_idle
+			PlayLevelMusic(Player.level)
+		end
+		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_idle then
 		-- state actions
 		MoveGridCursor(Player)
@@ -296,10 +324,10 @@ function _update()
 			Player.chances = 0
 			music(0)
 			FrameCounter = 0
-			CartState = STATES.game_over
+			CartState = STATES.game_over_transition
 		elseif Player.score >= Player.level_threshold then
 			FrameCounter = 0
-			CartState = STATES.level_up
+			CartState = STATES.level_up_transition
 		elseif btnp(4) or btnp(5) then
 			CartState = STATES.swap_select
 		end
@@ -357,13 +385,27 @@ function _update()
 			Player.combo = 0
 			CartState = STATES.game_idle
 		end
+	elseif CartState == STATES.level_up_transition then
+		-- state actions & transitions
+		if FrameCounter == WIPE_FRAMES then
+			FrameCounter = 0
+			CartState = STATES.level_up
+		end
+		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.level_up then
 		-- state transitions
-		if FrameCounter == 100 then
+		if FrameCounter == LEVEL_UP_FRAMES then
 			LevelUp(Player)
 			InitGrid()
 			FrameCounter = 0
-			CartState = STATES.generate_grid
+			CartState = STATES.prepare_grid
+		end
+		FrameCounter = FrameCounter + 1
+	elseif CartState == STATES.game_over_transition then
+		-- state actions & transitions
+		if FrameCounter == WIPE_FRAMES then
+			FrameCounter = 0
+			CartState = STATES.game_over
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then

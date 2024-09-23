@@ -21,14 +21,15 @@ end
 
 -- Fill holes in the grid by dropping gems.
 ---@param grid integer[][]
+---@param n_gems integer
 ---@return boolean # whether the grid has any holes
-function FillGridHoles(grid)
+function FillGridHoles(grid, n_gems)
 	local has_holes = false
 	for y = 6, 1, -1 do
 		for x = 1, 6 do
 			if grid[y][x] == 0 then
 				if y == 1 then
-					grid[y][x] = 1 + flr(rnd(N_GEMS))
+					grid[y][x] = 1 + flr(rnd(n_gems))
 				else
 					has_holes = true
 					-- printh("Found a hole at " .. x .. "," .. y)
@@ -140,9 +141,8 @@ end
 ---@param combo integer
 ---@param match_size integer
 function MatchScore(level, combo, match_size)
-	local level_bonus = 2 * (level - 1)
-	local base_level_points = level_bonus + BASE_MATCH_PTS
-	local size_bonus = level_bonus * (match_size - 3)
-	local combo_bonus = min(combo - 1, 6) * base_level_points
-	return base_level_points + size_bonus + combo_bonus
+	local base_level_points = level * BASE_MATCH_PTS
+	local size_bonus = level * (match_size - 3)
+	local combo_bonus = min(combo, 7)
+	return combo_bonus * (base_level_points + size_bonus)
 end

@@ -1,5 +1,5 @@
 -- stratagem v0.3.0
--- by vincent "vm" mercator & co.
+-- by vincent mercator & co.
 
 --# selene: allow(undefined_variable)
 
@@ -124,15 +124,14 @@ function MoveScoreCursor()
 	end
 end
 
-
 -- Increase the player level and perform associated actions
 ---@param player Player
 function LevelUp(player)
 	player.level = player.level + 1
 	player.init_level_score = player.score
-	player.level_threshold = (
-		player.init_level_score + (L1_MATCHES + 20 * (player.level - 1)) * (2 * (player.level - 1) + BASE_MATCH_PTS)
-	)
+	local match_threshold = L1_MATCHES + 20 * (player.level - 1)
+	local level_score_multiplier = BASE_MATCH_PTS * player.level
+	player.level_threshold = player.init_level_score + match_threshold * level_score_multiplier
 end
 
 -- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
@@ -242,12 +241,12 @@ function _draw()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawHUD(Player)
-		print("level " .. Player.level .. " complete", 16, 16, 7)
-		print("get ready for level " .. Player.level + 1, 16, 22, 7)
+		Printc("level " .. Player.level .. " complete!", 64, 32 - 3, 7)
+		Printc("get ready for level " .. Player.level + 1, 64, 96 - 3, 7)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawHUD(Player)
-		print("game over", 46, 61, 7)
+		Printc("game over", 64, 64 - 3, 7)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -286,7 +285,7 @@ function _update()
 		CartState = STATES.generate_grid
 	elseif CartState == STATES.generate_grid then
 		-- state actions & transitions
-		if not FillGridHoles(Grid) then
+		if not FillGridHoles(Grid, N_GEMS) then
 			if not ClearFirstGridMatch(Grid) then
 				CartState = STATES.game_idle
 				PlayLevelMusic(Player.level)
@@ -343,7 +342,7 @@ function _update()
 		MoveGridCursor(Player)
 		-- state actions & transitions
 		if FrameCounter % DROP_FRAMES == 0 then
-			if not FillGridHoles(Grid) then
+			if not FillGridHoles(Grid, N_GEMS) then
 				CartState = STATES.combo_check
 			end
 		end

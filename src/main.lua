@@ -22,13 +22,14 @@ STATES = {
 	player_matching = 8,
 	show_match_points = 9,
 	fill_grid = 10,
-	combo_check = 11,
-	level_up_transition = 12,
-	level_up = 13,
-	game_over_transition = 14,
-	game_over = 15,
-	enter_high_score = 16,
-	high_scores = 17,
+	fill_grid_transition = 11,
+	combo_check = 12,
+	level_up_transition = 13,
+	level_up = 14,
+	game_over_transition = 15,
+	game_over = 16,
+	enter_high_score = 17,
+	high_scores = 18,
 }
 
 ---@type integer[] List of level music starting positions
@@ -246,6 +247,12 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid)
 		DrawCursor(Player, 1)
+	elseif CartState == STATES.fill_grid_transition then
+		DrawGameBG()
+		DrawHUD(Player)
+		DrawGems(Grid)
+		DrawCursor(Player, 1)
+		-- DrawFallingGems(Grid)
 	elseif CartState == STATES.level_up_transition then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -366,10 +373,15 @@ function _update()
 		-- state actions
 		MoveGridCursor(Player)
 		-- state actions & transitions
+		if FillGridHoles(Grid, N_GEMS) then
+			FrameCounter = 0
+			CartState = STATES.fill_grid_transition
+		else
+			CartState = STATES.combo_check
+		end
+	elseif CartState == STATES.fill_grid_transition then
 		if FrameCounter % DROP_FRAMES == 0 then
-			if not FillGridHoles(Grid, N_GEMS) then
-				CartState = STATES.combo_check
-			end
+			CartState = STATES.fill_grid
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.combo_check then

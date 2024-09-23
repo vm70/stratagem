@@ -71,7 +71,8 @@ function DrawGems(grid)
 		for x = 1, 6 do
 			local color = grid[y][x]
 			if color ~= 0 then
-				sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
+				spr(32 + 2 * (color - 1), 16 * x, 16 * y, 2, 2)
+				-- sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
 			end
 			-- print(color, 16 * x, 16 * y, 11)
 		end

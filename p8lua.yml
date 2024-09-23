@@ -77,6 +77,21 @@ globals:
         required: false
       - type: number
         required: false
+  spr:
+    args:
+      - type: number
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
   sspr:
     args:
       - type: number

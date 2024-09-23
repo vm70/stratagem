@@ -185,7 +185,7 @@ end
 ---@param player Player
 ---@param frame integer
 -- Draw the point numbers for the player's match where the gems were cleared
-function DrawMatchPoints(player, frame)
+function DrawMatchAnimations(player, frame)
 	-- initialize particles
 	if frame == 0 then
 		Particles = {}
@@ -195,7 +195,8 @@ function DrawMatchPoints(player, frame)
 			end
 		end
 	end
-	local fraction_complete = frame / MATCH_FRAMES
+	local particle_progress = frame / MATCH_FRAMES
+	local shrinking_progress = min(particle_progress * 2, 1)
 	if player.combo ~= 0 then
 		-- draw gems shrinking
 		for _, coord in ipairs(player.last_match.match_list) do
@@ -204,10 +205,10 @@ function DrawMatchPoints(player, frame)
 				16,
 				16,
 				16,
-				16 * coord.x + fraction_complete * 8,
-				16 * coord.y + fraction_complete * 8,
-				16 - 16 * fraction_complete,
-				16 - 16 * fraction_complete
+				16 * coord.x + shrinking_progress * 8,
+				16 * coord.y + shrinking_progress * 8,
+				16 - 16 * shrinking_progress,
+				16 - 16 * shrinking_progress
 			)
 		end
 		for _, particle in ipairs(Particles) do
@@ -215,7 +216,7 @@ function DrawMatchPoints(player, frame)
 			circfill(
 				particle_origin.x + particle.r * cos(particle.theta),
 				particle_origin.y + particle.r * sin(particle.theta),
-				3 - 3 * fraction_complete,
+				3 - 3 * particle_progress,
 				GEM_COLORS[player.last_match.gem_type]
 			)
 			particle.vr = particle.vr + 1 / 30 * particle.ar

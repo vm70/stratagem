@@ -229,7 +229,7 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid)
 		DrawCursor(Player, 1)
-		DrawMatchPoints(Player, FrameCounter)
+		DrawMatchAnimations(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)

@@ -21,13 +21,15 @@ end
 
 -- Fill holes in the grid by dropping gems.
 ---@param grid integer[][]
+---@param falling_grid boolean[][]
 ---@param n_gems integer
 ---@return boolean # whether the grid has any holes
-function FillGridHoles(grid, n_gems)
+function FillGridHoles(grid, falling_grid, n_gems)
 	local has_holes = false
 	for y = 6, 1, -1 do
 		for x = 1, 6 do
 			if grid[y][x] == 0 then
+				falling_grid[y][x] = true
 				if y == 1 then
 					grid[y][x] = 1 + flr(rnd(n_gems))
 				else
@@ -36,6 +38,8 @@ function FillGridHoles(grid, n_gems)
 					grid[y][x] = grid[y - 1][x]
 					grid[y - 1][x] = 0
 				end
+			else
+				falling_grid[y][x] = false
 			end
 		end
 	end

@@ -38,14 +38,14 @@ LEVEL_MUSIC = { 2, 8, 32 }
 ---@type integer Number of gems in the game (max 8)
 N_GEMS = 8
 
----@type integer Number of frames to wait before dropping new gems down
-DROP_FRAMES = 2
-
 ---@type integer Number of frames to show level-up screen
 LEVEL_UP_FRAMES = 100
 
 ---@type integer[][] game grid
 Grid = {}
+
+---@type boolean[][] falling grid
+FallingGrid = {}
 
 -- table containing player information
 Player = {}
@@ -60,11 +60,13 @@ Leaderboard = {}
 FrameCounter = 0
 
 -- Initialize the grid with all holes
-function InitGrid()
+function InitGrids()
 	for y = 1, 6 do
 		Grid[y] = {}
+		FallingGrid[y] = {}
 		for x = 1, 6 do
 			Grid[y][x] = 0
+			FallingGrid[y][x] = true
 		end
 	end
 end
@@ -195,7 +197,7 @@ function _init()
 	cls(0)
 	music(24)
 	InitPlayer()
-	InitGrid()
+	InitGrids()
 	LoadLeaderboard(Leaderboard, VERSION)
 	menuitem(1, "reset scores", function()
 		ResetLeaderboard(Leaderboard)
@@ -219,44 +221,44 @@ function _draw()
 	elseif CartState == STATES.init_level_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawWipe(FrameCounter, true)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 7)
 	elseif CartState == STATES.swap_select then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 11)
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
 		DrawMatchAnimations(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
 	elseif CartState == STATES.fill_grid_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
-		-- DrawFallingGems(Grid)
+		DrawFallingGems(Grid, FallingGrid, FrameCounter)
 	elseif CartState == STATES.level_up_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
@@ -266,7 +268,7 @@ function _draw()
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid)
+		DrawGems(Grid, FallingGrid)
 		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
@@ -305,12 +307,12 @@ function _update()
 	elseif CartState == STATES.game_init then
 		-- state actions
 		InitPlayer()
-		InitGrid()
+		InitGrids()
 		-- state transitions
 		CartState = STATES.prepare_grid
 	elseif CartState == STATES.prepare_grid then
 		-- state actions & transitions
-		if not FillGridHoles(Grid, N_GEMS) then
+		if not FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			if not ClearFirstGridMatch(Grid) then
 				FrameCounter = 0
 				CartState = STATES.init_level_transition
@@ -373,14 +375,14 @@ function _update()
 		-- state actions
 		MoveGridCursor(Player)
 		-- state actions & transitions
-		if FillGridHoles(Grid, N_GEMS) then
+		if FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			FrameCounter = 0
 			CartState = STATES.fill_grid_transition
 		else
 			CartState = STATES.combo_check
 		end
 	elseif CartState == STATES.fill_grid_transition then
-		if FrameCounter % DROP_FRAMES == 0 then
+		if FrameCounter == DROP_FRAMES then
 			CartState = STATES.fill_grid
 		end
 		FrameCounter = FrameCounter + 1
@@ -408,7 +410,7 @@ function _update()
 		-- state transitions
 		if FrameCounter == LEVEL_UP_FRAMES then
 			LevelUp(Player)
-			InitGrid()
+			InitGrids()
 			FrameCounter = 0
 			CartState = STATES.prepare_grid
 		end

@@ -24,6 +24,9 @@ SCORE_POSITIONS = {
 ---@type integer How many frames to wait for level wiping transitions
 WIPE_FRAMES = 10
 
+---@type integer Number of frames to wait before dropping new gems down
+DROP_FRAMES = 2
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -76,15 +79,38 @@ end
 
 -- draw the gems in the grid
 ---@param grid integer[][]
-function DrawGems(grid)
+---@param falling_grid boolean[][]
+function DrawGems(grid, falling_grid)
 	for y = 1, 6 do
 		for x = 1, 6 do
-			local color = grid[y][x]
-			if color ~= 0 then
-				spr(32 + 2 * (color - 1), 16 * x, 16 * y, 2, 2)
+			local gem_type = grid[y][x]
+			if gem_type ~= 0 and falling_grid[y][x] == false then
+				spr(32 + 2 * (gem_type - 1), 16 * x, 16 * y, 2, 2)
 				-- sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
 			end
 			-- print(color, 16 * x, 16 * y, 11)
+		end
+	end
+end
+
+-- draw the falling gems in the grid
+---@param grid integer[][]
+---@param falling_grid boolean[][]
+---@param frame integer
+function DrawFallingGems(grid, falling_grid, frame)
+	local fraction_complete = frame / DROP_FRAMES
+	for y = 1, 6 do
+		for x = 1, 6 do
+			local gem_type = grid[y][x]
+			if gem_type ~= 0 and falling_grid[y][x] == true then
+				if y ~= 1 then
+					local sprite_y1 = Lerp(16 * y - 16, 16 * y, fraction_complete)
+					spr(32 + 2 * (gem_type - 1), 16 * x, sprite_y1, 2, 2)
+				else
+					local sprite_height = Lerp(0, 16, fraction_complete)
+					sspr(16 * (gem_type - 1), 16, 16, sprite_height, 16 * x, 16 * y)
+				end
+			end
 		end
 	end
 end

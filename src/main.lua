@@ -37,9 +37,6 @@ N_GEMS = 8
 ---@type integer Number of frames to wait before dropping new gems down
 DROP_FRAMES = 2
 
----@type integer Number of frames to wait to show the match points
-MATCH_FRAMES = 20
-
 ---@type integer[][] game grid
 Grid = {}
 
@@ -232,7 +229,7 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid)
 		DrawCursor(Player, 1)
-		DrawMatchPoints(Player)
+		DrawMatchPoints(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)

@@ -7,6 +7,9 @@ TITLE_SPRITE = {
 	y_offset = 10,
 }
 
+---@type integer Number of frames to wait to show the match points
+MATCH_FRAMES = 20
+
 ---@type integer[] main PICO-8 colors of gems
 GEM_COLORS = { 8, 9, 12, 11, 14, 7, 4, 13 }
 
@@ -35,6 +38,7 @@ function Printc(str, x, y, col)
 	local width = print(str, -128, -128) + 128
 	print(str, x - width / 2, y, col)
 end
+
 ---
 -- draw the cursor on the grid
 ---@param player Player
@@ -175,9 +179,24 @@ function DrawTitleFG(version)
 	Printc("\131: credits    ", 64, 88, 7)
 end
 
+---@param player Player
+---@param frame integer
 -- Draw the point numbers for the player's match where the gems were cleared
-function DrawMatchPoints(player)
+function DrawMatchPoints(player, frame)
+	local fraction_complete = frame / MATCH_FRAMES
 	if player.combo ~= 0 then
+		for _, coord in ipairs(player.last_match.match_list) do
+			sspr(
+				16 * (player.last_match.gem_type - 1),
+				16,
+				16,
+				16,
+				16 * coord.x + fraction_complete * 8,
+				16 * coord.y + fraction_complete * 8,
+				16 - 16 * fraction_complete,
+				16 - 16 * fraction_complete
+			)
+		end
 		print(
 			chr(2) .. "0" .. player.last_match.move_score,
 			16 * player.last_match.x + 1,

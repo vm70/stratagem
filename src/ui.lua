@@ -129,11 +129,9 @@ end
 function DrawLeaderboard(leaderboard)
 	Printc("high scores", 64, 8, 7)
 	for i, score in ipairs(leaderboard) do
-		-- use the format "XX. AAA: #####" for each score
-		-- 14 chars * 3 + 13 gaps = 55 px
 		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
 		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 8, 7)
+		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 8 + 6*i, 7)
 	end
 	Printc("\142/\151: return to title", 64, 94, 7)
 end
@@ -141,7 +139,7 @@ end
 function DrawCredits()
 	Printc("credits", 64, 8, 7)
 	print(
-		'vincent "vm" mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting',
+		'vincent mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting',
 		64 - 47,
 		24,
 		7

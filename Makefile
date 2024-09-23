@@ -36,18 +36,18 @@ build-cart:
 		--map assets/art.p8 \
 		--sfx assets/sound.p8 \
 		--music assets/sound.p8
-
-# Use the PICO-8 executable itself to prepare the cart for publishing
-prepare-cart: build-cart
-ifndef PICO8_PATH
-	$(error "PICO-8 is not available on your PATH.")
-endif
 	# Append label image
 	cat assets/label.txt >> $(p8_file)
 	# Assemble P8.PNG cart
 	$(PICO8_PATH) $(p8_file) -export $(p8png_file)
 	# Convert back to P8 format
 	$(PICO8_PATH) $(p8png_file) -export $(p8_file)
+
+# Use the PICO-8 executable itself to prepare the cart for publishing
+prepare-cart: build-cart
+ifndef PICO8_PATH
+	$(error "PICO-8 is not available on your PATH.")
+endif
 	# Assemble ZIP file
 	zip $(BUILD_DIR)/stratagem-$(stratagem_version).zip \
 		README.md \
@@ -58,7 +58,10 @@ endif
 	# Assemble binary application
 	$(PICO8_PATH) $(p8png_file) -export $(bin_folder)
 
-run-cart: build-cart prepare-cart
+run-cart: build-cart
+ifndef PICO8_PATH
+	$(error "PICO-8 is not available on your PATH.")
+endif
 	$(PICO8_PATH) -run $(p8_file)
 
 clean:

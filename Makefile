@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-PICO8_PATH := $(shell command -v pico8 2> /dev/null)
+PICO8_PATH := pico8
 BUILD_DIR := ./build
 PYTHON_VENV := ./.venv
 

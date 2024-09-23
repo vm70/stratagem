@@ -330,8 +330,8 @@ function _update()
 		MoveGridCursor(Player)
 		-- state transitions
 		if FrameCounter == MATCH_FRAMES then
-			CartState = STATES.player_matching
 			FrameCounter = 0
+			CartState = STATES.player_matching
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.fill_grid then
@@ -362,8 +362,8 @@ function _update()
 		if FrameCounter == 100 then
 			LevelUp(Player)
 			InitGrid()
-			CartState = STATES.generate_grid
 			FrameCounter = 0
+			CartState = STATES.generate_grid
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then

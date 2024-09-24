@@ -296,8 +296,8 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
 	end
-	print(tostr(CartState), 1, 1, 7)
-	print(tostr(FrameCounter), 1, 7, 7)
+	-- print(tostr(CartState), 1, 1, 7)
+	-- print(tostr(FrameCounter), 1, 7, 7)
 end
 
 function _update()

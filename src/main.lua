@@ -221,44 +221,48 @@ function _draw()
 	elseif CartState == STATES.init_level_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawWipe(FrameCounter, true)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player, 7)
 	elseif CartState == STATES.swap_select then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player, 11)
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player, 1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player, 1)
 		DrawMatchAnimations(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player, 1)
 	elseif CartState == STATES.fill_grid_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player, 1)
-		DrawFallingGems(Grid, FallingGrid, FrameCounter)
+	elseif CartState == STATES.combo_check then
+		DrawGameBG()
+		DrawHUD(Player)
+		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawCursor(Player, 1)
 	elseif CartState == STATES.level_up_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
@@ -268,7 +272,7 @@ function _draw()
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid)
+		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
@@ -285,8 +289,8 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
 	end
-	-- print(tostr(CartState), 1, 1, 7)
-	-- print(tostr(FrameCounter), 1, 7, 7)
+	print(tostr(CartState), 1, 1, 7)
+	print(tostr(FrameCounter), 1, 7, 7)
 end
 
 function _update()
@@ -323,8 +327,9 @@ function _update()
 		if FrameCounter == WIPE_FRAMES then
 			CartState = STATES.game_idle
 			PlayLevelMusic(Player.level)
+		else
+			FrameCounter = FrameCounter + 1
 		end
-		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_idle then
 		-- state actions
 		MoveGridCursor(Player)
@@ -369,10 +374,12 @@ function _update()
 		if FrameCounter == MATCH_FRAMES then
 			FrameCounter = 0
 			CartState = STATES.player_matching
+		else
+			FrameCounter = FrameCounter + 1
 		end
-		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.fill_grid then
 		-- state actions
+		FrameCounter = DROP_FRAMES
 		MoveGridCursor(Player)
 		-- state actions & transitions
 		if FillGridHoles(Grid, FallingGrid, N_GEMS) then
@@ -382,12 +389,18 @@ function _update()
 			CartState = STATES.combo_check
 		end
 	elseif CartState == STATES.fill_grid_transition then
-		if FrameCounter == DROP_FRAMES then
+		-- state actions
+		MoveGridCursor(Player)
+		-- state transitions
+		if FrameCounter == DROP_FRAMES - 1 then
 			CartState = STATES.fill_grid
 		end
 		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.combo_check then
-		-- state actions & transitions
+		-- state actions
+		FrameCounter = DROP_FRAMES
+		MoveGridCursor(Player)
+		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
@@ -404,8 +417,9 @@ function _update()
 		if FrameCounter == WIPE_FRAMES then
 			FrameCounter = 0
 			CartState = STATES.level_up
+		else
+			FrameCounter = FrameCounter + 1
 		end
-		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.level_up then
 		-- state transitions
 		if FrameCounter == LEVEL_UP_FRAMES then
@@ -413,15 +427,17 @@ function _update()
 			InitGrids()
 			FrameCounter = 0
 			CartState = STATES.prepare_grid
+		else
+			FrameCounter = FrameCounter + 1
 		end
-		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over_transition then
 		-- state actions & transitions
 		if FrameCounter == WIPE_FRAMES then
 			FrameCounter = 0
 			CartState = STATES.game_over
+		else
+			FrameCounter = FrameCounter + 1
 		end
-		FrameCounter = FrameCounter + 1
 	elseif CartState == STATES.game_over then
 		-- state actions & transitions
 		if FrameCounter ~= LEVEL_UP_FRAMES then

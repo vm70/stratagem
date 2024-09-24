@@ -80,37 +80,27 @@ end
 -- draw the gems in the grid
 ---@param grid integer[][]
 ---@param falling_grid boolean[][]
-function DrawGems(grid, falling_grid)
-	for y = 1, 6 do
-		for x = 1, 6 do
-			local gem_type = grid[y][x]
-			if gem_type ~= 0 and falling_grid[y][x] == false then
-				spr(32 + 2 * (gem_type - 1), 16 * x, 16 * y, 2, 2)
-				-- sspr(16 * (color - 1), 16, 16, 16, 16 * x, 16 * y)
-			end
-			-- print(color, 16 * x, 16 * y, 11)
-		end
-	end
-end
-
--- draw the falling gems in the grid
----@param grid integer[][]
----@param falling_grid boolean[][]
 ---@param frame integer
-function DrawFallingGems(grid, falling_grid, frame)
-	local fraction_complete = frame / DROP_FRAMES
+function DrawGems(grid, falling_grid, frame)
+	local fraction_complete = min(frame / DROP_FRAMES, 1)
 	for y = 1, 6 do
 		for x = 1, 6 do
-			local gem_type = grid[y][x]
-			if gem_type ~= 0 and falling_grid[y][x] == true then
+			if grid[y][x] ~= 0 and falling_grid[y][x] == false then
+				-- draw the gem normally
+				spr(32 + 2 * (grid[y][x] - 1), 16 * x, 16 * y, 2, 2)
+			elseif grid[y][x] ~= 0 and falling_grid[y][x] == true then
 				if y ~= 1 then
+					-- draw the gem falling normally
 					local sprite_y1 = Lerp(16 * y - 16, 16 * y, fraction_complete)
-					spr(32 + 2 * (gem_type - 1), 16 * x, sprite_y1, 2, 2)
+					spr(32 + 2 * (grid[y][x] - 1), 16 * x, sprite_y1, 2, 2)
 				else
-					local sprite_height = Lerp(0, 16, fraction_complete)
-					sspr(16 * (gem_type - 1), 16, 16, sprite_height, 16 * x, 16 * y)
+					-- clip the gem sprite to make it look like it's falling
+					local sy = Lerp(32, 16, fraction_complete)
+					local sh = Lerp(0, 16, fraction_complete)
+					sspr(16 * (grid[y][x] - 1), sy, 16, sh, 16 * x, 16 * y)
 				end
 			end
+			-- print(color, 16 * x, 16 * y, 11)
 		end
 	end
 end

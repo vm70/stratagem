@@ -13,6 +13,7 @@ contributing documentation or Lua code.
 pipx install pre-commit
 cargo install stylua --features lua52
 cargo install selene
+npm install -g prettier
 pre-commit install
 ```
 
@@ -30,12 +31,13 @@ Stratagem's cartridge is split across several files in this repository for more
 modular version control. See the following table for the location of each
 cartridge section.
 
-| Cartridge Part      | Part Header | Project Location   |
-| :------------------ | :---------- | :----------------- |
-| (Expanded) Lua code | `__lua__`   | `src/main.lua`     |
-| Sprite sheet        | `__gfx__`   | `assets/art.p8`    |
-| Sprite flags        | `__gff__`   | `assets/art.p8`    |
-| Cartridge label     | `__label__` | `assets/label.txt` |
-| Tile Map            | `__map__`   | `assets/art.p8`    |
-| Sound Effects       | `__sfx__`   | `assets/sound.p8`  |
-| Music Patterns      | `__music__` | `assets/sound.p8`  |
+| Cartridge Part     | Part Header | Project Location   |
+| :----------------- | :---------- | :----------------- |
+| P8Lua code imports | `__lua__`   | `src/main.p8`      |
+| Lua code           | `-->8`      | `src/*.lua`        |
+| Sprite sheet       | `__gfx__`   | `assets/art.p8`    |
+| Sprite flags       | `__gff__`   | `assets/art.p8`    |
+| Cartridge label    | `__label__` | `assets/label.txt` |
+| Tile Map           | `__map__`   | `assets/art.p8`    |
+| Sound Effects      | `__sfx__`   | `assets/sound.p8`  |
+| Music Patterns     | `__music__` | `assets/sound.p8`  |

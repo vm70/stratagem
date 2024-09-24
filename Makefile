@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-PICO8_PATH := $(shell command -v pico8 2> /dev/null)
+PICO8_PATH := pico8
 BUILD_DIR := ./build
 PYTHON_VENV := ./.venv
 
@@ -13,16 +13,16 @@ stratagem_version = v$(stratagem_major).$(stratagem_minor).$(stratagem_patch)
 
 p8_file = $(BUILD_DIR)/stratagem-$(stratagem_version).p8
 p8png_file = $(BUILD_DIR)/stratagem-$(stratagem_version).p8.png
+bin_folder = $(BUILD_DIR)/stratagem-$(stratagem_version).bin
 
 # Do everything
-everything: setup build-cart run-cart
+all: setup build-cart run-cart
 
 # Set up development environment
 setup:
 	# Install pico-tool in an isolated Python environment
 	/usr/bin/python3 -m venv $(PYTHON_VENV)
 	$(PYTHON_VENV)/bin/pip install git+https://github.com/dansanderson/picotool.git
-
 
 # Build the cart and place results in the 'build' directory
 build-cart:
@@ -31,14 +31,14 @@ build-cart:
 	mkdir -p $(BUILD_DIR)
 	# Assemble P8 cart
 	$(PYTHON_VENV)/bin/p8tool build $(p8_file) \
-		--lua src/main.lua \
+		--lua src/main.p8 \
 		--gfx assets/art.p8 \
 		--map assets/art.p8 \
 		--sfx assets/sound.p8 \
 		--music assets/sound.p8
 
-# Use the PICO-8 executable itself to modify the cart
-modify-cart: build-cart
+# Use the PICO-8 executable itself to prepare the cart for publishing
+prepare-cart: build-cart
 ifndef PICO8_PATH
 	$(error "PICO-8 is not available on your PATH.")
 endif
@@ -55,8 +55,13 @@ endif
 		LICENSE \
 		$(p8_file) \
 		$(p8png_file)
+	# Assemble binary application
+	$(PICO8_PATH) $(p8png_file) -export $(bin_folder)
 
-run-cart: build-cart modify-cart
+run-cart: build-cart
+ifndef PICO8_PATH
+	$(error "PICO-8 is not available on your PATH.")
+endif
 	$(PICO8_PATH) -run $(p8_file)
 
 clean:

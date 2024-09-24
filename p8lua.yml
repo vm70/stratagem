@@ -4,7 +4,7 @@ globals:
   add:
     args:
       - type: table
-      - type: number
+      - type: any
       - type: number
         required: false
   btnp:
@@ -15,6 +15,20 @@ globals:
   cartdata:
     args:
       - type: string
+  circ:
+    args:
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+        required: false
+  circfill:
+    args:
+      - type: number
+      - type: number
+      - type: number
+      - type: number
+        required: false
   dget:
     args:
       - type: number
@@ -67,6 +81,21 @@ globals:
     args:
       - type: number
       - type: number
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+      - type: number
+        required: false
+  spr:
+    args:
+      - type: number
+      - type: number
+        required: false
       - type: number
         required: false
       - type: number

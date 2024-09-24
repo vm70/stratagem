@@ -19,17 +19,18 @@ STATES = {
 	init_level_transition = 5,
 	game_idle = 6,
 	swap_select = 7,
-	player_matching = 8,
-	show_match_points = 9,
-	fill_grid = 10,
-	fill_grid_transition = 11,
-	combo_check = 12,
-	level_up_transition = 13,
-	level_up = 14,
-	game_over_transition = 15,
-	game_over = 16,
-	enter_high_score = 17,
-	high_scores = 18,
+	swap_transition = 8,
+	player_matching = 9,
+	show_match_points = 10,
+	fill_grid = 11,
+	fill_grid_transition = 12,
+	combo_check = 13,
+	level_up_transition = 14,
+	level_up = 15,
+	game_over_transition = 16,
+	game_over = 17,
+	enter_high_score = 18,
+	high_scores = 19,
 }
 
 ---@type integer[] List of level music starting positions
@@ -86,6 +87,7 @@ function InitPlayer()
 		letter_ids = { 1, 1, 1 },
 		placement = nil,
 		score_cursor = SCORE_POSITIONS.first,
+		swapping_gem = { x = 3, y = 4 },
 	}
 end
 
@@ -221,27 +223,32 @@ function _draw()
 	elseif CartState == STATES.init_level_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawWipe(FrameCounter, true)
 	elseif CartState == STATES.game_idle then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 7)
 	elseif CartState == STATES.swap_select then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 11)
+	elseif CartState == STATES.swap_transition then
+		DrawGameBG()
+		DrawHUD(Player)
+		DrawGems(Grid, FallingGrid)
+		DrawGemSwapping(Grid, Player.grid_cursor, Player.swapping_gem, FrameCounter)
 	elseif CartState == STATES.player_matching then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
 		DrawMatchAnimations(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
@@ -257,12 +264,12 @@ function _draw()
 	elseif CartState == STATES.combo_check then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player, 1)
 	elseif CartState == STATES.level_up_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
@@ -272,7 +279,7 @@ function _draw()
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
 		DrawHUD(Player)
-		DrawGems(Grid, FallingGrid, FrameCounter)
+		DrawGems(Grid, FallingGrid)
 		DrawWipe(FrameCounter, false)
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
@@ -289,8 +296,8 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
 	end
-	-- print(tostr(CartState), 1, 1, 7)
-	-- print(tostr(FrameCounter), 1, 7, 7)
+	print(tostr(CartState), 1, 1, 7)
+	print(tostr(FrameCounter), 1, 7, 7)
 end
 
 function _update()
@@ -352,9 +359,19 @@ function _update()
 		if btnp(4) or btnp(5) then
 			CartState = STATES.game_idle
 		elseif swapping_gem ~= nil then
-			SwapGems(Grid, Player.grid_cursor, swapping_gem)
-			Player.grid_cursor = swapping_gem
+			Player.swapping_gem = swapping_gem
+			FrameCounter = 0
+			CartState = STATES.swap_transition
+		end
+	elseif CartState == STATES.swap_transition then
+		-- state transitions
+		if FrameCounter == SWAP_FRAMES then
+			SwapGems(Grid, Player.grid_cursor, Player.swapping_gem)
+			Player.grid_cursor = Player.swapping_gem
+			FrameCounter = 0
 			CartState = STATES.player_matching
+		else
+			FrameCounter = FrameCounter + 1
 		end
 	elseif CartState == STATES.player_matching then
 		-- state actions
@@ -364,7 +381,6 @@ function _update()
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		else
-			FrameCounter = 0
 			CartState = STATES.fill_grid
 		end
 	elseif CartState == STATES.show_match_points then

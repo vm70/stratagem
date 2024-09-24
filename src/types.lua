@@ -25,6 +25,7 @@
 ---@field letter_ids integer[]
 ---@field placement integer | nil
 ---@field score_cursor ScorePositions | integer
+---@field swapping_gem Coords
 
 ---@class Particle
 ---@field coord Coords

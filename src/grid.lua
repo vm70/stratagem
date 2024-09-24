@@ -41,6 +41,7 @@ function FillGridHoles(grid, falling_grid, n_gems)
 			else
 				falling_grid[y][x] = false
 			end
+			has_holes = has_holes or falling_grid[y][x]
 		end
 	end
 	return has_holes

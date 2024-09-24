@@ -27,6 +27,9 @@ WIPE_FRAMES = 10
 ---@type integer Number of frames to wait before dropping new gems down
 DROP_FRAMES = 2
 
+---@type integer number of frames to wait for swapping gems
+SWAP_FRAMES = 5
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -52,17 +55,25 @@ end
 -- draw the cursor on the grid
 ---@param player Player
 ---@param color integer
-function DrawCursor(player, color)
+---@param offset_x? integer
+---@param offset_y? integer
+function DrawCursor(player, color, offset_x, offset_y)
 	-- fillp(0x33CC)
 	-- -- 0011 -> 3
 	-- -- 0011 -> 3
 	-- -- 1100 -> C
 	-- -- 1100 -> C
+	if offset_x == nil then
+		offset_x = 0
+	end
+	if offset_y == nil then
+		offset_y = 0
+	end
 	rect(
-		16 * player.grid_cursor.x,
-		16 * player.grid_cursor.y,
-		16 * player.grid_cursor.x + 15,
-		16 * player.grid_cursor.y + 15,
+		16 * player.grid_cursor.x + offset_x,
+		16 * player.grid_cursor.y + offset_y,
+		16 * player.grid_cursor.x + offset_x + 15,
+		16 * player.grid_cursor.y + offset_y + 15,
 		color
 	)
 	-- fillp(0)
@@ -80,29 +91,118 @@ end
 -- draw the gems in the grid
 ---@param grid integer[][]
 ---@param falling_grid boolean[][]
----@param frame integer
+---@param frame? integer
 function DrawGems(grid, falling_grid, frame)
+	if frame == nil then
+		frame = 0
+	end
 	local fraction_complete = min(frame / DROP_FRAMES, 1)
 	for y = 1, 6 do
 		for x = 1, 6 do
-			if grid[y][x] ~= 0 and falling_grid[y][x] == false then
-				-- draw the gem normally
-				spr(32 + 2 * (grid[y][x] - 1), 16 * x, 16 * y, 2, 2)
-			elseif grid[y][x] ~= 0 and falling_grid[y][x] == true then
-				if y ~= 1 then
-					-- draw the gem falling normally
-					local sprite_y1 = Lerp(16 * y - 16, 16 * y, fraction_complete)
-					spr(32 + 2 * (grid[y][x] - 1), 16 * x, sprite_y1, 2, 2)
-				else
-					-- clip the gem sprite to make it look like it's falling
-					local sy = Lerp(32, 16, fraction_complete)
-					local sh = Lerp(0, 16, fraction_complete)
-					sspr(16 * (grid[y][x] - 1), sy, 16, sh, 16 * x, 16 * y)
+			if grid[y][x] ~= 0 then
+				if falling_grid[y][x] == false then
+					-- draw the gem normally
+					spr(32 + 2 * (grid[y][x] - 1), 16 * x, 16 * y, 2, 2)
+				elseif falling_grid[y][x] == true then
+					if y ~= 1 then
+						-- draw the gem falling normally
+						local sprite_y1 = Lerp(16 * y - 16, 16 * y, fraction_complete)
+						spr(32 + 2 * (grid[y][x] - 1), 16 * x, sprite_y1, 2, 2)
+					else
+						-- clip the gem sprite to make it look like it's falling
+						local sy = Lerp(32, 16, fraction_complete)
+						local sh = Lerp(0, 16, fraction_complete)
+						sspr(16 * (grid[y][x] - 1), sy, 16, sh, 16 * x, 16 * y)
+					end
 				end
 			end
-			-- print(color, 16 * x, 16 * y, 11)
+			-- print(grid[y][x], 16 * x, 16 * y, 11)
 		end
 	end
+end
+
+---@param grid integer[][]
+---@param cursor_gem Coords
+---@param swapping_gem Coords
+---@param frame integer
+function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
+	local fraction_complete = frame / SWAP_FRAMES
+	local offset = Lerp(0, 16, 3 * fraction_complete ^ 2 - 2 * fraction_complete ^ 3)
+	local cover_rect = nil
+	local cursor_gem_type = grid[cursor_gem.y][cursor_gem.x]
+	local swapping_gem_type = grid[swapping_gem.y][swapping_gem.x]
+	local swapping_gem_anim = nil
+	local cursor_gem_anim = nil
+	if swapping_gem.x == cursor_gem.x - 1 then
+		-- swap left
+		cover_rect = {
+			x0 = 16 * swapping_gem.x,
+			y0 = 16 * swapping_gem.y,
+			x1 = 16 * cursor_gem.x + 16,
+			y1 = 16 * cursor_gem.y + 16,
+		}
+		swapping_gem_anim = {
+			x = 16 * swapping_gem.x + offset,
+			y = 16 * swapping_gem.y,
+		}
+		cursor_gem_anim = {
+			x = 16 * cursor_gem.x - offset,
+			y = 16 * cursor_gem.y,
+		}
+	elseif swapping_gem.x == cursor_gem.x + 1 then
+		-- swap right
+		cover_rect = {
+			x0 = 16 * cursor_gem.x,
+			y0 = 16 * cursor_gem.y,
+			x1 = 16 * swapping_gem.x + 16,
+			y1 = 16 * swapping_gem.y + 16,
+		}
+		swapping_gem_anim = {
+			x = 16 * swapping_gem.x - offset,
+			y = 16 * swapping_gem.y,
+		}
+		cursor_gem_anim = {
+			x = 16 * cursor_gem.x + offset,
+			y = 16 * cursor_gem.y,
+		}
+	elseif swapping_gem.y == cursor_gem.y - 1 then
+		-- swap up
+		cover_rect = {
+			x0 = 16 * swapping_gem.x,
+			y0 = 16 * swapping_gem.y,
+			x1 = 16 * cursor_gem.x + 16,
+			y1 = 16 * cursor_gem.y + 16,
+		}
+		swapping_gem_anim = {
+			x = 16 * swapping_gem.x,
+			y = 16 * swapping_gem.y + offset,
+		}
+		cursor_gem_anim = {
+			x = 16 * cursor_gem.x,
+			y = 16 * cursor_gem.y - offset,
+		}
+	elseif swapping_gem.y == cursor_gem.y + 1 then
+		-- swap down
+		cover_rect = {
+			x0 = 16 * cursor_gem.x,
+			y0 = 16 * cursor_gem.y,
+			x1 = 16 * swapping_gem.x + 16,
+			y1 = 16 * swapping_gem.y + 16,
+		}
+		swapping_gem_anim = {
+			x = 16 * swapping_gem.x,
+			y = 16 * swapping_gem.y - offset,
+		}
+		cursor_gem_anim = {
+			x = 16 * cursor_gem.x,
+			y = 16 * cursor_gem.y + offset,
+		}
+	else
+		error("invalid coordinates")
+	end
+	rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
+	spr(32 + 2 * (swapping_gem_type - 1), swapping_gem_anim.x, swapping_gem_anim.y, 2, 2)
+	spr(32 + 2 * (cursor_gem_type - 1), cursor_gem_anim.x, cursor_gem_anim.y, 2, 2)
 end
 
 -- Do 1D linear interpolation (LERP) between two values.

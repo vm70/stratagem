@@ -1,4 +1,4 @@
--- stratagem v0.3.1
+-- stratagem v0.4.0
 -- by vincent mercator & co.
 
 --# selene: allow(undefined_variable)
@@ -6,8 +6,8 @@
 ---@type Version
 VERSION = {
 	major = 0,
-	minor = 3,
-	patch = 1,
+	minor = 4,
+	patch = 0,
 }
 
 ---@enum States

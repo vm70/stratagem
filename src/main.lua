@@ -60,6 +60,9 @@ Leaderboard = {}
 ---@type integer frame counter for state transitions / pauses
 FrameCounter = 0
 
+---@type integer whether or not the mouse is enabled
+MouseEnabled = 0
+
 -- Initialize the grid with all holes
 function InitGrids()
 	for y = 1, 6 do
@@ -195,13 +198,35 @@ function DrawInitialEntering()
 	end
 end
 
+---@param mouse_enabled integer
+function SetMouseControls(mouse_enabled)
+	MouseEnabled = mouse_enabled
+	dset(63, MouseEnabled)
+	printh("MouseEnabled is " .. tostr(MouseEnabled))
+	if MouseEnabled == 0 then
+		menuitem(1, "mouse input: off", function()
+			SetMouseControls(1)
+		end)
+	elseif MouseEnabled == 1 then
+		menuitem(1, "mouse input: on", function()
+			SetMouseControls(0)
+		end)
+	else
+		error("Invalid memory configuration for enabling mouse")
+	end
+end
+
 function _init()
+	cartdata("vm70_stratagem_v" .. VERSION.major .. "_" .. VERSION.minor .. "_" .. VERSION.patch)
+	LoadLeaderboard(Leaderboard)
+	MouseEnabled = dget(63)
+	poke(0x5f2d, 0x1)
 	cls(0)
 	music(24)
 	InitPlayer()
 	InitGrids()
-	LoadLeaderboard(Leaderboard, VERSION)
-	menuitem(1, "reset scores", function()
+	SetMouseControls(MouseEnabled)
+	menuitem(2, "reset scores", function()
 		ResetLeaderboard(Leaderboard)
 	end)
 end
@@ -298,6 +323,9 @@ function _draw()
 	end
 	-- print(tostr(CartState), 1, 1, 7)
 	-- print(tostr(FrameCounter), 1, 7, 7)
+	if MouseEnabled == 1 then
+		spr(15, stat(32) - 1, stat(33) - 1)
+	end
 end
 
 function _update()

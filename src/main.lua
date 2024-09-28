@@ -367,7 +367,7 @@ function _update()
 		end
 	elseif CartState == STATES.game_idle then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if Player.chances == -1 then
 			Player.chances = 0
@@ -403,7 +403,7 @@ function _update()
 		end
 	elseif CartState == STATES.player_matching then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
@@ -413,7 +413,7 @@ function _update()
 		end
 	elseif CartState == STATES.show_match_points then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if FrameCounter == MATCH_FRAMES then
 			FrameCounter = 0
@@ -424,7 +424,7 @@ function _update()
 	elseif CartState == STATES.fill_grid then
 		-- state actions
 		FrameCounter = DROP_FRAMES
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state actions & transitions
 		if FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			FrameCounter = 0
@@ -434,7 +434,7 @@ function _update()
 		end
 	elseif CartState == STATES.fill_grid_transition then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if FrameCounter == DROP_FRAMES - 1 then
 			CartState = STATES.fill_grid
@@ -443,7 +443,7 @@ function _update()
 	elseif CartState == STATES.combo_check then
 		-- state actions
 		FrameCounter = DROP_FRAMES
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0

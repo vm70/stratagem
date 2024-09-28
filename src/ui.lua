@@ -393,19 +393,28 @@ end
 
 -- do all actions for moving the grid cursor
 ---@param player Player
-function MoveGridCursor(player)
-	if btnp(0) and player.grid_cursor.x > 1 then
-		-- move left
-		player.grid_cursor.x = player.grid_cursor.x - 1
-	elseif btnp(1) and player.grid_cursor.x < 6 then
-		-- move right
-		player.grid_cursor.x = player.grid_cursor.x + 1
-	elseif btnp(2) and player.grid_cursor.y > 1 then
-		-- move up
-		player.grid_cursor.y = player.grid_cursor.y - 1
-	elseif btnp(3) and player.grid_cursor.y < 6 then
-		-- move down
-		player.grid_cursor.y = player.grid_cursor.y + 1
+function MoveGridCursor(player, mouse_enabled)
+	if mouse_enabled == 0 then
+		if btnp(0) and player.grid_cursor.x > 1 then
+			-- move left
+			player.grid_cursor.x = player.grid_cursor.x - 1
+		elseif btnp(1) and player.grid_cursor.x < 6 then
+			-- move right
+			player.grid_cursor.x = player.grid_cursor.x + 1
+		elseif btnp(2) and player.grid_cursor.y > 1 then
+			-- move up
+			player.grid_cursor.y = player.grid_cursor.y - 1
+		elseif btnp(3) and player.grid_cursor.y < 6 then
+			-- move down
+			player.grid_cursor.y = player.grid_cursor.y + 1
+		end
+	else
+		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 112) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 112) then
+			player.grid_cursor = {
+				x = flr((stat(32) - 1) / 16),
+				y = flr((stat(33) - 1) / 16),
+			}
+		end
 	end
 end
 

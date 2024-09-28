@@ -1,4 +1,4 @@
-# State Diagram
+# State Diagram Notes
 
 Here is the current implementation of Stratagem's state diagram.
 

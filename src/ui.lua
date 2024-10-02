@@ -384,6 +384,9 @@ end
 ---@param player Player
 function MoveGridCursor(player, mouse_enabled)
 	if mouse_enabled == 0 then
+		if player.grid_cursor == nil then
+			player.grid_cursor = { x = 1, y = 1 }
+		end
 		if btnp(0) and player.grid_cursor.x > 1 then
 			-- move left
 			player.grid_cursor.x = player.grid_cursor.x - 1
@@ -403,6 +406,8 @@ function MoveGridCursor(player, mouse_enabled)
 				x = flr((stat(32) - 1) / 16),
 				y = flr((stat(33) - 1) / 16),
 			}
+		else
+			player.grid_cursor = nil
 		end
 	end
 end

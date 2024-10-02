@@ -48,8 +48,21 @@ Grid = {}
 ---@type boolean[][] falling grid
 FallingGrid = {}
 
--- table containing player information
-Player = {}
+---@type Player # table containing player information
+Player = {
+	grid_cursor = nil,
+	score = 0,
+	init_level_score = 0,
+	level_threshold = L1_THRESHOLD,
+	level = 1,
+	chances = 3,
+	combo = 0,
+	last_match = nil,
+	letter_ids = { 1, 1, 1 },
+	placement = nil,
+	score_cursor = 1,
+	swapping_gem = { x = 3, y = 4 },
+}
 
 ---@type States current state of the cartridge
 CartState = STATES.title_screen
@@ -77,21 +90,17 @@ end
 
 -- Initialize the player for starting the game
 function InitPlayer()
-	---@type Player
-	Player = {
-		grid_cursor = { x = 3, y = 3 },
-		score = 0,
-		init_level_score = 0,
-		level_threshold = L1_THRESHOLD,
-		level = 1,
-		chances = 3,
-		combo = 0,
-		last_match = { move_score = 0, x = 0, y = 0, gem_type = 1, match_list = {} },
-		letter_ids = { 1, 1, 1 },
-		placement = nil,
-		score_cursor = SCORE_POSITIONS.first,
-		swapping_gem = { x = 3, y = 4 },
-	}
+	Player.grid_cursor = { x = 3, y = 3 }
+	Player.score = 0
+	Player.init_level_score = 0
+	Player.level_threshold = L1_THRESHOLD
+	Player.level = 1
+	Player.chances = 3
+	Player.combo = 0
+	Player.last_match = nil
+	Player.placement = nil
+	Player.score_cursor = SCORE_POSITIONS.first
+	Player.swapping_gem = nil
 end
 
 -- Cycle through the initials' indices.
@@ -254,12 +263,12 @@ function _draw()
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 7)
+		DrawCursor(Player.grid_cursor, 7)
 	elseif CartState == STATES.swap_select then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 11)
+		DrawCursor(Player.grid_cursor, 11)
 	elseif CartState == STATES.swap_transition then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -269,28 +278,28 @@ function _draw()
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 		DrawMatchAnimations(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid, FrameCounter)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.fill_grid_transition then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid, FrameCounter)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.combo_check then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.level_up_transition then
 		DrawGameBG()
 		DrawHUD(Player)

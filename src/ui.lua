@@ -53,29 +53,18 @@ end
 
 ---
 -- draw the cursor on the grid
----@param player Player
+---@param grid_cursor Coords | nil
 ---@param color integer
----@param offset_x? integer
----@param offset_y? integer
-function DrawCursor(player, color, offset_x, offset_y)
+function DrawCursor(grid_cursor, color)
 	-- fillp(0x33CC)
 	-- -- 0011 -> 3
 	-- -- 0011 -> 3
 	-- -- 1100 -> C
 	-- -- 1100 -> C
-	if offset_x == nil then
-		offset_x = 0
+	if grid_cursor == nil then
+		return
 	end
-	if offset_y == nil then
-		offset_y = 0
-	end
-	rect(
-		16 * player.grid_cursor.x + offset_x,
-		16 * player.grid_cursor.y + offset_y,
-		16 * player.grid_cursor.x + offset_x + 15,
-		16 * player.grid_cursor.y + offset_y + 15,
-		color
-	)
+	rect(16 * grid_cursor.x, 16 * grid_cursor.y, 16 * grid_cursor.x + 15, 16 * grid_cursor.y + 15, color)
 	-- fillp(0)
 end
 

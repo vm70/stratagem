@@ -91,21 +91,21 @@ function ClearMatching(grid, coords, player)
 end
 
 -- Get the neighbors of the given coordinate
----@param gemCoords Coords
+---@param gem_coords Coords
 ---@return Coords[] # array of neighbor coordinates
-function Neighbors(gemCoords)
+function Neighbors(gem_coords)
 	local neighbors = {}
-	if gemCoords.y ~= 1 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y - 1, x = gemCoords.x }
+	if gem_coords.y ~= 1 then
+		add(neighbors, { y = gem_coords.y - 1, x = gem_coords.x })
 	end
-	if gemCoords.y ~= 6 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y + 1, x = gemCoords.x }
+	if gem_coords.y ~= 6 then
+		add(neighbors, { y = gem_coords.y + 1, x = gem_coords.x })
 	end
-	if gemCoords.x ~= 1 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x - 1 }
+	if gem_coords.x ~= 1 then
+		add(neighbors, { y = gem_coords.y, x = gem_coords.x - 1 })
 	end
-	if gemCoords.x ~= 6 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x + 1 }
+	if gem_coords.x ~= 6 then
+		add(neighbors, { y = gem_coords.y, x = gem_coords.x + 1 })
 	end
 	return neighbors
 end
@@ -125,15 +125,15 @@ end
 
 -- Find the list of gems that are in the same match as the given gem coordinate using flood filling
 ---@param grid integer[][]
----@param gemCoords Coords current coordinates to search
+---@param gem_coords Coords current coordinates to search
 ---@param visited Coords[] list of visited coordinates. Start with "{}" if new match
 ---@return Coords[] # list of coordinates in the match
-function FloodMatch(grid, gemCoords, visited)
+function FloodMatch(grid, gem_coords, visited)
 	-- mark the current cell as visited
-	visited[#visited + 1] = gemCoords
-	for _, neighbor in pairs(Neighbors(gemCoords)) do
+	add(visited, gem_coords)
+	for _, neighbor in pairs(Neighbors(gem_coords)) do
 		if not Contains(visited, neighbor) then
-			if grid[neighbor.y][neighbor.x] == grid[gemCoords.y][gemCoords.x] then
+			if grid[neighbor.y][neighbor.x] == grid[gem_coords.y][gem_coords.x] then
 				-- do recursion for all non-visited neighbors
 				visited = FloodMatch(grid, neighbor, visited)
 			end

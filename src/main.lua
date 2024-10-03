@@ -18,19 +18,20 @@ STATES = {
 	prepare_grid = 4,
 	init_level_transition = 5,
 	game_idle = 6,
-	swap_select = 7,
-	swap_transition = 8,
-	player_matching = 9,
-	show_match_points = 10,
-	fill_grid = 11,
-	fill_grid_transition = 12,
-	combo_check = 13,
-	level_up_transition = 14,
-	level_up = 15,
-	game_over_transition = 16,
-	game_over = 17,
-	enter_high_score = 18,
-	high_scores = 19,
+	swap_select_mouse_held = 7,
+	swap_select = 8,
+	swap_transition = 9,
+	player_matching = 10,
+	show_match_points = 11,
+	fill_grid = 12,
+	fill_grid_transition = 13,
+	combo_check = 14,
+	level_up_transition = 15,
+	level_up = 16,
+	game_over_transition = 17,
+	game_over = 18,
+	enter_high_score = 19,
+	high_scores = 20,
 }
 
 ---@type integer[] List of level music starting positions
@@ -264,7 +265,7 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player.grid_cursor, 7)
-	elseif CartState == STATES.swap_select then
+	elseif (CartState == STATES.swap_select) or (CartState == STATES.swap_select_mouse_held) then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
@@ -330,13 +331,14 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
 	end
-	-- print(tostr(CartState), 1, 1, 7)
+	print(tostr(CartState), 1, 1, 7)
 	-- print(tostr(FrameCounter), 1, 7, 7)
 	if MouseEnabled == 1 then
 		spr(15, stat(32) - 1, stat(33) - 1)
 	end
 end
 
+-- selene: allow(if_same_then_else)
 function _update()
 	if CartState == STATES.title_screen then
 		-- state transitions
@@ -386,15 +388,28 @@ function _update()
 		elseif Player.score >= Player.level_threshold then
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
-		elseif btnp(4) or btnp(5) then
+		elseif MouseEnabled and Player.grid_cursor ~= nil and band(stat(34), 0x1) == 1 then
+			CartState = STATES.swap_select_mouse_held
+		elseif not MouseEnabled and (btnp(4) or btnp(5)) then
 			CartState = STATES.swap_select
 		end
 	elseif CartState == STATES.swap_select then
 		-- state actions
-		local swapping_gem = SelectSwapping(Player)
+		local swapping_gem = SelectSwapping(Player, MouseEnabled)
 		-- state transitions
-		if btnp(4) or btnp(5) then
+		if MouseEnabled and band(stat(34), 0x1) == 1 and swapping_gem == nil then
 			CartState = STATES.game_idle
+		elseif not MouseEnabled and (btnp(4) or btnp(5)) then
+			CartState = STATES.game_idle
+		elseif swapping_gem ~= nil then
+			Player.swapping_gem = swapping_gem
+			FrameCounter = 0
+			CartState = STATES.swap_transition
+		end
+	elseif CartState == STATES.swap_select_mouse_held then
+		local swapping_gem = SelectSwapping(Player, MouseEnabled)
+		if band(stat(34), 0x1) == 0 then
+			CartState = STATES.swap_select
 		elseif swapping_gem ~= nil then
 			Player.swapping_gem = swapping_gem
 			FrameCounter = 0

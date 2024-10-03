@@ -159,21 +159,7 @@ end
 function SelectSwapping(player, mouse_enabled)
 	---@type Coords | nil
 	local swapping_gem = nil
-	if not mouse_enabled then
-		if btnp(0) and player.grid_cursor.x > 1 then
-			-- swap left
-			swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
-		elseif btnp(1) and player.grid_cursor.x < 6 then
-			-- swap right
-			swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
-		elseif btnp(2) and player.grid_cursor.y > 1 then
-			-- swap up
-			swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
-		elseif btnp(3) and player.grid_cursor.y < 6 then
-			-- swap down
-			swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
-		end
-	elseif mouse_enabled and band(stat(34), 0x1) == 1 then
+	if mouse_enabled and band(stat(34), 0x1) == 1 then
 		---@type Coords
 		local mouse_location = {
 			x = flr((stat(32) - 1) / 16),
@@ -181,7 +167,21 @@ function SelectSwapping(player, mouse_enabled)
 		}
 		if Contains(Neighbors(player.grid_cursor), mouse_location) then
 			swapping_gem = mouse_location
+			return swapping_gem
 		end
+	end
+	if btnp(0) and player.grid_cursor.x > 1 then
+		-- swap left
+		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
+	elseif btnp(1) and player.grid_cursor.x < 6 then
+		-- swap right
+		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
+	elseif btnp(2) and player.grid_cursor.y > 1 then
+		-- swap up
+		swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
+	elseif btnp(3) and player.grid_cursor.y < 6 then
+		-- swap down
+		swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
 	end
 	return swapping_gem
 end

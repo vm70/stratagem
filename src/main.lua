@@ -379,6 +379,9 @@ function _update()
 	elseif CartState == STATES.game_idle then
 		-- state actions
 		MoveGridCursor(Player, MouseEnabled)
+		if MouseEnabled then
+			swapping_gem = SelectSwapping(Player, MouseEnabled)
+		end
 		-- state transitions
 		if Player.chances == -1 then
 			Player.chances = 0
@@ -388,6 +391,10 @@ function _update()
 		elseif Player.score >= Player.level_threshold then
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
+		elseif MouseEnabled and swapping_gem ~= nil then
+			Player.swapping_gem = swapping_gem
+			FrameCounter = 0
+			CartState = STATES.swap_transition
 		elseif MouseEnabled and Player.grid_cursor ~= nil and band(stat(34), 0x1) == 1 then
 			CartState = STATES.swap_select_mouse_held
 		elseif not MouseEnabled and (btnp(4) or btnp(5)) then

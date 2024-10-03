@@ -381,34 +381,34 @@ function IsDoneEntering(player)
 end
 
 -- do all actions for moving the grid cursor
----@param player Player
+---@param grid_cursor Coords | nil # player's grid cursor
 ---@param mouse_mode integer
-function MoveGridCursor(player, mouse_mode)
+function MoveGridCursor(grid_cursor, mouse_mode)
 	if mouse_mode == 0 then
-		if player.grid_cursor == nil then
-			player.grid_cursor = { x = 1, y = 1 }
+		if grid_cursor == nil then
+			grid_cursor = { x = 1, y = 1 }
 		end
-		if btnp(0) and player.grid_cursor.x > 1 then
+		if btnp(0) and grid_cursor.x > 1 then
 			-- move left
-			player.grid_cursor.x = player.grid_cursor.x - 1
-		elseif btnp(1) and player.grid_cursor.x < 6 then
+			grid_cursor.x = grid_cursor.x - 1
+		elseif btnp(1) and grid_cursor.x < 6 then
 			-- move right
-			player.grid_cursor.x = player.grid_cursor.x + 1
-		elseif btnp(2) and player.grid_cursor.y > 1 then
+			grid_cursor.x = grid_cursor.x + 1
+		elseif btnp(2) and grid_cursor.y > 1 then
 			-- move up
-			player.grid_cursor.y = player.grid_cursor.y - 1
-		elseif btnp(3) and player.grid_cursor.y < 6 then
+			grid_cursor.y = grid_cursor.y - 1
+		elseif btnp(3) and grid_cursor.y < 6 then
 			-- move down
-			player.grid_cursor.y = player.grid_cursor.y + 1
+			grid_cursor.y = grid_cursor.y + 1
 		end
 	else
 		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 112) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 112) then
-			player.grid_cursor = {
+			grid_cursor = {
 				x = flr((stat(32) - 1) / 16),
 				y = flr((stat(33) - 1) / 16),
 			}
 		else
-			player.grid_cursor = nil
+			grid_cursor = nil
 		end
 	end
 end

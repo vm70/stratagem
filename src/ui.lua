@@ -187,11 +187,13 @@ function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 			y = 16 * cursor_gem.y + offset,
 		}
 	else
-		error("invalid coordinates")
+		assert(false, "invalid coordinates")
 	end
-	rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
-	spr(32 + 2 * (swapping_gem_type - 1), swapping_gem_anim.x, swapping_gem_anim.y, 2, 2)
-	spr(32 + 2 * (cursor_gem_type - 1), cursor_gem_anim.x, cursor_gem_anim.y, 2, 2)
+	if cover_rect ~= nil and swapping_gem ~= nil and swapping_gem_anim ~= nil and cursor_gem_anim ~= nil then
+		rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
+		spr(32 + 2 * (swapping_gem_type - 1), swapping_gem_anim.x, swapping_gem_anim.y, 2, 2)
+		spr(32 + 2 * (cursor_gem_type - 1), cursor_gem_anim.x, cursor_gem_anim.y, 2, 2)
+	end
 end
 
 -- Do 1D linear interpolation (LERP) between two values.
@@ -229,7 +231,7 @@ end
 ---@param length integer
 function LeftPad(str, pad, length)
 	if length < #str then
-		error("desired length is less than input string")
+		assert(false, "desired length is less than input string")
 	end
 	local padded = "" .. str
 	while #padded < length do

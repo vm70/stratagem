@@ -110,9 +110,9 @@ end
 ---@return integer # next / previous letter ID
 function StepInitials(letterID, isForward)
 	if letterID > #ALLOWED_LETTERS then
-		error("letter ID must be less than or equal to " .. #ALLOWED_LETTERS)
+		assert(false, "letter ID must be less than or equal to " .. #ALLOWED_LETTERS)
 	elseif letterID < 1 then
-		error("letter ID must be greater than or equal to 1")
+		assert(false, "letter ID must be greater than or equal to 1")
 	end
 
 	-- undo 1-based indexing for modulo arithmetic
@@ -159,6 +159,7 @@ end
 ---@param place integer
 ---@return string
 function OrdinalIndicator(place)
+	assert(1 <= place and place <= 10, "only works for 1-10")
 	if place == 1 then
 		return "st"
 	elseif place == 2 then
@@ -167,8 +168,6 @@ function OrdinalIndicator(place)
 		return "rd"
 	elseif 4 <= place and place <= 10 then
 		return "th"
-	else
-		error("only works for 1-10")
 	end
 end
 
@@ -222,7 +221,7 @@ function SetMouseControls(mouse_mode)
 			SetMouseControls(0)
 		end)
 	else
-		error("Invalid memory configuration for enabling mouse")
+		assert(false, "Invalid memory configuration for enabling mouse")
 	end
 end
 
@@ -535,6 +534,6 @@ function _update()
 			CartState = STATES.high_scores
 		end
 	else
-		error("invalid state")
+		assert(false, "invalid state")
 	end
 end

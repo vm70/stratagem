@@ -2,6 +2,7 @@
   "diagnostics.globals": [
     "_draw",
     "_init",
+    "band",
     "_update",
     "add",
     "stat",

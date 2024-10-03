@@ -178,3 +178,7 @@ globals:
   stat:
     args:
       - type: number
+  band:
+    args:
+      - type: number
+      - type: number

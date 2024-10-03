@@ -205,6 +205,15 @@ function Lerp(a, b, t)
 	return a + (b - a) * t
 end
 
+-- Do a quadratic ease-out between two values.
+---@param a number # starting number (output when t = 0)
+---@param b number # ending number (output when t = 1)
+---@param t number # time, expected to be in range [0, 1]
+---@return number
+function QuadEaseOut(a, b, t)
+	return a + (b - a) * (2 * t - t ^ 2)
+end
+
 -- Draw an animation wipe on the game grid.
 ---@param frame integer # frame counter
 ---@param is_up? boolean # whether the wipe goes up or down
@@ -330,7 +339,7 @@ function DrawMatchAnimations(player, frame)
 		Particles = {}
 		for _, coord in ipairs(player.last_match.match_list) do
 			for i = 1, 8 do
-				add(Particles, { coord = coord, r = 0, theta = 0.125 * i + rnd(0.125), vr = 40, ar = -60 })
+				add(Particles, { coord = coord, theta = 0.125 * i + rnd(0.125) })
 			end
 		end
 	end
@@ -352,15 +361,13 @@ function DrawMatchAnimations(player, frame)
 		end
 		for _, particle in ipairs(Particles) do
 			local particle_origin = { x = 16 * particle.coord.x + 8, y = 16 * particle.coord.y + 8 }
+			local particle_r = QuadEaseOut(0, 15, particle_progress)
 			circfill(
-				particle_origin.x + particle.r * cos(particle.theta),
-				particle_origin.y + particle.r * sin(particle.theta),
+				particle_origin.x + particle_r * cos(particle.theta),
+				particle_origin.y + particle_r * sin(particle.theta),
 				3 - 3 * particle_progress,
 				GEM_COLORS[player.last_match.gem_type]
 			)
-			particle.vr = particle.vr + 1 / 30 * particle.ar
-			particle.r = particle.r + particle.vr * 1 / 30
-			-- particle.r = particle.r + 30/8
 		end
 		-- draw match point number
 		print(

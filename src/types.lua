@@ -29,9 +29,6 @@
 
 ---@class Particle # a particle used for match animations
 ---@field coord Coords # center gem coordinate, used to determine the particle's relative origin
----@field r number # radius [px] from the particle's relative origin
 ---@field theta number # angle [rotations] from the particle's relative origin
----@field vr number # radial velocity [px/s] from the particle's relative origin
----@field ar number # radial acceleration [px/s^2] from the particle's relative origin
 
 ---@alias Version {major: integer, minor: integer, patch: integer} # semantic version number

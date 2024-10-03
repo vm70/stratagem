@@ -154,10 +154,14 @@ function MatchScore(level, combo, match_size)
 end
 
 -- do all actions for selecting which gem to swap
----@param player Player
+---@param grid_cursor Coords | nil # player's grid cursor. May be nil from mouse controls.
+---@param mouse_enabled boolean # whether or not the mouse is enabled
 ---@return Coords | nil # which gem was chosen to swap with the player's cursor
-function SelectSwapping(player, mouse_enabled)
+function SelectSwapping(grid_cursor, mouse_enabled)
 	---@type Coords | nil
+	if grid_cursor == nil then
+		return nil
+	end
 	local swapping_gem = nil
 	if mouse_enabled and band(stat(34), 0x1) == 1 then
 		---@type Coords
@@ -165,23 +169,23 @@ function SelectSwapping(player, mouse_enabled)
 			x = flr((stat(32) - 1) / 16),
 			y = flr((stat(33) - 1) / 16),
 		}
-		if Contains(Neighbors(player.grid_cursor), mouse_location) then
+		if Contains(Neighbors(grid_cursor), mouse_location) then
 			swapping_gem = mouse_location
 			return swapping_gem
 		end
 	end
-	if btnp(0) and player.grid_cursor.x > 1 then
+	if btnp(0) and grid_cursor.x > 1 then
 		-- swap left
-		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
-	elseif btnp(1) and player.grid_cursor.x < 6 then
+		swapping_gem = { y = grid_cursor.y, x = grid_cursor.x - 1 }
+	elseif btnp(1) and grid_cursor.x < 6 then
 		-- swap right
-		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
-	elseif btnp(2) and player.grid_cursor.y > 1 then
+		swapping_gem = { y = grid_cursor.y, x = grid_cursor.x + 1 }
+	elseif btnp(2) and grid_cursor.y > 1 then
 		-- swap up
-		swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
-	elseif btnp(3) and player.grid_cursor.y < 6 then
+		swapping_gem = { y = grid_cursor.y - 1, x = grid_cursor.x }
+	elseif btnp(3) and grid_cursor.y < 6 then
 		-- swap down
-		swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
+		swapping_gem = { y = grid_cursor.y + 1, x = grid_cursor.x }
 	end
 	return swapping_gem
 end

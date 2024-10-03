@@ -381,7 +381,7 @@ function _update()
 		MoveGridCursor(Player, MouseEnabled)
 		local swapping_gem = nil
 		if MouseEnabled then
-			swapping_gem = SelectSwapping(Player, MouseEnabled)
+			swapping_gem = SelectSwapping(Player.grid_cursor, MouseEnabled)
 		end
 		-- state transitions
 		if Player.chances == -1 then
@@ -403,7 +403,7 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select then
 		-- state actions
-		local swapping_gem = SelectSwapping(Player, MouseEnabled)
+		local swapping_gem = SelectSwapping(Player.grid_cursor, MouseEnabled)
 		-- state transitions
 		if MouseEnabled and band(stat(34), 0x1) == 1 and swapping_gem == nil then
 			CartState = STATES.game_idle
@@ -415,7 +415,7 @@ function _update()
 			CartState = STATES.swap_transition
 		end
 	elseif CartState == STATES.swap_select_mouse_held then
-		local swapping_gem = SelectSwapping(Player, MouseEnabled)
+		local swapping_gem = SelectSwapping(Player.grid_cursor, MouseEnabled)
 		if band(stat(34), 0x1) == 0 then
 			CartState = STATES.swap_select
 		elseif swapping_gem ~= nil then

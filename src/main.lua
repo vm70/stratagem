@@ -379,6 +379,7 @@ function _update()
 	elseif CartState == STATES.game_idle then
 		-- state actions
 		MoveGridCursor(Player, MouseEnabled)
+		local swapping_gem = nil
 		if MouseEnabled then
 			swapping_gem = SelectSwapping(Player, MouseEnabled)
 		end

@@ -33,7 +33,9 @@ The version number can be found in the following locations in this repository:
 
 > [!TIP]
 >
-> When updating the version number, don't forget to check the label!
+> When updating the version number, don't forget to check the label! Since the
+> label represents a 128x128 image and not a text field, it can't be searched
+> with command-line tools like `grep` or `rg`.
 
 ## Directory Structure
 

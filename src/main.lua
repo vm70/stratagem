@@ -166,7 +166,7 @@ function OrdinalIndicator(place)
 		return "nd"
 	elseif place == 3 then
 		return "rd"
-	elseif 4 <= place and place <= 10 then
+	else
 		return "th"
 	end
 end

@@ -116,7 +116,7 @@ end
 ---@param frame integer
 function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 	local fraction_complete = frame / SWAP_FRAMES
-	local offset = Lerp(0, 16, 3 * fraction_complete ^ 2 - 2 * fraction_complete ^ 3)
+	local offset = CubicEase(0, 16, fraction_complete)
 	local cover_rect = nil
 	local cursor_gem_type = grid[cursor_gem.y][cursor_gem.x]
 	local swapping_gem_type = grid[swapping_gem.y][swapping_gem.x]
@@ -212,6 +212,15 @@ end
 ---@return number
 function QuadEaseOut(a, b, t)
 	return a + (b - a) * (2 * t - t ^ 2)
+end
+
+-- Do a cubic ease-in ease-out between two values.
+---@param a number # starting number (output when t = 0)
+---@param b number # ending number (output when t = 1)
+---@param t number # time, expected to be in range [0, 1]
+---@return number
+function CubicEase(a, b, t)
+	return a + (b - a) * (3 * t ^ 2 - 2 * t ^ 3)
 end
 
 -- Draw an animation wipe on the game grid.
@@ -360,7 +369,9 @@ function DrawMatchAnimations(player, frame)
 			)
 		end
 		for _, particle in ipairs(Particles) do
+			-- relative origin of the particle's polar coordinates [px, px]
 			local particle_origin = { x = 16 * particle.coord.x + 8, y = 16 * particle.coord.y + 8 }
+			-- distance [px] from the relative origin
 			local particle_r = QuadEaseOut(0, 15, particle_progress)
 			circfill(
 				particle_origin.x + particle_r * cos(particle.theta),

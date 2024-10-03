@@ -18,19 +18,20 @@ STATES = {
 	prepare_grid = 4,
 	init_level_transition = 5,
 	game_idle = 6,
-	swap_select = 7,
-	swap_transition = 8,
-	player_matching = 9,
-	show_match_points = 10,
-	fill_grid = 11,
-	fill_grid_transition = 12,
-	combo_check = 13,
-	level_up_transition = 14,
-	level_up = 15,
-	game_over_transition = 16,
-	game_over = 17,
-	enter_high_score = 18,
-	high_scores = 19,
+	swap_select_mouse_held = 7,
+	swap_select = 8,
+	swap_transition = 9,
+	player_matching = 10,
+	show_match_points = 11,
+	fill_grid = 12,
+	fill_grid_transition = 13,
+	combo_check = 14,
+	level_up_transition = 15,
+	level_up = 16,
+	game_over_transition = 17,
+	game_over = 18,
+	enter_high_score = 19,
+	high_scores = 20,
 }
 
 ---@type integer[] List of level music starting positions
@@ -48,8 +49,21 @@ Grid = {}
 ---@type boolean[][] falling grid
 FallingGrid = {}
 
--- table containing player information
-Player = {}
+---@type Player # table containing player information
+Player = {
+	grid_cursor = nil,
+	score = 0,
+	init_level_score = 0,
+	level_threshold = L1_THRESHOLD,
+	level = 1,
+	chances = 3,
+	combo = 0,
+	last_match = nil,
+	letter_ids = { 1, 1, 1 },
+	placement = nil,
+	score_cursor = 1,
+	swapping_gem = { x = 3, y = 4 },
+}
 
 ---@type States current state of the cartridge
 CartState = STATES.title_screen
@@ -59,6 +73,9 @@ Leaderboard = {}
 
 ---@type integer frame counter for state transitions / pauses
 FrameCounter = 0
+
+---@type integer whether or not the mouse is enabled
+MouseEnabled = 0
 
 -- Initialize the grid with all holes
 function InitGrids()
@@ -74,21 +91,17 @@ end
 
 -- Initialize the player for starting the game
 function InitPlayer()
-	---@type Player
-	Player = {
-		grid_cursor = { x = 3, y = 3 },
-		score = 0,
-		init_level_score = 0,
-		level_threshold = L1_THRESHOLD,
-		level = 1,
-		chances = 3,
-		combo = 0,
-		last_match = { move_score = 0, x = 0, y = 0, gem_type = 1, match_list = {} },
-		letter_ids = { 1, 1, 1 },
-		placement = nil,
-		score_cursor = SCORE_POSITIONS.first,
-		swapping_gem = { x = 3, y = 4 },
-	}
+	Player.grid_cursor = { x = 3, y = 3 }
+	Player.score = 0
+	Player.init_level_score = 0
+	Player.level_threshold = L1_THRESHOLD
+	Player.level = 1
+	Player.chances = 3
+	Player.combo = 0
+	Player.last_match = nil
+	Player.placement = nil
+	Player.score_cursor = SCORE_POSITIONS.first
+	Player.swapping_gem = nil
 end
 
 -- Cycle through the initials' indices.
@@ -195,13 +208,35 @@ function DrawInitialEntering()
 	end
 end
 
+---@param mouse_enabled integer
+function SetMouseControls(mouse_enabled)
+	MouseEnabled = mouse_enabled
+	dset(63, MouseEnabled)
+	printh("MouseEnabled is " .. tostr(MouseEnabled))
+	if MouseEnabled == 0 then
+		menuitem(1, "mouse input: off", function()
+			SetMouseControls(1)
+		end)
+	elseif MouseEnabled == 1 then
+		menuitem(1, "mouse input: on", function()
+			SetMouseControls(0)
+		end)
+	else
+		error("Invalid memory configuration for enabling mouse")
+	end
+end
+
 function _init()
+	cartdata("vm70_stratagem_v" .. VERSION.major .. "_" .. VERSION.minor .. "_" .. VERSION.patch)
+	LoadLeaderboard(Leaderboard)
+	MouseEnabled = dget(63)
+	poke(0x5f2d, 0x1)
 	cls(0)
 	music(24)
 	InitPlayer()
 	InitGrids()
-	LoadLeaderboard(Leaderboard, VERSION)
-	menuitem(1, "reset scores", function()
+	SetMouseControls(MouseEnabled)
+	menuitem(2, "reset scores", function()
 		ResetLeaderboard(Leaderboard)
 	end)
 end
@@ -229,12 +264,12 @@ function _draw()
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 7)
-	elseif CartState == STATES.swap_select then
+		DrawCursor(Player.grid_cursor, 7)
+	elseif (CartState == STATES.swap_select) or (CartState == STATES.swap_select_mouse_held) then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 11)
+		DrawCursor(Player.grid_cursor, 11)
 	elseif CartState == STATES.swap_transition then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -244,28 +279,28 @@ function _draw()
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.show_match_points then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 		DrawMatchAnimations(Player, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid, FrameCounter)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.fill_grid_transition then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid, FrameCounter)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.combo_check then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
-		DrawCursor(Player, 1)
+		DrawCursor(Player.grid_cursor, 1)
 	elseif CartState == STATES.level_up_transition then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -296,10 +331,14 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
 	end
-	-- print(tostr(CartState), 1, 1, 7)
+	print(tostr(CartState), 1, 1, 7)
 	-- print(tostr(FrameCounter), 1, 7, 7)
+	if MouseEnabled == 1 then
+		spr(15, stat(32) - 1, stat(33) - 1)
+	end
 end
 
+-- selene: allow(if_same_then_else)
 function _update()
 	if CartState == STATES.title_screen then
 		-- state transitions
@@ -339,7 +378,11 @@ function _update()
 		end
 	elseif CartState == STATES.game_idle then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
+		local swapping_gem = nil
+		if MouseEnabled then
+			swapping_gem = SelectSwapping(Player, MouseEnabled)
+		end
 		-- state transitions
 		if Player.chances == -1 then
 			Player.chances = 0
@@ -349,15 +392,32 @@ function _update()
 		elseif Player.score >= Player.level_threshold then
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
-		elseif btnp(4) or btnp(5) then
+		elseif MouseEnabled and swapping_gem ~= nil then
+			Player.swapping_gem = swapping_gem
+			FrameCounter = 0
+			CartState = STATES.swap_transition
+		elseif MouseEnabled and Player.grid_cursor ~= nil and band(stat(34), 0x1) == 1 then
+			CartState = STATES.swap_select_mouse_held
+		elseif not MouseEnabled and (btnp(4) or btnp(5)) then
 			CartState = STATES.swap_select
 		end
 	elseif CartState == STATES.swap_select then
 		-- state actions
-		local swapping_gem = SelectSwapping(Player)
+		local swapping_gem = SelectSwapping(Player, MouseEnabled)
 		-- state transitions
-		if btnp(4) or btnp(5) then
+		if MouseEnabled and band(stat(34), 0x1) == 1 and swapping_gem == nil then
 			CartState = STATES.game_idle
+		elseif not MouseEnabled and (btnp(4) or btnp(5)) then
+			CartState = STATES.game_idle
+		elseif swapping_gem ~= nil then
+			Player.swapping_gem = swapping_gem
+			FrameCounter = 0
+			CartState = STATES.swap_transition
+		end
+	elseif CartState == STATES.swap_select_mouse_held then
+		local swapping_gem = SelectSwapping(Player, MouseEnabled)
+		if band(stat(34), 0x1) == 0 then
+			CartState = STATES.swap_select
 		elseif swapping_gem ~= nil then
 			Player.swapping_gem = swapping_gem
 			FrameCounter = 0
@@ -375,7 +435,7 @@ function _update()
 		end
 	elseif CartState == STATES.player_matching then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
@@ -385,7 +445,7 @@ function _update()
 		end
 	elseif CartState == STATES.show_match_points then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if FrameCounter == MATCH_FRAMES then
 			FrameCounter = 0
@@ -396,7 +456,7 @@ function _update()
 	elseif CartState == STATES.fill_grid then
 		-- state actions
 		FrameCounter = DROP_FRAMES
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state actions & transitions
 		if FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			FrameCounter = 0
@@ -406,7 +466,7 @@ function _update()
 		end
 	elseif CartState == STATES.fill_grid_transition then
 		-- state actions
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if FrameCounter == DROP_FRAMES - 1 then
 			CartState = STATES.fill_grid
@@ -415,7 +475,7 @@ function _update()
 	elseif CartState == STATES.combo_check then
 		-- state actions
 		FrameCounter = DROP_FRAMES
-		MoveGridCursor(Player)
+		MoveGridCursor(Player, MouseEnabled)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0

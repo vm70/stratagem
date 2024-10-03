@@ -53,29 +53,18 @@ end
 
 ---
 -- draw the cursor on the grid
----@param player Player
+---@param grid_cursor Coords | nil
 ---@param color integer
----@param offset_x? integer
----@param offset_y? integer
-function DrawCursor(player, color, offset_x, offset_y)
+function DrawCursor(grid_cursor, color)
 	-- fillp(0x33CC)
 	-- -- 0011 -> 3
 	-- -- 0011 -> 3
 	-- -- 1100 -> C
 	-- -- 1100 -> C
-	if offset_x == nil then
-		offset_x = 0
+	if grid_cursor == nil then
+		return
 	end
-	if offset_y == nil then
-		offset_y = 0
-	end
-	rect(
-		16 * player.grid_cursor.x + offset_x,
-		16 * player.grid_cursor.y + offset_y,
-		16 * player.grid_cursor.x + offset_x + 15,
-		16 * player.grid_cursor.y + offset_y + 15,
-		color
-	)
+	rect(16 * grid_cursor.x, 16 * grid_cursor.y, 16 * grid_cursor.x + 15, 16 * grid_cursor.y + 15, color)
 	-- fillp(0)
 end
 
@@ -393,40 +382,32 @@ end
 
 -- do all actions for moving the grid cursor
 ---@param player Player
-function MoveGridCursor(player)
-	if btnp(0) and player.grid_cursor.x > 1 then
-		-- move left
-		player.grid_cursor.x = player.grid_cursor.x - 1
-	elseif btnp(1) and player.grid_cursor.x < 6 then
-		-- move right
-		player.grid_cursor.x = player.grid_cursor.x + 1
-	elseif btnp(2) and player.grid_cursor.y > 1 then
-		-- move up
-		player.grid_cursor.y = player.grid_cursor.y - 1
-	elseif btnp(3) and player.grid_cursor.y < 6 then
-		-- move down
-		player.grid_cursor.y = player.grid_cursor.y + 1
+function MoveGridCursor(player, mouse_enabled)
+	if mouse_enabled == 0 then
+		if player.grid_cursor == nil then
+			player.grid_cursor = { x = 1, y = 1 }
+		end
+		if btnp(0) and player.grid_cursor.x > 1 then
+			-- move left
+			player.grid_cursor.x = player.grid_cursor.x - 1
+		elseif btnp(1) and player.grid_cursor.x < 6 then
+			-- move right
+			player.grid_cursor.x = player.grid_cursor.x + 1
+		elseif btnp(2) and player.grid_cursor.y > 1 then
+			-- move up
+			player.grid_cursor.y = player.grid_cursor.y - 1
+		elseif btnp(3) and player.grid_cursor.y < 6 then
+			-- move down
+			player.grid_cursor.y = player.grid_cursor.y + 1
+		end
+	else
+		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 112) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 112) then
+			player.grid_cursor = {
+				x = flr((stat(32) - 1) / 16),
+				y = flr((stat(33) - 1) / 16),
+			}
+		else
+			player.grid_cursor = nil
+		end
 	end
-end
-
--- do all actions for selecting which gem to swap
----@param player Player
----@return Coords | nil # which gem was chosen to swap with the player's cursor
-function SelectSwapping(player)
-	---@type Coords | nil
-	local swapping_gem = nil
-	if btnp(0) and player.grid_cursor.x > 1 then
-		-- swap left
-		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
-	elseif btnp(1) and player.grid_cursor.x < 6 then
-		-- swap right
-		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
-	elseif btnp(2) and player.grid_cursor.y > 1 then
-		-- swap up
-		swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
-	elseif btnp(3) and player.grid_cursor.y < 6 then
-		-- swap down
-		swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
-	end
-	return swapping_gem
 end

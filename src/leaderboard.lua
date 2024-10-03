@@ -18,9 +18,7 @@ end
 
 -- Initialize the high scores by reading from persistent memory
 ---@param leaderboard HighScore[]
----@param version Version
-function LoadLeaderboard(leaderboard, version)
-	cartdata("vm70_stratagem_v" .. version.major .. "_" .. version.minor .. "_" .. version.patch)
+function LoadLeaderboard(leaderboard)
 	for score_idx = 1, 10 do
 		---@type integer[]
 		local raw_score_data = {}

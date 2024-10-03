@@ -378,7 +378,7 @@ function _update()
 		end
 	elseif CartState == STATES.game_idle then
 		-- state actions
-		MoveGridCursor(Player.grid_cursor, MouseMode)
+		MoveGridCursor(Player, MouseMode)
 		if MouseMode == 1 then
 			Player.swapping_gem = nil
 			Player.swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
@@ -432,7 +432,7 @@ function _update()
 		end
 	elseif CartState == STATES.player_matching then
 		-- state actions
-		MoveGridCursor(Player.grid_cursor, MouseMode)
+		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
@@ -442,7 +442,7 @@ function _update()
 		end
 	elseif CartState == STATES.show_match_points then
 		-- state actions
-		MoveGridCursor(Player.grid_cursor, MouseMode)
+		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if FrameCounter == MATCH_FRAMES then
 			FrameCounter = 0
@@ -453,7 +453,7 @@ function _update()
 	elseif CartState == STATES.fill_grid then
 		-- state actions
 		FrameCounter = DROP_FRAMES
-		MoveGridCursor(Player.grid_cursor, MouseMode)
+		MoveGridCursor(Player, MouseMode)
 		-- state actions & transitions
 		if FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			FrameCounter = 0
@@ -463,7 +463,7 @@ function _update()
 		end
 	elseif CartState == STATES.fill_grid_transition then
 		-- state actions
-		MoveGridCursor(Player.grid_cursor, MouseMode)
+		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if FrameCounter == DROP_FRAMES - 1 then
 			CartState = STATES.fill_grid
@@ -472,7 +472,7 @@ function _update()
 	elseif CartState == STATES.combo_check then
 		-- state actions
 		FrameCounter = DROP_FRAMES
-		MoveGridCursor(Player.grid_cursor, MouseMode)
+		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0

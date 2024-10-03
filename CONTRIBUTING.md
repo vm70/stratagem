@@ -25,6 +25,16 @@ hinting.
 This project uses [semantic versioning](https://semver.org/) for determining
 version numbers.
 
+The version number can be found in the following locations in this repository:
+
+- The `VERSION` global variable located in `src/main.lua`
+- The header comment in `src/main.lua`
+- As part of the `__label__` graphic in `src/label.txt`
+
+> [!TIP]
+>
+> When updating the version number, don't forget to check the label!
+
 ## Directory Structure
 
 Stratagem's cartridge is split across several files in this repository for more

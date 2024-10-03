@@ -389,9 +389,6 @@ function _update()
 			music(0)
 			FrameCounter = 0
 			CartState = STATES.game_over_transition
-		elseif Player.score >= Player.level_threshold then
-			FrameCounter = 0
-			CartState = STATES.level_up_transition
 		elseif MouseMode == 1 and Player.swapping_gem ~= nil then
 			FrameCounter = 0
 			CartState = STATES.swap_transition
@@ -477,6 +474,9 @@ function _update()
 		if ClearFirstGridMatch(Grid, Player) then
 			FrameCounter = 0
 			CartState = STATES.show_match_points
+		elseif Player.score >= Player.level_threshold then
+			FrameCounter = 0
+			CartState = STATES.level_up_transition
 		else
 			if Player.combo == 0 then
 				sfx(0, -1, 0, 3) -- "error" sound effect

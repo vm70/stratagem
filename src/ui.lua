@@ -382,8 +382,9 @@ end
 
 -- do all actions for moving the grid cursor
 ---@param player Player
-function MoveGridCursor(player, mouse_enabled)
-	if mouse_enabled == 0 then
+---@param mouse_mode integer
+function MoveGridCursor(player, mouse_mode)
+	if mouse_mode == 0 then
 		if player.grid_cursor == nil then
 			player.grid_cursor = { x = 1, y = 1 }
 		end

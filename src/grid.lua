@@ -155,15 +155,15 @@ end
 
 -- do all actions for selecting which gem to swap
 ---@param grid_cursor Coords | nil # player's grid cursor. May be nil from mouse controls.
----@param mouse_enabled boolean # whether or not the mouse is enabled
+---@param mouse_mode integer # whether or not the mouse is enabled
 ---@return Coords | nil # which gem was chosen to swap with the player's cursor
-function SelectSwapping(grid_cursor, mouse_enabled)
+function SelectSwapping(grid_cursor, mouse_mode)
 	---@type Coords | nil
 	if grid_cursor == nil then
 		return nil
 	end
 	local swapping_gem = nil
-	if mouse_enabled and band(stat(34), 0x1) == 1 then
+	if mouse_mode == 1 and band(stat(34), 0x1) == 1 then
 		---@type Coords
 		local mouse_location = {
 			x = flr((stat(32) - 1) / 16),

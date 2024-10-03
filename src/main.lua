@@ -413,11 +413,10 @@ function _update()
 			CartState = STATES.swap_transition
 		end
 	elseif CartState == STATES.swap_select_mouse_held then
-		local swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
-		if band(stat(34), 0x1) == 0 then
+		Player.swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
+		if MouseMode == 0 or band(stat(34), 0x1) == 0 then
 			CartState = STATES.swap_select
-		elseif swapping_gem ~= nil then
-			Player.swapping_gem = swapping_gem
+		elseif Player.swapping_gem ~= nil then
 			FrameCounter = 0
 			CartState = STATES.swap_transition
 		end

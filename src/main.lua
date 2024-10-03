@@ -150,9 +150,11 @@ end
 function LevelUp(player)
 	player.level = player.level + 1
 	player.init_level_score = player.score
+	-- number of matches needed to advance to the next level (w/o bonus)
 	local match_threshold = L1_MATCHES + 20 * (player.level - 1)
-	local level_score_multiplier = BASE_MATCH_PTS * player.level
-	player.level_threshold = player.init_level_score + match_threshold * level_score_multiplier
+	-- the number of points for a 3-gem match on this level
+	local base_level_points = ((player.level - 1) * 2) + BASE_MATCH_PTS
+	player.level_threshold = player.init_level_score + match_threshold * base_level_points
 end
 
 -- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)

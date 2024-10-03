@@ -147,10 +147,13 @@ end
 ---@param combo integer
 ---@param match_size integer
 function MatchScore(level, combo, match_size)
-	local base_level_points = level * BASE_MATCH_PTS
+	-- the number of points for a 3-gem match on this level
+	local base_level_points = ((level - 1) * 2) + BASE_MATCH_PTS
+	-- the number of points added for larger matches
 	local size_bonus = level * (match_size - 3)
-	local combo_bonus = min(combo, 7)
-	return combo_bonus * (base_level_points + size_bonus)
+	-- the number of points added for combos / cascades
+	local combo_bonus = level * (min(combo, 7) - 1)
+	return base_level_points + size_bonus + combo_bonus
 end
 
 -- do all actions for selecting which gem to swap

@@ -332,11 +332,12 @@ function _draw()
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
 	end
-	print(tostr(CartState), 1, 1, 7)
-	-- print(tostr(FrameCounter), 1, 7, 7)
 	if MouseMode == 1 then
 		spr(15, stat(32) - 1, stat(33) - 1)
 	end
+	-- print(tostr(CartState), 1, 1, 7)
+	-- print(tostr(FrameCounter), 1, 7, 7)
+	-- print(tostr(stat(1) * 100), 1, 14, 7)
 end
 
 -- selene: allow(if_same_then_else)

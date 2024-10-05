@@ -346,7 +346,6 @@ function _draw()
 	-- print(tostr(Player.score_cursor), 1, 21, 7)
 end
 
--- selene: allow(if_same_then_else)
 function _update()
 	assert((1 <= CartState) and (CartState <= STATES.high_scores), "invalid state " .. tostr(CartState))
 	if CartState == STATES.title_screen then
@@ -417,9 +416,10 @@ function _update()
 		-- state actions
 		Player.swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
 		-- state transitions
-		if MouseMode == 1 and band(stat(34), 0x1) == 1 and Player.swapping_gem == nil then
-			CartState = STATES.game_idle
-		elseif MouseMode == 0 and (btnp(4) or btnp(5)) then
+		if
+			(MouseMode == 1 and band(stat(34), 0x1) == 1 and Player.swapping_gem == nil)
+			or (MouseMode == 0 and (btnp(4) or btnp(5)))
+		then
 			CartState = STATES.game_idle
 		elseif Player.swapping_gem ~= nil then
 			FrameCounter = 0

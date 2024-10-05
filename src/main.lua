@@ -315,8 +315,8 @@ function _draw()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("level " .. Player.level .. " complete!", 64, 32 - 3, 7)
-		Printc("get ready for level " .. Player.level + 1, 64, 96 - 3, 7)
+		Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
+		Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
 		DrawHUD(Player)

@@ -320,7 +320,9 @@ function _draw()
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("game over", 64, 64 - 3, 7)
+		Printc("no more chances!", 64, 64 - 18, 7)
+		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
+		Printc("press a key to continue", 64, 64 + 12, 7)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -508,16 +510,12 @@ function _update()
 	elseif CartState == STATES.game_over_transition then
 		-- state actions & transitions
 		if FrameCounter == WIPE_FRAMES then
-			FrameCounter = 0
 			CartState = STATES.game_over
 		else
 			FrameCounter = FrameCounter + 1
 		end
 	elseif CartState == STATES.game_over then
-		-- state actions & transitions
-		if FrameCounter ~= LEVEL_UP_FRAMES then
-			FrameCounter = FrameCounter + 1
-		elseif btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
+		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
 			Player.placement = FindPlacement(Leaderboard, Player.score)
 			if Player.placement == nil then
 				CartState = STATES.high_scores

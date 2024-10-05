@@ -191,23 +191,28 @@ function PlayLevelMusic(level)
 	music(LEVEL_MUSIC[musicID])
 end
 
-function DrawInitialEntering()
-	print(ALLOWED_LETTERS[Player.letter_ids[1]], 16, 36, HSColor(SCORE_POSITIONS.first))
-	if Player.score_cursor == SCORE_POSITIONS.first then
-		rect(16, 36 + 6, 16 + 2, 36 + 6, 11)
+function DrawInitialEntering(player)
+	local first_str = ""
+	local second_str = ""
+	local third_str = ""
+	local ok_str = ""
+	if player.score_cursor == SCORE_POSITIONS.first then
+		first_str = chr(2) .. "3"
 	end
-	print(ALLOWED_LETTERS[Player.letter_ids[2]], 21, 36, HSColor(SCORE_POSITIONS.second))
-	if Player.score_cursor == SCORE_POSITIONS.second then
-		rect(21, 36 + 6, 21 + 2, 36 + 6, 11)
+	first_str = first_str .. ALLOWED_LETTERS[player.letter_ids[1]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.second then
+		second_str = chr(2) .. "3"
 	end
-	print(ALLOWED_LETTERS[Player.letter_ids[3]], 26, 36, HSColor(SCORE_POSITIONS.third))
-	if Player.score_cursor == SCORE_POSITIONS.third then
-		rect(26, 36 + 6, 26 + 2, 36 + 6, 11)
+	second_str = second_str .. ALLOWED_LETTERS[player.letter_ids[2]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.third then
+		third_str = chr(2) .. "3"
 	end
-	print("ok", 31, 36, HSColor(SCORE_POSITIONS.ok))
-	if Player.score_cursor == SCORE_POSITIONS.ok then
-		rect(31, 36 + 6, 31 + 6, 36 + 6, 11)
+	third_str = third_str .. ALLOWED_LETTERS[player.letter_ids[3]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.ok then
+		ok_str = chr(2) .. "3"
 	end
+	ok_str = ok_str .. "ok" .. chr(2) .. "- "
+	Printc("your name: " .. first_str .. second_str .. third_str .. ok_str, 64, 64 + 24 - 3, 7)
 end
 
 ---@param mouse_mode integer
@@ -331,10 +336,9 @@ function _draw()
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD(Player)
-		print("nice job!", 16, 16, 7)
-		print("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 16, 22, 7)
-		print("enter your initials", 16, 28, 7)
-		DrawInitialEntering()
+		Printc("spectacular!", 64, 64 - 24 - 3, 7)
+		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
+		DrawInitialEntering(Player)
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)

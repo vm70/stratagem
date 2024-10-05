@@ -340,13 +340,15 @@ function _draw()
 	if MouseMode == 1 then
 		spr(15, stat(32) - 1, stat(33) - 1)
 	end
-	print(tostr(CartState), 1, 1, 7)
-	print(tostr(FrameCounter), 1, 7, 7)
-	print(tostr(stat(1) * 100), 1, 14, 7)
+	-- print(tostr(CartState), 1, 1, 7)
+	-- print(tostr(FrameCounter), 1, 7, 7)
+	-- print(tostr(stat(1) * 100), 1, 14, 7)
+	-- print(tostr(Player.score_cursor), 1, 21, 7)
 end
 
 -- selene: allow(if_same_then_else)
 function _update()
+	assert((1 <= CartState) and (CartState <= STATES.high_scores), "invalid state " .. tostr(CartState))
 	if CartState == STATES.title_screen then
 		-- state transitions
 		if btnp(4) then

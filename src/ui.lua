@@ -30,6 +30,9 @@ DROP_FRAMES = 2
 ---@type integer number of frames to wait for swapping gems
 SWAP_FRAMES = 5
 
+---@type integer number of frames to wait for fades to & from black
+FADE_FRAMES = 15
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -37,6 +40,9 @@ SWAP_FRAMES = 5
 -- 0111 -> 7
 -- 0010 -> 2
 BG_PATTERNS = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
+
+---@type integer[] fading patterns
+FADE_PATTERNS = { 0xFFFF, 0xFDF7, 0xF5F5, 0xB5E5, 0xA5A5, 0xA1A4, 0xA0A0, 0x2080, 0x0000 }
 
 ---@type Particle[] list of particles for matches
 Particles = {}
@@ -75,6 +81,14 @@ function DrawGameBG()
 	fillp(0)
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
+end
+
+-- Draw a fade to black using fill patterns
+---@param frame integer # frame number
+function DrawFade(frame)
+	local fade_pattern = min(flr(Lerp(1, #FADE_PATTERNS + 1, frame / FADE_FRAMES)), #FADE_PATTERNS)
+	fillp(FADE_PATTERNS[fade_pattern] + 0.5)
+	rectfill(0, 0, 128, 128, 0)
 end
 
 -- draw the gems in the grid

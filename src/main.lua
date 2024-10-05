@@ -14,24 +14,25 @@ VERSION = {
 STATES = {
 	title_screen = 1,
 	credits = 2,
-	game_init = 3,
-	prepare_grid = 4,
-	init_level_transition = 5,
-	game_idle = 6,
-	swap_select_mouse_held = 7,
-	swap_select = 8,
-	swap_transition = 9,
-	player_matching = 10,
-	show_match_points = 11,
-	fill_grid = 12,
-	fill_grid_transition = 13,
-	combo_check = 14,
-	level_up_transition = 15,
-	level_up = 16,
-	game_over_transition = 17,
-	game_over = 18,
-	enter_high_score = 19,
-	high_scores = 20,
+	title_transition = 3,
+	game_init = 4,
+	prepare_grid = 5,
+	init_level_transition = 6,
+	game_idle = 7,
+	swap_select_mouse_held = 8,
+	swap_select = 9,
+	swap_transition = 10,
+	player_matching = 11,
+	show_match_points = 12,
+	fill_grid = 13,
+	fill_grid_transition = 14,
+	combo_check = 15,
+	level_up_transition = 16,
+	level_up = 17,
+	game_over_transition = 18,
+	game_over = 19,
+	enter_high_score = 20,
+	high_scores = 21,
 }
 
 ---@type integer[] List of level music starting positions
@@ -250,6 +251,10 @@ function _draw()
 	elseif CartState == STATES.credits then
 		DrawTitleBG()
 		DrawCredits()
+	elseif CartState == STATES.title_transition then
+		DrawTitleBG()
+		DrawTitleFG(VERSION)
+		DrawFade(FrameCounter)
 	elseif CartState == STATES.game_init then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -337,9 +342,9 @@ function _draw()
 	if MouseMode == 1 then
 		spr(15, stat(32) - 1, stat(33) - 1)
 	end
-	-- print(tostr(CartState), 1, 1, 7)
-	-- print(tostr(FrameCounter), 1, 7, 7)
-	-- print(tostr(stat(1) * 100), 1, 14, 7)
+	print(tostr(CartState), 1, 1, 7)
+	print(tostr(FrameCounter), 1, 7, 7)
+	print(tostr(stat(1) * 100), 1, 14, 7)
 end
 
 -- selene: allow(if_same_then_else)
@@ -347,7 +352,8 @@ function _update()
 	if CartState == STATES.title_screen then
 		-- state transitions
 		if btnp(4) then
-			CartState = STATES.game_init
+			FrameCounter = 0
+			CartState = STATES.title_transition
 		elseif btnp(5) then
 			CartState = STATES.high_scores
 		elseif btnp(3) then
@@ -357,6 +363,12 @@ function _update()
 		-- state transitions
 		if btnp(4) or btnp(5) then
 			CartState = STATES.title_screen
+		end
+	elseif CartState == STATES.title_transition then
+		if FrameCounter == FADE_FRAMES then
+			CartState = STATES.game_init
+		else
+			FrameCounter = FrameCounter + 1
 		end
 	elseif CartState == STATES.game_init then
 		-- state actions

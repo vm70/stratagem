@@ -57,7 +57,6 @@ function Printc(str, x, y, col)
 	print(str, x - width / 2, y, col)
 end
 
----
 -- draw the cursor on the grid
 ---@param grid_cursor Coords | nil
 ---@param color integer
@@ -139,7 +138,6 @@ function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 	local cursor_gem_anim = nil
 	local cursor_gem_type = grid[cursor_gem.y][cursor_gem.x]
 	local swapping_gem_type = grid[swapping_gem.y][swapping_gem.x]
-	-- selene: allow(undefined_variable)
 	assert(Contains(Neighbors(cursor_gem), swapping_gem), "invalid coordinates for swapping gem")
 	if swapping_gem.x == cursor_gem.x - 1 then
 		-- swap left

@@ -110,12 +110,7 @@ end
 ---@param isForward boolean whether the step is forward
 ---@return integer # next / previous letter ID
 function StepInitials(letterID, isForward)
-	if letterID > #ALLOWED_LETTERS then
-		assert(false, "letter ID must be less than or equal to " .. #ALLOWED_LETTERS)
-	elseif letterID < 1 then
-		assert(false, "letter ID must be greater than or equal to 1")
-	end
-
+	assert((1 <= letterID) and (letterID <= #ALLOWED_LETTERS), "letter ID must be in allowed letter range")
 	-- undo 1-based indexing for modulo arithmetic
 	local letterID_0 = letterID - 1
 	if isForward then
@@ -162,7 +157,7 @@ end
 ---@param place integer
 ---@return string
 function OrdinalIndicator(place)
-	assert(1 <= place and place <= 10, "only works for 1-10")
+	assert((1 <= place) and (place <= 10), "only works for 1-10")
 	if place == 1 then
 		return "st"
 	elseif place == 2 then
@@ -217,6 +212,7 @@ end
 
 ---@param mouse_mode integer
 function SetMouseControls(mouse_mode)
+	assert((mouse_mode == 0) or (mouse_mode == 1), "Invalid memory configuration for mouse mode")
 	MouseMode = mouse_mode
 	dset(63, MouseMode)
 	printh("MouseMode is " .. tostr(MouseMode))
@@ -224,12 +220,10 @@ function SetMouseControls(mouse_mode)
 		menuitem(1, "mouse input: off", function()
 			SetMouseControls(1)
 		end)
-	elseif MouseMode == 1 then
+	else
 		menuitem(1, "mouse input: on", function()
 			SetMouseControls(0)
 		end)
-	else
-		assert(false, "Invalid memory configuration for enabling mouse")
 	end
 end
 
@@ -550,7 +544,5 @@ function _update()
 			music(24)
 			CartState = STATES.high_scores
 		end
-	else
-		assert(false, "invalid state")
 	end
 end

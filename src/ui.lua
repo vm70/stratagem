@@ -131,11 +131,16 @@ end
 function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 	local fraction_complete = frame / SWAP_FRAMES
 	local offset = CubicEase(0, 16, fraction_complete)
+	---@type {x0: number, y0: number, x1: number, y1: number} | nil
 	local cover_rect = nil
+	---@type {x: number, y: number} | nil
+	local swapping_gem_anim = nil
+	---@type {x: number, y: number} | nil
+	local cursor_gem_anim = nil
 	local cursor_gem_type = grid[cursor_gem.y][cursor_gem.x]
 	local swapping_gem_type = grid[swapping_gem.y][swapping_gem.x]
-	local swapping_gem_anim = nil
-	local cursor_gem_anim = nil
+	-- selene: allow(undefined_variable)
+	assert(Contains(Neighbors(cursor_gem), swapping_gem), "invalid coordinates for swapping gem")
 	if swapping_gem.x == cursor_gem.x - 1 then
 		-- swap left
 		cover_rect = {
@@ -200,8 +205,6 @@ function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 			x = 16 * cursor_gem.x,
 			y = 16 * cursor_gem.y + offset,
 		}
-	else
-		assert(false, "invalid coordinates")
 	end
 	if cover_rect ~= nil and swapping_gem ~= nil and swapping_gem_anim ~= nil and cursor_gem_anim ~= nil then
 		rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
@@ -262,9 +265,7 @@ end
 ---@param pad string
 ---@param length integer
 function LeftPad(str, pad, length)
-	if length < #str then
-		assert(false, "desired length is less than input string")
-	end
+	assert(length >= #str, "desired length is less than input string")
 	local padded = "" .. str
 	while #padded < length do
 		padded = pad .. padded
@@ -437,7 +438,7 @@ function MoveGridCursor(player, mouse_mode)
 			player.grid_cursor.y = player.grid_cursor.y + 1
 		end
 	else
-		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 112) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 112) then
+		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 111) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 111) then
 			player.grid_cursor = {
 				x = flr((stat(32) - 1) / 16),
 				y = flr((stat(33) - 1) / 16),

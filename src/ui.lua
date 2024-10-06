@@ -30,6 +30,9 @@ DROP_FRAMES = 2
 ---@type integer number of frames to wait for swapping gems
 SWAP_FRAMES = 5
 
+---@type integer number of frames to wait for fades to & from black
+FADE_FRAMES = 15
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -37,6 +40,9 @@ SWAP_FRAMES = 5
 -- 0111 -> 7
 -- 0010 -> 2
 BG_PATTERNS = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
+
+---@type integer[] fading patterns
+FADE_PATTERNS = { 0xFFFF, 0xFDF7, 0xF5F5, 0xB5E5, 0xA5A5, 0xA1A4, 0xA0A0, 0x2080, 0x0000 }
 
 ---@type Particle[] list of particles for matches
 Particles = {}
@@ -51,7 +57,6 @@ function Printc(str, x, y, col)
 	print(str, x - width / 2, y, col)
 end
 
----
 -- draw the cursor on the grid
 ---@param grid_cursor Coords | nil
 ---@param color integer
@@ -75,6 +80,14 @@ function DrawGameBG()
 	fillp(0)
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
+end
+
+-- Draw a fade to black using fill patterns
+---@param frame integer # frame number
+function DrawFade(frame)
+	local fade_pattern = min(flr(Lerp(1, #FADE_PATTERNS + 1, frame / FADE_FRAMES)), #FADE_PATTERNS)
+	fillp(FADE_PATTERNS[fade_pattern] + 0.5)
+	rectfill(0, 0, 128, 128, 0)
 end
 
 -- draw the gems in the grid
@@ -117,11 +130,15 @@ end
 function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 	local fraction_complete = frame / SWAP_FRAMES
 	local offset = CubicEase(0, 16, fraction_complete)
+	---@type {x0: number, y0: number, x1: number, y1: number} | nil
 	local cover_rect = nil
+	---@type {x: number, y: number} | nil
+	local swapping_gem_anim = nil
+	---@type {x: number, y: number} | nil
+	local cursor_gem_anim = nil
 	local cursor_gem_type = grid[cursor_gem.y][cursor_gem.x]
 	local swapping_gem_type = grid[swapping_gem.y][swapping_gem.x]
-	local swapping_gem_anim = nil
-	local cursor_gem_anim = nil
+	assert(Contains(Neighbors(cursor_gem), swapping_gem), "invalid coordinates for swapping gem")
 	if swapping_gem.x == cursor_gem.x - 1 then
 		-- swap left
 		cover_rect = {
@@ -186,8 +203,6 @@ function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 			x = 16 * cursor_gem.x,
 			y = 16 * cursor_gem.y + offset,
 		}
-	else
-		assert(false, "invalid coordinates")
 	end
 	if cover_rect ~= nil and swapping_gem ~= nil and swapping_gem_anim ~= nil and cursor_gem_anim ~= nil then
 		rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
@@ -248,9 +263,7 @@ end
 ---@param pad string
 ---@param length integer
 function LeftPad(str, pad, length)
-	if length < #str then
-		assert(false, "desired length is less than input string")
-	end
+	assert(length >= #str, "desired length is less than input string")
 	local padded = "" .. str
 	while #padded < length do
 		padded = pad .. padded
@@ -261,9 +274,10 @@ end
 -- Draw the HUD (score, chances, level progress bar, etc) on the screen
 ---@param player Player
 function DrawHUD(player)
-	print("score:" .. LeftPad(tostr(player.score), " ", 5), 17, 9, 7)
-	print("chances:" .. max(player.chances, 0), 73, 9, 8)
-	print("level:" .. player.level, 49, 121, 7)
+	-- the `chr(3) .. f` statement moves the text back one pixel
+	print("score:" .. chr(3) .. "h" .. LeftPad(tostr(player.score), " ", 5), 18, 9, 7)
+	print("chances:" .. chr(3) .. "h" .. max(player.chances, 0), 74, 9, 7)
+	print("level " .. player.level, 49, 121, 7)
 	-- calculate level completion ratio
 	local level_ratio = (player.score - player.init_level_score) / (player.level_threshold - player.init_level_score)
 	level_ratio = min(level_ratio, 1)
@@ -422,7 +436,7 @@ function MoveGridCursor(player, mouse_mode)
 			player.grid_cursor.y = player.grid_cursor.y + 1
 		end
 	else
-		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 112) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 112) then
+		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 111) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 111) then
 			player.grid_cursor = {
 				x = flr((stat(32) - 1) / 16),
 				y = flr((stat(33) - 1) / 16),

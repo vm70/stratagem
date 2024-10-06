@@ -6,4 +6,4 @@ std = "p8lua"
 
 unscoped_variables = "allow"
 unused_variable = "allow"
-# undefined_variable = "allow"
+undefined_variable = "allow"

@@ -1,11 +1,11 @@
--- stratagem v0.4.0
+-- stratagem v0.4.1
 -- by vincent mercator & co.
 
 ---@type Version
 VERSION = {
 	major = 0,
 	minor = 4,
-	patch = 0,
+	patch = 1,
 }
 
 ---@enum States
@@ -505,6 +505,7 @@ function _update()
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		elseif Player.score >= Player.level_threshold then
+			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
 		else

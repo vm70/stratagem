@@ -1,11 +1,11 @@
--- stratagem v0.4.0
+-- stratagem v0.4.1
 -- by vincent mercator & co.
 
 ---@type Version
 VERSION = {
 	major = 0,
 	minor = 4,
-	patch = 0,
+	patch = 1,
 }
 
 ---@enum States

@@ -215,7 +215,7 @@ function SetMouseControls(mouse_mode)
 	assert((mouse_mode == 0) or (mouse_mode == 1), "Invalid memory configuration for mouse mode")
 	MouseMode = mouse_mode
 	dset(63, MouseMode)
-	printh("MouseMode is " .. tostr(MouseMode))
+	-- printh("MouseMode is " .. tostr(MouseMode))
 	if MouseMode == 0 then
 		menuitem(1, "mouse input: off", function()
 			SetMouseControls(1)

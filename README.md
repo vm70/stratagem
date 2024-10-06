@@ -35,6 +35,8 @@ Contributors:
 - Vincent "VM" Mercator ([@vm70](https://github.com/vm70/)): Lead
   Developer/Artist/Musician
 - MattSquare ([@squaremango](https://github.com/squaremango)): Gem Sprite Artist
+- [Bejeweled Fans Discord](https://discord.com/servers/bejeweled-fans-328339420900098048)
+  Members: Playtesters & Feature Requesters
 
 ...and players like you. Thank you!
 

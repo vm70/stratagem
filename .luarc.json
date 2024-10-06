@@ -2,8 +2,10 @@
   "diagnostics.globals": [
     "_draw",
     "_init",
+    "band",
     "_update",
     "add",
+    "stat",
     "btnp",
     "cartdata",
     "chr",
@@ -20,6 +22,7 @@
     "menuitem",
     "min",
     "music",
+    "poke",
     "printh",
     "pset",
     "rect",

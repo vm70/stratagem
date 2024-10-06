@@ -91,21 +91,21 @@ function ClearMatching(grid, coords, player)
 end
 
 -- Get the neighbors of the given coordinate
----@param gemCoords Coords
+---@param gem_coords Coords
 ---@return Coords[] # array of neighbor coordinates
-function Neighbors(gemCoords)
+function Neighbors(gem_coords)
 	local neighbors = {}
-	if gemCoords.y ~= 1 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y - 1, x = gemCoords.x }
+	if gem_coords.y ~= 1 then
+		add(neighbors, { y = gem_coords.y - 1, x = gem_coords.x })
 	end
-	if gemCoords.y ~= 6 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y + 1, x = gemCoords.x }
+	if gem_coords.y ~= 6 then
+		add(neighbors, { y = gem_coords.y + 1, x = gem_coords.x })
 	end
-	if gemCoords.x ~= 1 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x - 1 }
+	if gem_coords.x ~= 1 then
+		add(neighbors, { y = gem_coords.y, x = gem_coords.x - 1 })
 	end
-	if gemCoords.x ~= 6 then
-		neighbors[#neighbors + 1] = { y = gemCoords.y, x = gemCoords.x + 1 }
+	if gem_coords.x ~= 6 then
+		add(neighbors, { y = gem_coords.y, x = gem_coords.x + 1 })
 	end
 	return neighbors
 end
@@ -125,15 +125,15 @@ end
 
 -- Find the list of gems that are in the same match as the given gem coordinate using flood filling
 ---@param grid integer[][]
----@param gemCoords Coords current coordinates to search
+---@param gem_coords Coords current coordinates to search
 ---@param visited Coords[] list of visited coordinates. Start with "{}" if new match
 ---@return Coords[] # list of coordinates in the match
-function FloodMatch(grid, gemCoords, visited)
+function FloodMatch(grid, gem_coords, visited)
 	-- mark the current cell as visited
-	visited[#visited + 1] = gemCoords
-	for _, neighbor in pairs(Neighbors(gemCoords)) do
+	add(visited, gem_coords)
+	for _, neighbor in pairs(Neighbors(gem_coords)) do
 		if not Contains(visited, neighbor) then
-			if grid[neighbor.y][neighbor.x] == grid[gemCoords.y][gemCoords.x] then
+			if grid[neighbor.y][neighbor.x] == grid[gem_coords.y][gem_coords.x] then
 				-- do recursion for all non-visited neighbors
 				visited = FloodMatch(grid, neighbor, visited)
 			end
@@ -147,8 +147,48 @@ end
 ---@param combo integer
 ---@param match_size integer
 function MatchScore(level, combo, match_size)
-	local base_level_points = level * BASE_MATCH_PTS
+	-- the number of points for a 3-gem match on this level
+	local base_level_points = ((level - 1) * 2) + BASE_MATCH_PTS
+	-- the number of points added for larger matches
 	local size_bonus = level * (match_size - 3)
-	local combo_bonus = min(combo, 7)
-	return combo_bonus * (base_level_points + size_bonus)
+	-- the number of points added for combos / cascades
+	local combo_bonus = level * (min(combo, 7) - 1)
+	return base_level_points + size_bonus + combo_bonus
+end
+
+-- do all actions for selecting which gem to swap
+---@param grid_cursor Coords | nil # player's grid cursor. May be nil from mouse controls.
+---@param mouse_mode integer # whether or not the mouse is enabled
+---@return Coords | nil # which gem was chosen to swap with the player's cursor
+function SelectSwapping(grid_cursor, mouse_mode)
+	---@type Coords | nil
+	if grid_cursor == nil then
+		return nil
+	end
+	local swapping_gem = nil
+	if mouse_mode == 1 and band(stat(34), 0x1) == 1 then
+		---@type Coords
+		local mouse_location = {
+			x = flr((stat(32) - 1) / 16),
+			y = flr((stat(33) - 1) / 16),
+		}
+		if Contains(Neighbors(grid_cursor), mouse_location) then
+			swapping_gem = mouse_location
+			return swapping_gem
+		end
+	end
+	if btnp(0) and grid_cursor.x > 1 then
+		-- swap left
+		swapping_gem = { y = grid_cursor.y, x = grid_cursor.x - 1 }
+	elseif btnp(1) and grid_cursor.x < 6 then
+		-- swap right
+		swapping_gem = { y = grid_cursor.y, x = grid_cursor.x + 1 }
+	elseif btnp(2) and grid_cursor.y > 1 then
+		-- swap up
+		swapping_gem = { y = grid_cursor.y - 1, x = grid_cursor.x }
+	elseif btnp(3) and grid_cursor.y < 6 then
+		-- swap down
+		swapping_gem = { y = grid_cursor.y + 1, x = grid_cursor.x }
+	end
+	return swapping_gem
 end

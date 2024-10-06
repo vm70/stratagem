@@ -30,6 +30,9 @@ DROP_FRAMES = 2
 ---@type integer number of frames to wait for swapping gems
 SWAP_FRAMES = 5
 
+---@type integer number of frames to wait for fades to & from black
+FADE_FRAMES = 15
+
 ---@type integer[] background patterns
 -- herringbone pattern
 -- 0100 -> 4
@@ -37,6 +40,9 @@ SWAP_FRAMES = 5
 -- 0111 -> 7
 -- 0010 -> 2
 BG_PATTERNS = { 0x4E72, 0xE724, 0x724E, 0x24E7 }
+
+---@type integer[] fading patterns
+FADE_PATTERNS = { 0xFFFF, 0xFDF7, 0xF5F5, 0xB5E5, 0xA5A5, 0xA1A4, 0xA0A0, 0x2080, 0x0000 }
 
 ---@type Particle[] list of particles for matches
 Particles = {}
@@ -51,31 +57,19 @@ function Printc(str, x, y, col)
 	print(str, x - width / 2, y, col)
 end
 
----
 -- draw the cursor on the grid
----@param player Player
+---@param grid_cursor Coords | nil
 ---@param color integer
----@param offset_x? integer
----@param offset_y? integer
-function DrawCursor(player, color, offset_x, offset_y)
+function DrawCursor(grid_cursor, color)
 	-- fillp(0x33CC)
 	-- -- 0011 -> 3
 	-- -- 0011 -> 3
 	-- -- 1100 -> C
 	-- -- 1100 -> C
-	if offset_x == nil then
-		offset_x = 0
+	if grid_cursor == nil then
+		return
 	end
-	if offset_y == nil then
-		offset_y = 0
-	end
-	rect(
-		16 * player.grid_cursor.x + offset_x,
-		16 * player.grid_cursor.y + offset_y,
-		16 * player.grid_cursor.x + offset_x + 15,
-		16 * player.grid_cursor.y + offset_y + 15,
-		color
-	)
+	rect(16 * grid_cursor.x, 16 * grid_cursor.y, 16 * grid_cursor.x + 15, 16 * grid_cursor.y + 15, color)
 	-- fillp(0)
 end
 
@@ -86,6 +80,14 @@ function DrawGameBG()
 	fillp(0)
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
+end
+
+-- Draw a fade to black using fill patterns
+---@param frame integer # frame number
+function DrawFade(frame)
+	local fade_pattern = min(flr(Lerp(1, #FADE_PATTERNS + 1, frame / FADE_FRAMES)), #FADE_PATTERNS)
+	fillp(FADE_PATTERNS[fade_pattern] + 0.5)
+	rectfill(0, 0, 128, 128, 0)
 end
 
 -- draw the gems in the grid
@@ -127,12 +129,16 @@ end
 ---@param frame integer
 function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 	local fraction_complete = frame / SWAP_FRAMES
-	local offset = Lerp(0, 16, 3 * fraction_complete ^ 2 - 2 * fraction_complete ^ 3)
+	local offset = CubicEase(0, 16, fraction_complete)
+	---@type {x0: number, y0: number, x1: number, y1: number} | nil
 	local cover_rect = nil
+	---@type {x: number, y: number} | nil
+	local swapping_gem_anim = nil
+	---@type {x: number, y: number} | nil
+	local cursor_gem_anim = nil
 	local cursor_gem_type = grid[cursor_gem.y][cursor_gem.x]
 	local swapping_gem_type = grid[swapping_gem.y][swapping_gem.x]
-	local swapping_gem_anim = nil
-	local cursor_gem_anim = nil
+	assert(Contains(Neighbors(cursor_gem), swapping_gem), "invalid coordinates for swapping gem")
 	if swapping_gem.x == cursor_gem.x - 1 then
 		-- swap left
 		cover_rect = {
@@ -197,12 +203,12 @@ function DrawGemSwapping(grid, cursor_gem, swapping_gem, frame)
 			x = 16 * cursor_gem.x,
 			y = 16 * cursor_gem.y + offset,
 		}
-	else
-		error("invalid coordinates")
 	end
-	rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
-	spr(32 + 2 * (swapping_gem_type - 1), swapping_gem_anim.x, swapping_gem_anim.y, 2, 2)
-	spr(32 + 2 * (cursor_gem_type - 1), cursor_gem_anim.x, cursor_gem_anim.y, 2, 2)
+	if cover_rect ~= nil and swapping_gem ~= nil and swapping_gem_anim ~= nil and cursor_gem_anim ~= nil then
+		rectfill(cover_rect.x0, cover_rect.y0, cover_rect.x1, cover_rect.y1, 0)
+		spr(32 + 2 * (swapping_gem_type - 1), swapping_gem_anim.x, swapping_gem_anim.y, 2, 2)
+		spr(32 + 2 * (cursor_gem_type - 1), cursor_gem_anim.x, cursor_gem_anim.y, 2, 2)
+	end
 end
 
 -- Do 1D linear interpolation (LERP) between two values.
@@ -212,6 +218,24 @@ end
 ---@return number
 function Lerp(a, b, t)
 	return a + (b - a) * t
+end
+
+-- Do a quadratic ease-out between two values.
+---@param a number # starting number (output when t = 0)
+---@param b number # ending number (output when t = 1)
+---@param t number # time, expected to be in range [0, 1]
+---@return number
+function QuadEaseOut(a, b, t)
+	return a + (b - a) * (2 * t - t ^ 2)
+end
+
+-- Do a cubic ease-in ease-out between two values.
+---@param a number # starting number (output when t = 0)
+---@param b number # ending number (output when t = 1)
+---@param t number # time, expected to be in range [0, 1]
+---@return number
+function CubicEase(a, b, t)
+	return a + (b - a) * (3 * t ^ 2 - 2 * t ^ 3)
 end
 
 -- Draw an animation wipe on the game grid.
@@ -239,9 +263,7 @@ end
 ---@param pad string
 ---@param length integer
 function LeftPad(str, pad, length)
-	if length < #str then
-		error("desired length is less than input string")
-	end
+	assert(length >= #str, "desired length is less than input string")
 	local padded = "" .. str
 	while #padded < length do
 		padded = pad .. padded
@@ -252,9 +274,10 @@ end
 -- Draw the HUD (score, chances, level progress bar, etc) on the screen
 ---@param player Player
 function DrawHUD(player)
-	print("score:" .. LeftPad(tostr(player.score), " ", 5), 17, 9, 7)
-	print("chances:" .. max(player.chances, 0), 73, 9, 8)
-	print("level:" .. player.level, 49, 121, 7)
+	-- the `chr(3) .. f` statement moves the text back one pixel
+	print("score:" .. chr(3) .. "h" .. LeftPad(tostr(player.score), " ", 5), 18, 9, 7)
+	print("chances:" .. chr(3) .. "h" .. max(player.chances, 0), 74, 9, 7)
+	print("level " .. player.level, 49, 121, 7)
 	-- calculate level completion ratio
 	local level_ratio = (player.score - player.init_level_score) / (player.level_threshold - player.init_level_score)
 	level_ratio = min(level_ratio, 1)
@@ -339,7 +362,7 @@ function DrawMatchAnimations(player, frame)
 		Particles = {}
 		for _, coord in ipairs(player.last_match.match_list) do
 			for i = 1, 8 do
-				add(Particles, { coord = coord, r = 0, theta = 0.125 * i + rnd(0.125), vr = 40, ar = -60 })
+				add(Particles, { coord = coord, theta = 0.125 * i + rnd(0.125) })
 			end
 		end
 	end
@@ -360,16 +383,16 @@ function DrawMatchAnimations(player, frame)
 			)
 		end
 		for _, particle in ipairs(Particles) do
+			-- relative origin of the particle's polar coordinates [px, px]
 			local particle_origin = { x = 16 * particle.coord.x + 8, y = 16 * particle.coord.y + 8 }
+			-- distance [px] from the relative origin
+			local particle_r = QuadEaseOut(0, 15, particle_progress)
 			circfill(
-				particle_origin.x + particle.r * cos(particle.theta),
-				particle_origin.y + particle.r * sin(particle.theta),
+				particle_origin.x + particle_r * cos(particle.theta),
+				particle_origin.y + particle_r * sin(particle.theta),
 				3 - 3 * particle_progress,
 				GEM_COLORS[player.last_match.gem_type]
 			)
-			particle.vr = particle.vr + 1 / 30 * particle.ar
-			particle.r = particle.r + particle.vr * 1 / 30
-			-- particle.r = particle.r + 30/8
 		end
 		-- draw match point number
 		print(
@@ -393,40 +416,33 @@ end
 
 -- do all actions for moving the grid cursor
 ---@param player Player
-function MoveGridCursor(player)
-	if btnp(0) and player.grid_cursor.x > 1 then
-		-- move left
-		player.grid_cursor.x = player.grid_cursor.x - 1
-	elseif btnp(1) and player.grid_cursor.x < 6 then
-		-- move right
-		player.grid_cursor.x = player.grid_cursor.x + 1
-	elseif btnp(2) and player.grid_cursor.y > 1 then
-		-- move up
-		player.grid_cursor.y = player.grid_cursor.y - 1
-	elseif btnp(3) and player.grid_cursor.y < 6 then
-		-- move down
-		player.grid_cursor.y = player.grid_cursor.y + 1
+---@param mouse_mode integer
+function MoveGridCursor(player, mouse_mode)
+	if mouse_mode == 0 then
+		if player.grid_cursor == nil then
+			player.grid_cursor = { x = 1, y = 1 }
+		end
+		if btnp(0) and player.grid_cursor.x > 1 then
+			-- move left
+			player.grid_cursor.x = player.grid_cursor.x - 1
+		elseif btnp(1) and player.grid_cursor.x < 6 then
+			-- move right
+			player.grid_cursor.x = player.grid_cursor.x + 1
+		elseif btnp(2) and player.grid_cursor.y > 1 then
+			-- move up
+			player.grid_cursor.y = player.grid_cursor.y - 1
+		elseif btnp(3) and player.grid_cursor.y < 6 then
+			-- move down
+			player.grid_cursor.y = player.grid_cursor.y + 1
+		end
+	else
+		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 111) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 111) then
+			player.grid_cursor = {
+				x = flr((stat(32) - 1) / 16),
+				y = flr((stat(33) - 1) / 16),
+			}
+		else
+			player.grid_cursor = nil
+		end
 	end
-end
-
--- do all actions for selecting which gem to swap
----@param player Player
----@return Coords | nil # which gem was chosen to swap with the player's cursor
-function SelectSwapping(player)
-	---@type Coords | nil
-	local swapping_gem = nil
-	if btnp(0) and player.grid_cursor.x > 1 then
-		-- swap left
-		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x - 1 }
-	elseif btnp(1) and player.grid_cursor.x < 6 then
-		-- swap right
-		swapping_gem = { y = player.grid_cursor.y, x = player.grid_cursor.x + 1 }
-	elseif btnp(2) and player.grid_cursor.y > 1 then
-		-- swap up
-		swapping_gem = { y = player.grid_cursor.y - 1, x = player.grid_cursor.x }
-	elseif btnp(3) and player.grid_cursor.y < 6 then
-		-- swap down
-		swapping_gem = { y = player.grid_cursor.y + 1, x = player.grid_cursor.x }
-	end
-	return swapping_gem
 end

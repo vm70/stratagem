@@ -171,3 +171,14 @@ globals:
         required: false
       - type: function
         required: false
+  poke:
+    args:
+      - type: number
+      - type: number
+  stat:
+    args:
+      - type: number
+  band:
+    args:
+      - type: number
+      - type: number

@@ -12,25 +12,27 @@ VERSION = {
 STATES = {
 	title_screen = 1,
 	credits = 2,
-	title_transition = 3,
+	title_fade = 3,
 	game_init = 4,
 	prepare_grid = 5,
-	init_level_transition = 6,
+	game_transition = 6,
 	game_idle = 7,
 	swap_select_mouse_held = 8,
 	swap_select = 9,
-	swap_transition = 10,
+	swap_animation = 10,
 	player_matching = 11,
 	show_match_points = 12,
 	fill_grid = 13,
-	fill_grid_transition = 14,
+	fill_grid_animation = 14,
 	combo_check = 15,
 	level_up_transition = 16,
 	level_up = 17,
 	game_over_transition = 18,
 	game_over = 19,
-	enter_high_score = 20,
-	high_scores = 21,
+	game_over_fade = 20,
+	enter_high_score = 21,
+	enter_high_score_fade = 22,
+	high_scores = 23,
 }
 
 ---@type integer[] List of level music starting positions
@@ -248,7 +250,7 @@ function _draw()
 	elseif CartState == STATES.credits then
 		DrawTitleBG()
 		DrawCredits()
-	elseif CartState == STATES.title_transition then
+	elseif CartState == STATES.title_fade then
 		DrawTitleBG()
 		DrawTitleFG(VERSION)
 		DrawFade(FrameCounter)
@@ -258,7 +260,7 @@ function _draw()
 	elseif CartState == STATES.prepare_grid then
 		DrawGameBG()
 		DrawHUD(Player)
-	elseif CartState == STATES.init_level_transition then
+	elseif CartState == STATES.game_transition then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
@@ -273,7 +275,7 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player.grid_cursor, 11)
-	elseif CartState == STATES.swap_transition then
+	elseif CartState == STATES.swap_animation then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
@@ -294,7 +296,7 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid, FrameCounter)
 		DrawCursor(Player.grid_cursor, 1)
-	elseif CartState == STATES.fill_grid_transition then
+	elseif CartState == STATES.fill_grid_animation then
 		DrawGameBG()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid, FrameCounter)
@@ -325,12 +327,26 @@ function _draw()
 		Printc("no more chances!", 64, 64 - 18, 7)
 		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
 		Printc("press a key to continue", 64, 64 + 12, 7)
+	elseif CartState == STATES.game_over_fade then
+		DrawGameBG()
+		DrawHUD(Player)
+		Printc("no more chances!", 64, 64 - 18, 7)
+		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
+		Printc("press a key to continue", 64, 64 + 12, 7)
+		DrawFade(FrameCounter)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD(Player)
 		Printc("spectacular!", 64, 64 - 24 - 3, 7)
 		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
 		DrawInitialEntering(Player)
+	elseif CartState == STATES.enter_high_score_fade then
+		DrawGameBG()
+		DrawHUD(Player)
+		Printc("spectacular!", 64, 64 - 24 - 3, 7)
+		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
+		DrawInitialEntering(Player)
+		DrawFade(FrameCounter)
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
 		DrawLeaderboard(Leaderboard)
@@ -350,7 +366,7 @@ function _update()
 		-- state transitions
 		if btnp(4) then
 			FrameCounter = 0
-			CartState = STATES.title_transition
+			CartState = STATES.title_fade
 		elseif btnp(5) then
 			CartState = STATES.high_scores
 		elseif btnp(3) then
@@ -361,7 +377,7 @@ function _update()
 		if btnp(4) or btnp(5) then
 			CartState = STATES.title_screen
 		end
-	elseif CartState == STATES.title_transition then
+	elseif CartState == STATES.title_fade then
 		if FrameCounter == FADE_FRAMES then
 			CartState = STATES.game_init
 		else
@@ -378,10 +394,10 @@ function _update()
 		if not FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			if not ClearFirstGridMatch(Grid) then
 				FrameCounter = 0
-				CartState = STATES.init_level_transition
+				CartState = STATES.game_transition
 			end
 		end
-	elseif CartState == STATES.init_level_transition then
+	elseif CartState == STATES.game_transition then
 		-- state actions & transitions
 		if FrameCounter == WIPE_FRAMES then
 			CartState = STATES.game_idle
@@ -404,7 +420,7 @@ function _update()
 			CartState = STATES.game_over_transition
 		elseif MouseMode == 1 and Player.swapping_gem ~= nil then
 			FrameCounter = 0
-			CartState = STATES.swap_transition
+			CartState = STATES.swap_animation
 		elseif MouseMode == 1 and Player.grid_cursor ~= nil and band(stat(34), 0x1) == 1 then
 			CartState = STATES.swap_select_mouse_held
 		elseif MouseMode == 0 and (btnp(4) or btnp(5)) then
@@ -421,7 +437,7 @@ function _update()
 			CartState = STATES.game_idle
 		elseif Player.swapping_gem ~= nil then
 			FrameCounter = 0
-			CartState = STATES.swap_transition
+			CartState = STATES.swap_animation
 		end
 	elseif CartState == STATES.swap_select_mouse_held then
 		Player.swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
@@ -429,9 +445,9 @@ function _update()
 			CartState = STATES.swap_select
 		elseif Player.swapping_gem ~= nil then
 			FrameCounter = 0
-			CartState = STATES.swap_transition
+			CartState = STATES.swap_animation
 		end
-	elseif CartState == STATES.swap_transition then
+	elseif CartState == STATES.swap_animation then
 		-- state transitions
 		if FrameCounter == SWAP_FRAMES then
 			SwapGems(Grid, Player.grid_cursor, Player.swapping_gem)
@@ -468,11 +484,11 @@ function _update()
 		-- state actions & transitions
 		if FillGridHoles(Grid, FallingGrid, N_GEMS) then
 			FrameCounter = 0
-			CartState = STATES.fill_grid_transition
+			CartState = STATES.fill_grid_animation
 		else
 			CartState = STATES.combo_check
 		end
-	elseif CartState == STATES.fill_grid_transition then
+	elseif CartState == STATES.fill_grid_animation then
 		-- state actions
 		MoveGridCursor(Player, MouseMode)
 		-- state transitions
@@ -528,11 +544,18 @@ function _update()
 		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
 			Player.placement = FindPlacement(Leaderboard, Player.score)
 			if Player.placement == nil then
-				CartState = STATES.high_scores
+				FrameCounter = 0
+				CartState = STATES.game_over_fade
 				music(24)
 			else
 				CartState = STATES.enter_high_score
 			end
+		end
+	elseif (CartState == STATES.game_over_fade) or (CartState == STATES.enter_high_score_fade) then
+		if FrameCounter == FADE_FRAMES then
+			CartState = STATES.high_scores
+		else
+			FrameCounter = FrameCounter + 1
 		end
 	elseif CartState == STATES.enter_high_score then
 		-- state actions
@@ -542,7 +565,8 @@ function _update()
 			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.score)
 			SaveLeaderboard(Leaderboard)
 			music(24)
-			CartState = STATES.high_scores
+			FrameCounter = 0
+			CartState = STATES.enter_high_score_fade
 		end
 	end
 end

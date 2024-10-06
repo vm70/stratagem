@@ -505,6 +505,7 @@ function _update()
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		elseif Player.score >= Player.level_threshold then
+			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
 		else

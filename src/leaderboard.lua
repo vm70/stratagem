@@ -25,10 +25,16 @@ function LoadLeaderboard(leaderboard)
 		for word = 1, 4 do
 			raw_score_data[word] = dget(4 * (entry_idx - 1) + word - 1)
 		end
-		if raw_score_data[1] == 0 then
-			raw_score_data = { 1, 1, 1, (11 - entry_idx) * 100 }
+		if raw_score_data[1] ~= 0 then
+			leaderboard[entry_idx] = {
+				initials = ALLOWED_LETTERS[raw_score_data[1]]
+					.. ALLOWED_LETTERS[raw_score_data[2]]
+					.. ALLOWED_LETTERS[raw_score_data[3]],
+				shifted_score = raw_score_data[4],
+			}
+		else
+			leaderboard[entry_idx] = DefaultScoreEntry(entry_idx)
 		end
-		leaderboard[entry_idx] = DefaultScoreEntry(entry_idx)
 	end
 end
 

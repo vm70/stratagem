@@ -501,13 +501,16 @@ function _update()
 		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
+			-- transition to start/continue combo
 			FrameCounter = 0
 			CartState = STATES.show_match_points
 		elseif Player.shifted_score >= Player.shifted_level_threshold then
+			-- transition to initiate leveling up
 			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
 		else
+			-- transition back to idle; optionally punish player for no match
 			if Player.combo == 0 then
 				sfx(0, -1, 0, 3) -- "error" sound effect
 				Player.chances = Player.chances - 1

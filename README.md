@@ -1,13 +1,14 @@
 # Stratagem: A Nonlinear Match-3 Game for the PICO-8
 
-Stratagem (originally named Gemini) is a match-3 game for the
-[PICO-8 fantasy console](https://www.lexaloffle.com/pico-8.php) where you swap
-adjacent gems on a grid to gain points. Unlike other popular match-3 games, any
-group of gems that directly touch on the grid are cleared, not just ones that
-are in the same row or column.
+<div align="center">
+<img src="assets/stratagem-label.png" alt="Stratagem Logo" style="image-rendering: pixelated" width=384 height=384>
+</div>
 
-While you can make any move on the board that swaps two touching gems, you can
-only make three moves that don't clear groups of gems before the game is over.
+Stratagem is a match-3 game for the
+[PICO-8 fantasy console](https://www.lexaloffle.com/pico-8.php). The objective
+of the game is to get as many points as possible by swapping adjacent gems on a
+grid to clear touching groups on the grid. Spend your chances to make wrong
+non-matching moves wisely; once you run out, it's game over!
 
 ## Build Instructions
 

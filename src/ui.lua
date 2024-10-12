@@ -274,12 +274,13 @@ end
 -- Draw the HUD (score, chances, level progress bar, etc) on the screen
 ---@param player Player
 function DrawHUD(player)
-	-- the `chr(3) .. f` statement moves the text back one pixel
-	print("score:" .. chr(3) .. "h" .. LeftPad(tostr(player.score), " ", 5), 18, 9, 7)
-	print("chances:" .. chr(3) .. "h" .. max(player.chances, 0), 74, 9, 7)
-	print("level " .. player.level, 49, 121, 7)
+	-- `chr(3)` is a special PICO-8 character that shifts the print cursor
+	print("\135" .. chr(3) .. "e:" .. max(player.chances, 0), 17, 9, 7)
+	Printc("score" .. chr(3) .. "f:" .. LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 77, 9, 7)
+	Printc("level " .. player.level, 64, 121, 7)
 	-- calculate level completion ratio
-	local level_ratio = (player.score - player.init_level_score) / (player.level_threshold - player.init_level_score)
+	local level_ratio = (player.shifted_score - player.shifted_init_level_score)
+		/ (player.shifted_level_threshold - player.shifted_init_level_score)
 	level_ratio = min(level_ratio, 1)
 	local rect_length = (93 * level_ratio)
 	rectfill(17, 114, 17 + rect_length, 117, 7)
@@ -307,10 +308,10 @@ end
 ---@param leaderboard HighScore[]
 function DrawLeaderboard(leaderboard)
 	Printc("high scores", 64, 8, 7)
-	for i, score in ipairs(leaderboard) do
-		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
-		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 16 + 6 * i, 7)
+	for entry_idx, entry in ipairs(leaderboard) do
+		local padded_place = LeftPad(tostr(entry_idx), " ", 2) .. ". "
+		local padded_score = LeftPad(tostr(entry.shifted_score, 0x2), " ", 10)
+		Printc(padded_place .. entry.initials .. " " .. padded_score, 64, 16 + 6 * entry_idx, 7)
 	end
 	Printc("\142/\151: return to title", 64, 94, 7)
 end
@@ -396,7 +397,7 @@ function DrawMatchAnimations(player, frame)
 		end
 		-- draw match point number
 		print(
-			chr(2) .. "0" .. player.last_match.move_score,
+			chr(2) .. "0" .. tostr(player.last_match.shifted_match_score, 0x2),
 			16 * player.last_match.x + 1,
 			16 * player.last_match.y + 1,
 			GEM_COLORS[player.last_match.gem_type]

@@ -182,3 +182,7 @@ globals:
     args:
       - type: number
       - type: number
+  lshr:
+    args:
+      - type: number
+      - type: number

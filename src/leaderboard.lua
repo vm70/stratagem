@@ -19,44 +19,46 @@ end
 -- Initialize the high scores by reading from persistent memory
 ---@param leaderboard HighScore[]
 function LoadLeaderboard(leaderboard)
-	for score_idx = 1, 10 do
+	for entry_idx = 1, 10 do
 		---@type integer[]
 		local raw_score_data = {}
 		for word = 1, 4 do
-			raw_score_data[word] = dget(4 * (score_idx - 1) + word - 1)
+			raw_score_data[word] = dget(4 * (entry_idx - 1) + word - 1)
 		end
 		if raw_score_data[1] == 0 then
-			raw_score_data = { 1, 1, 1, (11 - score_idx) * 100 }
+			raw_score_data = { 1, 1, 1, (11 - entry_idx) * 100 }
 		end
-		leaderboard[score_idx] = {
-			initials = ALLOWED_LETTERS[raw_score_data[1]]
-				.. ALLOWED_LETTERS[raw_score_data[2]]
-				.. ALLOWED_LETTERS[raw_score_data[3]],
-			score = raw_score_data[4],
-		}
+		leaderboard[entry_idx] = DefaultScoreEntry(entry_idx)
 	end
 end
 
 ---@param leaderboard HighScore[]
 function ResetLeaderboard(leaderboard)
-	for score_idx = 1, 10 do
-		leaderboard[score_idx] = {
-			initials = ALLOWED_LETTERS[1] .. ALLOWED_LETTERS[1] .. ALLOWED_LETTERS[1],
-			score = (11 - score_idx) * 100,
-		}
+	for entry_idx = 1, 10 do
+		leaderboard[entry_idx] = DefaultScoreEntry(entry_idx)
 	end
+end
+
+-- Create a default score value for populating / resetting the leaderboard.
+---@param entry_idx integer # leaderboard entry index
+---@return HighScore
+function DefaultScoreEntry(entry_idx)
+	return {
+		initials = "aaa",
+		shifted_score = lshr((11 - entry_idx) * 100, 16),
+	}
 end
 
 -- Add the player's new high score to the leaderboard
 ---@param leaderboard HighScore[]
 ---@param letter_ids integer[]
-function UpdateLeaderboard(leaderboard, letter_ids, score)
+function UpdateLeaderboard(leaderboard, letter_ids, shifted_score)
 	local first = ALLOWED_LETTERS[letter_ids[1]]
 	local second = ALLOWED_LETTERS[letter_ids[2]]
 	local third = ALLOWED_LETTERS[letter_ids[3]]
 	---@type HighScore
-	local new_high_score = { initials = first .. second .. third, score = score }
-	local placement = FindPlacement(leaderboard, score)
+	local new_high_score = { initials = first .. second .. third, shifted_score = shifted_score }
+	local placement = FindPlacement(leaderboard, shifted_score)
 	if 1 <= placement and placement <= 10 then
 		add(leaderboard, new_high_score, placement)
 		leaderboard[11] = nil
@@ -66,14 +68,14 @@ end
 -- Save the leaderboard to the cartridge memory
 ---@param leaderboard HighScore[]
 function SaveLeaderboard(leaderboard)
-	for score_idx, score in ipairs(leaderboard) do
-		local first = StringFind(ALLOWED_LETTERS, score.initials[1])
-		dset(4 * (score_idx - 1) + 0, first)
-		local second = StringFind(ALLOWED_LETTERS, score.initials[2])
-		dset(4 * (score_idx - 1) + 1, second)
-		local third = StringFind(ALLOWED_LETTERS, score.initials[3])
-		dset(4 * (score_idx - 1) + 2, third)
-		dset(4 * (score_idx - 1) + 3, score.score)
+	for entry_idx, entry in ipairs(leaderboard) do
+		local first = StringFind(ALLOWED_LETTERS, entry.initials[1])
+		dset(4 * (entry_idx - 1) + 0, first)
+		local second = StringFind(ALLOWED_LETTERS, entry.initials[2])
+		dset(4 * (entry_idx - 1) + 1, second)
+		local third = StringFind(ALLOWED_LETTERS, entry.initials[3])
+		dset(4 * (entry_idx - 1) + 2, third)
+		dset(4 * (entry_idx - 1) + 3, entry.shifted_score)
 	end
 end
 
@@ -82,9 +84,9 @@ end
 ---@param player_score integer
 ---@return integer | nil # which placement (1-10) if the player got a high score; nil otherwise
 function FindPlacement(leaderboard, player_score)
-	for scoreIdx, score in ipairs(leaderboard) do
-		if player_score > score.score then
-			return scoreIdx
+	for entry_idx, entry in ipairs(leaderboard) do
+		if player_score > entry.shifted_score then
+			return entry_idx
 		end
 	end
 	return nil

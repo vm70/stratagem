@@ -53,9 +53,9 @@ FallingGrid = {}
 ---@type Player # table containing player information
 Player = {
 	grid_cursor = nil,
-	score = 0,
-	init_level_score = 0,
-	level_threshold = L1_THRESHOLD,
+	shifted_score = 0,
+	shifted_init_level_score = 0,
+	shifted_level_threshold = SHIFTED_L1_THRESHOLD,
 	level = 1,
 	chances = 3,
 	combo = 0,
@@ -93,9 +93,9 @@ end
 -- Initialize the player for starting the game
 function InitPlayer()
 	Player.grid_cursor = { x = 3, y = 3 }
-	Player.score = 0
-	Player.init_level_score = 0
-	Player.level_threshold = L1_THRESHOLD
+	Player.shifted_score = 0
+	Player.shifted_init_level_score = 0
+	Player.shifted_level_threshold = SHIFTED_L1_THRESHOLD
 	Player.level = 1
 	Player.chances = 3
 	Player.combo = 0
@@ -145,12 +145,11 @@ end
 ---@param player Player
 function LevelUp(player)
 	player.level = player.level + 1
-	player.init_level_score = player.score
+	player.shifted_init_level_score = player.shifted_score
 	-- number of matches needed to advance to the next level (w/o bonus)
 	local match_threshold = L1_MATCHES + 20 * (player.level - 1)
-	-- the number of points for a 3-gem match on this level
-	local base_level_points = ((player.level - 1) * 2) + BASE_MATCH_PTS
-	player.level_threshold = player.init_level_score + match_threshold * base_level_points
+	player.shifted_level_threshold = player.shifted_init_level_score
+		+ match_threshold * ShiftedMatchScore(player.level, 1, 3)
 end
 
 -- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
@@ -502,13 +501,16 @@ function _update()
 		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
+			-- transition to start/continue combo
 			FrameCounter = 0
 			CartState = STATES.show_match_points
-		elseif Player.score >= Player.level_threshold then
+		elseif Player.shifted_score >= Player.shifted_level_threshold then
+			-- transition to initiate leveling up
 			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
 		else
+			-- transition back to idle; optionally punish player for no match
 			if Player.combo == 0 then
 				sfx(0, -1, 0, 3) -- "error" sound effect
 				Player.chances = Player.chances - 1
@@ -543,7 +545,7 @@ function _update()
 		end
 	elseif CartState == STATES.game_over then
 		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
-			Player.placement = FindPlacement(Leaderboard, Player.score)
+			Player.placement = FindPlacement(Leaderboard, Player.shifted_score)
 			if Player.placement == nil then
 				FrameCounter = 0
 				CartState = STATES.game_over_fade
@@ -563,7 +565,7 @@ function _update()
 		MoveScoreCursor()
 		-- state transitions
 		if IsDoneEntering(Player) then
-			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.score)
+			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.shifted_score)
 			SaveLeaderboard(Leaderboard)
 			music(24)
 			FrameCounter = 0

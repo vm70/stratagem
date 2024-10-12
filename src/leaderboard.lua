@@ -40,7 +40,7 @@ function ResetLeaderboard(leaderboard)
 end
 
 -- Create a default score value for populating / resetting the leaderboard.
----@param entry_idx # leaderboard entry index
+---@param entry_idx integer # leaderboard entry index
 ---@return HighScore
 function DefaultScoreEntry(entry_idx)
 	return {

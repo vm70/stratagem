@@ -10,11 +10,14 @@ project-related dependencies using the following shell commands before
 contributing documentation or Lua code.
 
 ```bash
+# I recommend installing Pre-Commit using a package manager like `apt` or `dnf`.
+# Otherwise, `pip` or `pipx` works.
 pipx install pre-commit
+pre-commit install
+
+# StyLua & Selene are Rust programs.
 cargo install stylua --features lua52
 cargo install selene
-npm install -g prettier
-pre-commit install
 ```
 
 This project also uses [Lua LS](https://luals.github.io) to enforce type
@@ -25,17 +28,11 @@ hinting.
 This project uses [semantic versioning](https://semver.org/) for determining
 version numbers.
 
-The version number can be found in the following locations in this repository:
+When creating a new version, don't forget to increment / bump the version
+number. It can be found in the following locations:
 
 - The `VERSION` global variable located in `src/main.lua`
 - The header comment in `src/main.lua`
-- As part of the `__label__` graphic in `src/label.txt`
-
-> [!TIP]
->
-> When updating the version number, don't forget to check the label! Since the
-> label represents a 128x128 image and not a text field, it can't be searched
-> with command-line tools like `grep` or `rg`.
 
 ## Directory Structure
 
@@ -43,13 +40,13 @@ Stratagem's cartridge is split across several files in this repository for more
 modular version control. See the following table for the location of each
 cartridge section.
 
-| Cartridge Part     | Part Header | Project Location   |
-| :----------------- | :---------- | :----------------- |
-| P8Lua code imports | `__lua__`   | `src/main.p8`      |
-| Lua code           | `-->8`      | `src/*.lua`        |
-| Sprite sheet       | `__gfx__`   | `assets/art.p8`    |
-| Sprite flags       | `__gff__`   | `assets/art.p8`    |
-| Cartridge label    | `__label__` | `assets/label.txt` |
-| Tile Map           | `__map__`   | `assets/art.p8`    |
-| Sound Effects      | `__sfx__`   | `assets/sound.p8`  |
-| Music Patterns     | `__music__` | `assets/sound.p8`  |
+| Cartridge Part      | Part Header | Project Location  |
+| :------------------ | :---------- | :---------------- |
+| P8 Lua code imports | `__lua__`   | `src/main.p8`     |
+| Lua code            | `-->8`      | `src/*.lua`       |
+| Sprite sheet        | `__gfx__`   | `assets/art.p8`   |
+| Sprite flags        | `__gff__`   | `assets/art.p8`   |
+| Cartridge label     | `__label__` | `assets/label.p8` |
+| Tile Map            | `__map__`   | `assets/art.p8`   |
+| Sound Effects       | `__sfx__`   | `assets/sound.p8` |
+| Music Patterns      | `__music__` | `assets/sound.p8` |

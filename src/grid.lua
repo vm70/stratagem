@@ -80,10 +80,15 @@ function ClearMatching(grid, coords, player)
 		if player ~= nil then
 			player.combo = player.combo + 1
 			sfx(min(player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
-			local move_score = MatchScore(player.level, player.combo, #match_list)
-			player.score = player.score + move_score
-			player.last_match =
-				{ move_score = move_score, x = coords.x, y = coords.y, gem_type = gem_type, match_list = match_list }
+			local shifted_match_score = ShiftedMatchScore(player.level, player.combo, #match_list)
+			player.shifted_score = player.shifted_score + shifted_match_score
+			player.last_match = {
+				shifted_match_score = shifted_match_score,
+				x = coords.x,
+				y = coords.y,
+				gem_type = gem_type,
+				match_list = match_list,
+			}
 		end
 		return true
 	end

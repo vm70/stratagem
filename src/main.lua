@@ -144,6 +144,7 @@ end
 -- Increase the player level and perform associated actions
 ---@param player Player
 function LevelUp(player)
+	player.chances = min(player.chances + 1, 99)
 	player.level = player.level + 1
 	player.shifted_init_level_score = player.shifted_score
 	-- number of matches needed to advance to the next level (w/o bonus)
@@ -314,6 +315,7 @@ function _draw()
 		DrawGameBG()
 		DrawHUD(Player)
 		Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
+		Printc("you got an extra chance!", 64, 64 - 3, 7)
 		Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
@@ -506,6 +508,7 @@ function _update()
 			CartState = STATES.show_match_points
 		elseif Player.shifted_score >= Player.shifted_level_threshold then
 			-- transition to initiate leveling up
+			sfx(54, -1, 0, 8)
 			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition

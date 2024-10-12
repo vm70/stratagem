@@ -275,7 +275,7 @@ end
 ---@param player Player
 function DrawHUD(player)
 	-- `chr(3)` is a special PICO-8 character that shifts the print cursor
-	print("\135" .. chr(3) .. "e:" .. max(player.chances, 0), 17, 9, 7)
+	print("\135:" .. LeftPad(tostr(max(player.chances, 0)), " ", 2), 18, 9, 7)
 	Printc("score" .. chr(3) .. "f:" .. LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 77, 9, 7)
 	Printc("level " .. player.level, 64, 121, 7)
 	-- calculate level completion ratio

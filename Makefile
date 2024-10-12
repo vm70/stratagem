@@ -30,6 +30,9 @@ build-cart:
 	# Create folder if not exists
 	mkdir -p $(BUILD_DIR)
 	# Assemble P8 cart
+	# Start with label image
+	cp assets/label.p8 $(p8_file)
+	# Use pico-tool to build the cart
 	$(PYTHON_VENV)/bin/p8tool build $(p8_file) \
 		--lua src/main.p8 \
 		--gfx assets/art.p8 \
@@ -42,8 +45,6 @@ prepare-cart: build-cart
 ifndef PICO8_PATH
 	$(error "PICO-8 is not available on your PATH.")
 endif
-	# Append label image
-	cat assets/label.txt >> $(p8_file)
 	# Assemble P8.PNG cart
 	$(PICO8_PATH) $(p8_file) -export $(p8png_file)
 	# Convert back to P8 format

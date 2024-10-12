@@ -4,10 +4,10 @@
 
 ---@class (strict) HighScore # a high score in the leaderboard.
 ---@field initials string # three characters representing the player's initials
----@field score integer # the player's score at the end of a game
+---@field shifted_score integer # the player's score at the end of a game, bit-shifted right by 16
 
 ---@class (strict) MatchInfo # information about a match in the game.
----@field move_score integer # the match's total point score
+---@field shifted_match_score integer # the match's total point score, bit-shifted right by 16
 ---@field x integer # grid x-coordinate of the match's top-left gem
 ---@field y integer # grid y-coordinate of the match's top-left gem
 ---@field gem_type integer # which gem type it is (1 to 8)
@@ -15,9 +15,9 @@
 
 ---@class Player # table containing all player information.
 ---@field grid_cursor Coords | nil # position of the player's cursor
----@field score integer # player's current score
----@field init_level_score integer # player's score at the start of the level
----@field level_threshold integer # player's target score to get to the next level
+---@field shifted_score integer # player's current score, bit-shifted right by 16
+---@field shifted_init_level_score integer # player's score at the start of the level, bit-shifted right by 16
+---@field shifted_level_threshold integer # player's target score to get to the next level, bit-shifted right by 16
 ---@field level integer # player's current level
 ---@field chances integer # how many chances left the player has for making wrong moves
 ---@field combo integer # player's current combo (how many matches have been made since the player swapped two gems)

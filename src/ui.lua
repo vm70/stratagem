@@ -274,10 +274,10 @@ end
 -- Draw the HUD (score, chances, level progress bar, etc) on the screen
 ---@param player Player
 function DrawHUD(player)
-	-- the `chr(3) .. f` statement moves the text back one pixel
-	print(LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 18, 9, 7)
-	print("chances:" .. chr(3) .. "h" .. max(player.chances, 0), 74, 9, 7)
-	print("level " .. player.level, 49, 121, 7)
+	-- `chr(3)` is a special PICO-8 character that shifts the print cursor
+	print("\135" .. chr(3) .. "e:" .. max(player.chances, 0), 17, 9, 7)
+	Printc("score" .. chr(3) .. "f:" .. LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 77, 9, 7)
+	Printc("level " .. player.level, 64, 121, 7)
 	-- calculate level completion ratio
 	local level_ratio = (player.shifted_score - player.shifted_init_level_score)
 		/ (player.shifted_level_threshold - player.shifted_init_level_score)

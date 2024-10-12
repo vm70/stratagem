@@ -508,6 +508,7 @@ function _update()
 			CartState = STATES.show_match_points
 		elseif Player.shifted_score >= Player.shifted_level_threshold then
 			-- transition to initiate leveling up
+			sfx(54, -1, 0, 8)
 			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition

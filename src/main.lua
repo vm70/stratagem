@@ -148,7 +148,6 @@ function PlayLevelMusic(level)
 	music(LEVEL_MUSIC[musicID])
 end
 
-
 ---@param mouse_mode integer
 function SetMouseControls(mouse_mode)
 	assert((mouse_mode == 0) or (mouse_mode == 1), "Invalid memory configuration for mouse mode")

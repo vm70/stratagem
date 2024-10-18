@@ -95,16 +95,16 @@ end
 -- Draw the "level-complete" text
 ---@param level integer
 function DrawLevelComplete(level)
-		Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
-		Printc("you got an extra chance!", 64, 64 - 3, 7)
-		Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
+	Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
+	Printc("you got an extra chance!", 64, 64 - 3, 7)
+	Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
 end
 
 -- Draw the "game-over" text
 function DrawGameOver()
-		Printc("no more chances!", 64, 64 - 18, 7)
-		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
-		Printc("press a key to continue", 64, 64 + 12, 7)
+	Printc("no more chances!", 64, 64 - 18, 7)
+	Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
+	Printc("press a key to continue", 64, 64 + 12, 7)
 end
 
 -- draw the moving game background
@@ -483,8 +483,8 @@ function MoveGridCursor(player, mouse_mode)
 end
 
 function DrawHighScoreEntering(player)
-		Printc("spectacular!", 64, 64 - 24 - 3, 7)
-		Printc("you got " .. player.placement .. OrdinalIndicator(player.placement) .. " place", 64, 64 - 3, 7)
+	Printc("spectacular!", 64, 64 - 24 - 3, 7)
+	Printc("you got " .. player.placement .. OrdinalIndicator(player.placement) .. " place", 64, 64 - 3, 7)
 	local first_str = ""
 	local second_str = ""
 	local third_str = ""

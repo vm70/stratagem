@@ -116,4 +116,3 @@ function FindPlacement(leaderboard, player_score)
 	end
 	return nil
 end
-

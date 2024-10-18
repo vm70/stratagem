@@ -15,8 +15,8 @@ non-matching moves wisely; once you run out, it's game over!
 The included Makefile automatically downloads and installs
 [`picotool`](https://www.dansanderson.com/projects/picotool/) for assembling and
 modifying the PICO-8 cartridge's parts. You can run the following script to
-download and run _Stratagem_ on your machine (assuming the PICO-8 executable is on
-your PATH).
+download and run _Stratagem_ on your machine (assuming the PICO-8 executable is
+on your PATH).
 
 ```bash
 git clone github.com/vm70/stratagem

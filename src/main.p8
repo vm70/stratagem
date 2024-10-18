@@ -9,3 +9,5 @@ __lua__
 -->8
 #include ui.lua
 -->8
+#include controls.lua
+-->8

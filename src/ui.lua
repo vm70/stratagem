@@ -95,9 +95,9 @@ end
 -- Draw the "level-complete" text
 ---@param level integer
 function DrawLevelComplete(level)
-	Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
+	Printc("level " .. level .. " complete!", 64, 64 - 24 - 3, 7)
 	Printc("you got an extra chance!", 64, 64 - 3, 7)
-	Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
+	Printc("get ready for level " .. level + 1, 64, 64 + 24 - 3, 7)
 end
 
 -- Draw the "game-over" text
@@ -447,39 +447,6 @@ function IsDoneEntering(player)
 		return true
 	end
 	return false
-end
-
--- do all actions for moving the grid cursor
----@param player Player
----@param mouse_mode integer
-function MoveGridCursor(player, mouse_mode)
-	if mouse_mode == 0 then
-		if player.grid_cursor == nil then
-			player.grid_cursor = { x = 1, y = 1 }
-		end
-		if btnp(0) and player.grid_cursor.x > 1 then
-			-- move left
-			player.grid_cursor.x = player.grid_cursor.x - 1
-		elseif btnp(1) and player.grid_cursor.x < 6 then
-			-- move right
-			player.grid_cursor.x = player.grid_cursor.x + 1
-		elseif btnp(2) and player.grid_cursor.y > 1 then
-			-- move up
-			player.grid_cursor.y = player.grid_cursor.y - 1
-		elseif btnp(3) and player.grid_cursor.y < 6 then
-			-- move down
-			player.grid_cursor.y = player.grid_cursor.y + 1
-		end
-	else
-		if (16 <= stat(32) - 1) and (stat(32) - 1 <= 111) and (16 <= stat(33) - 1) and (stat(33) - 1 <= 111) then
-			player.grid_cursor = {
-				x = flr((stat(32) - 1) / 16),
-				y = flr((stat(33) - 1) / 16),
-			}
-		else
-			player.grid_cursor = nil
-		end
-	end
 end
 
 function DrawHighScoreEntering(player)

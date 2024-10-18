@@ -122,23 +122,6 @@ function InitPlayer()
 	Player.swapping_gem = nil
 end
 
--- Do all cursor moving actions for entering the high score
-function MoveScoreCursor()
-	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
-		-- move left
-		Player.score_cursor = Player.score_cursor - 1
-	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(1) then
-		-- move right
-		Player.score_cursor = Player.score_cursor + 1
-	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(2) then
-		-- increment letter
-		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], true)
-	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(3) then
-		-- decrement letter
-		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
-	end
-end
-
 -- Increase the player level and perform associated actions
 ---@param player Player
 function LevelUp(player)
@@ -166,23 +149,6 @@ end
 function PlayLevelMusic(level)
 	local musicID = (level % #LEVEL_MUSIC) + 1
 	music(LEVEL_MUSIC[musicID])
-end
-
----@param mouse_mode integer
-function SetMouseControls(mouse_mode)
-	assert((mouse_mode == 0) or (mouse_mode == 1), "Invalid memory configuration for mouse mode")
-	MouseMode = mouse_mode
-	dset(63, MouseMode)
-	-- printh("MouseMode is " .. tostr(MouseMode))
-	if MouseMode == 0 then
-		menuitem(1, "mouse input: off", function()
-			SetMouseControls(1)
-		end)
-	else
-		menuitem(1, "mouse input: on", function()
-			SetMouseControls(0)
-		end)
-	end
 end
 
 function _init()

@@ -169,7 +169,7 @@ function SelectSwapping(grid_cursor, mouse_mode)
 		return nil
 	end
 	local swapping_gem = nil
-	if mouse_mode == 1 and band(stat(34), 0x1) == 1 then
+	if mouse_mode == 1 and MousePressed() then
 		---@type Coords
 		local mouse_location = {
 			x = flr((stat(32) - 1) / 16),

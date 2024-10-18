@@ -75,6 +75,26 @@ FrameCounter = 0
 ---@type integer # mode for mouse controls. 0 if mouse is disabled, 1 if enabled.
 MouseMode = 0
 
+-- Signal whether the mouse has been pressed.
+--
+-- see PICO-8 Manual, sec. 6.13
+---@return boolean
+function MousePressed()
+	return band(stat(34), 0x1) == 1
+end
+
+-- Check if any key (including the mouse) has been pressed.
+---@return boolean
+function AnyKeyPressed()
+	if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
+		return true
+	end
+	if MouseMode == 1 and MousePressed() then
+		return true
+	end
+	return false
+end
+
 -- Initialize the grid with all holes
 function InitGrids()
 	for y = 1, 6 do
@@ -352,7 +372,7 @@ function _update()
 		elseif MouseMode == 1 and Player.swapping_gem ~= nil then
 			FrameCounter = 0
 			CartState = STATES.swap_animation
-		elseif MouseMode == 1 and Player.grid_cursor ~= nil and band(stat(34), 0x1) == 1 then
+		elseif MouseMode == 1 and Player.grid_cursor ~= nil and MousePressed() then
 			CartState = STATES.swap_select_mouse_held
 		elseif MouseMode == 0 and (btnp(4) or btnp(5)) then
 			CartState = STATES.swap_select
@@ -362,7 +382,7 @@ function _update()
 		Player.swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
 		-- state transitions
 		if
-			(MouseMode == 1 and band(stat(34), 0x1) == 1 and Player.swapping_gem == nil)
+			(MouseMode == 1 and MousePressed() and Player.swapping_gem == nil)
 			or (MouseMode == 0 and (btnp(4) or btnp(5)))
 		then
 			CartState = STATES.game_idle
@@ -372,7 +392,7 @@ function _update()
 		end
 	elseif CartState == STATES.swap_select_mouse_held then
 		Player.swapping_gem = SelectSwapping(Player.grid_cursor, MouseMode)
-		if MouseMode == 0 or band(stat(34), 0x1) == 0 then
+		if MouseMode == 0 or not MousePressed() then
 			CartState = STATES.swap_select
 		elseif Player.swapping_gem ~= nil then
 			FrameCounter = 0
@@ -477,7 +497,7 @@ function _update()
 			FrameCounter = FrameCounter + 1
 		end
 	elseif CartState == STATES.game_over then
-		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) or band(stat(34), 0x1) == 1 then
+		if AnyKeyPressed() then
 			Player.placement = FindPlacement(Leaderboard, Player.shifted_score)
 			if Player.placement == nil then
 				FrameCounter = 0

@@ -41,9 +41,6 @@ LEVEL_MUSIC = { 2, 8, 32 }
 ---@type integer Number of gems in the game (max 8)
 N_GEMS = 8
 
----@type integer Number of frames to show level-up screen
-LEVEL_UP_FRAMES = 100
-
 ---@type integer[][] game grid
 Grid = {}
 

@@ -21,6 +21,9 @@ SCORE_POSITIONS = {
 	ok = 4,
 }
 
+---@type integer Number of frames to show level-up screen
+LEVEL_UP_FRAMES = 100
+
 ---@type integer How many frames to wait for level wiping transitions
 WIPE_FRAMES = 10
 

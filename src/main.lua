@@ -477,7 +477,7 @@ function _update()
 			FrameCounter = FrameCounter + 1
 		end
 	elseif CartState == STATES.game_over then
-		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
+		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) or band(stat(34), 0x1) == 1 then
 			Player.placement = FindPlacement(Leaderboard, Player.shifted_score)
 			if Player.placement == nil then
 				FrameCounter = 0

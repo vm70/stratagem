@@ -1,14 +1,14 @@
 -- stratagem v0.6.0
 -- by vincent mercator & co.
 
----@type Version
+---@type Version Semantic version number
 VERSION = {
 	major = 0,
 	minor = 6,
 	patch = 0,
 }
 
----@enum States
+---@enum States Dictionary of allowed states in the cart's finite-state machine
 STATES = {
 	title_screen = 1,
 	credits = 2,
@@ -75,26 +75,6 @@ FrameCounter = 0
 ---@type integer # mode for mouse controls. 0 if mouse is disabled, 1 if enabled.
 MouseMode = 0
 
--- Signal whether the mouse has been pressed.
---
--- see PICO-8 Manual, sec. 6.13
----@return boolean
-function MousePressed()
-	return band(stat(34), 0x1) == 1
-end
-
--- Check if any key (including the mouse) has been pressed.
----@return boolean
-function AnyKeyPressed()
-	if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
-		return true
-	end
-	if MouseMode == 1 and MousePressed() then
-		return true
-	end
-	return false
-end
-
 -- Initialize the grid with all holes
 function InitGrids()
 	for y = 1, 6 do
@@ -132,16 +112,6 @@ function LevelUp(player)
 	local match_threshold = L1_MATCHES + 20 * (player.level - 1)
 	player.shifted_level_threshold = player.shifted_init_level_score
 		+ match_threshold * ShiftedMatchScore(player.level, 1, 3)
-end
-
--- Get the color of the score position for drawing the high score UI
----@param score_position ScorePositions
-function HSColor(score_position)
-	local color = 7
-	if score_position == Player.score_cursor then
-		color = 11
-	end
-	return color
 end
 
 -- Play the corresponding music for the given level number
@@ -260,8 +230,6 @@ function _draw()
 	elseif CartState == STATES.enter_high_score_fade then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("spectacular!", 64, 64 - 24 - 3, 7)
-		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
 		DrawHighScoreEntering(Player)
 		DrawFade(FrameCounter)
 	elseif CartState == STATES.high_scores then
@@ -481,7 +449,7 @@ function _update()
 		end
 	elseif CartState == STATES.enter_high_score then
 		-- state actions
-		MoveScoreCursor()
+		MoveScoreCursor(Player)
 		-- state transitions
 		if IsDoneEntering(Player) then
 			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.shifted_score)

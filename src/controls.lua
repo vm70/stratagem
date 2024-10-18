@@ -1,6 +1,8 @@
 -- Player controls.
 
----@param mouse_mode integer
+-- Set the mouse controls.
+---@see MouseMode for how MouseMode is stored.
+---@param mouse_mode integer Desired mouse mode control.
 function SetMouseControls(mouse_mode)
 	assert((mouse_mode == 0) or (mouse_mode == 1), "Invalid memory configuration for mouse mode")
 	MouseMode = mouse_mode
@@ -17,13 +19,14 @@ function SetMouseControls(mouse_mode)
 	end
 end
 
--- do all actions for moving the grid cursor
----@param player Player
----@param mouse_mode integer
+-- Do all actions for moving the player's grid cursor.
+---@param player Player Player table.
+---@param mouse_mode integer Mouse mode.
+---@see MouseMode for how MouseMode is stored.
 function MoveGridCursor(player, mouse_mode)
 	if mouse_mode == 0 then
 		if player.grid_cursor == nil then
-			player.grid_cursor = { x = 1, y = 1 }
+			player.grid_cursor = { x = 3, y = 3 }
 		end
 		if btnp(0) and player.grid_cursor.x > 1 then
 			-- move left
@@ -50,12 +53,12 @@ function MoveGridCursor(player, mouse_mode)
 	end
 end
 
--- do all actions for selecting which gem to swap
----@param grid_cursor Coords | nil # player's grid cursor. May be nil from mouse controls.
+-- Do all actions for selecting which gem to swap.
+---@param grid_cursor Coords | nil # player's grid cursor. May be nil due to mouse controls.
 ---@param mouse_mode integer # whether or not the mouse is enabled
----@return Coords | nil # which gem was chosen to swap with the player's cursor
+---@see MouseMode for how MouseMode is stored.
+---@return Coords | nil # which gem was chosen to swap with the player's cursor. May be nil if the choice is invalid.
 function SelectSwapping(grid_cursor, mouse_mode)
-	---@type Coords | nil
 	if grid_cursor == nil then
 		return nil
 	end
@@ -87,19 +90,40 @@ function SelectSwapping(grid_cursor, mouse_mode)
 	return swapping_gem
 end
 
--- Do all cursor moving actions for entering the high score
-function MoveScoreCursor()
-	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
+-- Do all cursor-moving actions for entering the high score.
+---@param player Player table.
+function MoveScoreCursor(player)
+	if player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then
 		-- move left
-		Player.score_cursor = Player.score_cursor - 1
-	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(1) then
+		player.score_cursor = player.score_cursor - 1
+	elseif player.score_cursor ~= SCORE_POSITIONS.ok and btnp(1) then
 		-- move right
-		Player.score_cursor = Player.score_cursor + 1
-	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(2) then
+		player.score_cursor = player.score_cursor + 1
+	elseif player.score_cursor ~= SCORE_POSITIONS.ok and btnp(2) then
 		-- increment letter
-		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], true)
-	elseif Player.score_cursor ~= SCORE_POSITIONS.ok and btnp(3) then
+		player.letter_ids[player.score_cursor] = StepInitials(player.letter_ids[player.score_cursor], true)
+	elseif player.score_cursor ~= SCORE_POSITIONS.ok and btnp(3) then
 		-- decrement letter
-		Player.letter_ids[Player.score_cursor] = StepInitials(Player.letter_ids[Player.score_cursor], false)
+		player.letter_ids[player.score_cursor] = StepInitials(player.letter_ids[player.score_cursor], false)
 	end
+end
+
+-- Signal whether the mouse has been pressed.
+--
+-- see PICO-8 Manual, sec. 6.13
+---@return boolean
+function MousePressed()
+	return band(stat(34), 0x1) == 1
+end
+
+-- Check if any key (including the mouse) has been pressed.
+---@return boolean
+function AnyKeyPressed()
+	if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
+		return true
+	end
+	if MouseMode == 1 and MousePressed() then
+		return true
+	end
+	return false
 end

@@ -474,3 +474,13 @@ function DrawHighScoreEntering(player)
 	ok_str = ok_str .. "ok" .. chr(2) .. "- "
 	Printc("your name: " .. first_str .. second_str .. third_str .. ok_str, 64, 64 + 24 - 3, 7)
 end
+
+-- Get the color of the score position for drawing the high score UI
+---@param score_position ScorePositions
+function HSColor(score_position)
+	local color = 7
+	if score_position == Player.score_cursor then
+		color = 11
+	end
+	return color
+end

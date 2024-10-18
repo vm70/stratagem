@@ -4,8 +4,8 @@
 ALLOWED_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789 "
 
 -- Cycle through the initials' indices.
----@param letterID integer # current letter ID (1 to #INITIALS inclusive)
----@param isForward boolean whether the step is forward
+---@param letterID integer Current letter ID (in range {1, ..., #INITIALS})
+---@param isForward boolean Whether the step is forward. If false, then the step is backward.
 ---@return integer # next / previous letter ID
 function StepInitials(letterID, isForward)
 	assert((1 <= letterID) and (letterID <= #ALLOWED_LETTERS), "letter ID must be in allowed letter range")
@@ -22,10 +22,11 @@ function StepInitials(letterID, isForward)
 	end
 end
 
--- equivalent of `string.find` in vanilla Lua's standard library
----@param str string
----@param wantChar string
----@return integer | nil
+-- Look for the first index in a string that matches a wanted character.
+---@see string.find (in vanilla Lua 5.2)
+---@param str string # string to search
+---@param wantChar string # wanted character
+---@return integer | nil # index of the found character in the original string; nil if not found
 function StringFind(str, wantChar)
 	for idx = 1, #str do
 		if str[idx] == wantChar then
@@ -35,7 +36,7 @@ function StringFind(str, wantChar)
 	return nil
 end
 
--- Initialize the high scores by reading from persistent memory
+-- Initialize the high score leaderboard by reading from persistent memory
 ---@param leaderboard HighScore[]
 function LoadLeaderboard(leaderboard)
 	for entry_idx = 1, 10 do
@@ -57,6 +58,7 @@ function LoadLeaderboard(leaderboard)
 	end
 end
 
+-- Reset the given leaderboard by filling it with default score entries.
 ---@param leaderboard HighScore[]
 function ResetLeaderboard(leaderboard)
 	for entry_idx = 1, 10 do
@@ -64,7 +66,7 @@ function ResetLeaderboard(leaderboard)
 	end
 end
 
--- Create a default score value for populating / resetting the leaderboard.
+-- Create a default leaderboard entry for populating / resetting the leaderboard.
 ---@param entry_idx integer # leaderboard entry index
 ---@return HighScore
 function DefaultScoreEntry(entry_idx)
@@ -74,9 +76,9 @@ function DefaultScoreEntry(entry_idx)
 	}
 end
 
--- Add the player's new high score to the leaderboard
----@param leaderboard HighScore[]
----@param letter_ids integer[]
+-- Add the player's new high score to the leaderboard.
+---@param leaderboard HighScore[] game leaderboard
+---@param letter_ids integer[] array of the player's letter IDs
 function UpdateLeaderboard(leaderboard, letter_ids, shifted_score)
 	local first = ALLOWED_LETTERS[letter_ids[1]]
 	local second = ALLOWED_LETTERS[letter_ids[2]]
@@ -90,8 +92,8 @@ function UpdateLeaderboard(leaderboard, letter_ids, shifted_score)
 	end
 end
 
--- Save the leaderboard to the cartridge memory
----@param leaderboard HighScore[]
+-- Save the leaderboard to the cartridge's persistent memory.
+---@param leaderboard HighScore[] game leaderboard
 function SaveLeaderboard(leaderboard)
 	for entry_idx, entry in ipairs(leaderboard) do
 		local first = StringFind(ALLOWED_LETTERS, entry.initials[1])
@@ -105,9 +107,9 @@ function SaveLeaderboard(leaderboard)
 end
 
 -- Calculate a score's placement in the leaderboard.
----@param leaderboard HighScore[]
----@param player_score integer
----@return integer | nil # which placement (1-10) if the player got a high score; nil otherwise
+---@param leaderboard HighScore[] Game leaderboard
+---@param player_score integer Player's score after playing the game.
+---@return integer | nil # Which placement (1 to 10) if the player got a high score; nil otherwise
 function FindPlacement(leaderboard, player_score)
 	for entry_idx, entry in ipairs(leaderboard) do
 		if player_score > entry.shifted_score then

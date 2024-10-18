@@ -10,9 +10,9 @@ L1_MATCHES = 50
 SHIFTED_L1_THRESHOLD = L1_MATCHES * BASE_MATCH_SHIFTED_PTS
 
 -- swap the two gems (done by the player)
----@param grid integer[][]
----@param gem1 Coords
----@param gem2 Coords
+---@param grid integer[][] game grid
+---@param gem1 Coords first gem to swap
+---@param gem2 Coords second gem to swap
 function SwapGems(grid, gem1, gem2)
 	local temp = grid[gem1.y][gem1.x]
 	grid[gem1.y][gem1.x] = grid[gem2.y][gem2.x]
@@ -20,18 +20,18 @@ function SwapGems(grid, gem1, gem2)
 end
 
 -- Fill holes in the grid by dropping gems.
----@param grid integer[][]
----@param falling_grid boolean[][]
----@param n_gems integer
+---@param grid integer[][] game grid
+---@param falling_grid boolean[][] grid used by UI functions for determining whether gems are falling.
+---@param max_gem_id integer # maximum gem ID for dropping new gems onto the grid.
 ---@return boolean # whether the grid has any holes
-function FillGridHoles(grid, falling_grid, n_gems)
+function FillGridHoles(grid, falling_grid, max_gem_id)
 	local has_holes = false
 	for y = 6, 1, -1 do
 		for x = 1, 6 do
 			if grid[y][x] == 0 then
 				falling_grid[y][x] = true
 				if y == 1 then
-					grid[y][x] = 1 + flr(rnd(n_gems))
+					grid[y][x] = 1 + flr(rnd(max_gem_id))
 				else
 					has_holes = true
 					-- printh("Found a hole at " .. x .. "," .. y)
@@ -48,8 +48,8 @@ function FillGridHoles(grid, falling_grid, n_gems)
 end
 
 -- Clear the first match on the grid, starting from the top-left corner.
----@param grid integer[][]
----@param player? Player whether the match is made by the player
+---@param grid integer[][] game grid
+---@param player? Player player table. If not passed as input, then no points are awarded.
 ---@return boolean # whether any matches were cleared
 function ClearFirstGridMatch(grid, player)
 	for y = 1, 6 do
@@ -65,7 +65,7 @@ end
 
 -- Clear a match on the grid at the specific coordinates (if possible). Only clears when the match has 3+ gems
 ---@param coords Coords coordinates of a single gem in the match
----@param player? Player
+---@param player? Player player table. If not passed as input, then no points are awarded.
 ---@return boolean # whether the match clearing was successful
 function ClearMatching(grid, coords, player)
 	local gem_type = grid[coords.y][coords.x]
@@ -147,14 +147,15 @@ function FloodMatch(grid, gem_coords, visited)
 	return visited
 end
 
--- Calculate the score for a match.
+-- Calculate the (bit-shifted) score for a match.
 ---@param level integer
 ---@param combo integer
----@param match_size integer
+---@param match_size integer How many gems are in the match
+---@return number # match points, bit-shifted right by 16 for more efficient storage.
 function ShiftedMatchScore(level, combo, match_size)
-	-- the number of (shifted) points added for larger matches
+	-- the number of (bit-shifted) points added for larger matches
 	local shifted_size_bonus = lshr(match_size - 3, 16)
-	-- the number of (shifted) points added for combos / cascades
+	-- the number of (bit-shifted) points added for combos / cascades
 	local shifted_combo_bonus = (min(combo, 7) - 1) * BASE_MATCH_SHIFTED_PTS
 	return level * (BASE_MATCH_SHIFTED_PTS + shifted_size_bonus + shifted_combo_bonus)
 end

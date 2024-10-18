@@ -92,6 +92,21 @@ function DrawCursor(grid_cursor, color)
 	-- fillp(0)
 end
 
+-- Draw the "level-complete" text
+---@param level integer
+function DrawLevelComplete(level)
+		Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
+		Printc("you got an extra chance!", 64, 64 - 3, 7)
+		Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
+end
+
+-- Draw the "game-over" text
+function DrawGameOver()
+		Printc("no more chances!", 64, 64 - 18, 7)
+		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
+		Printc("press a key to continue", 64, 64 + 12, 7)
+end
+
 -- draw the moving game background
 function DrawGameBG()
 	fillp(BG_PATTERNS[1 + flr(time() % #BG_PATTERNS)])
@@ -465,4 +480,30 @@ function MoveGridCursor(player, mouse_mode)
 			player.grid_cursor = nil
 		end
 	end
+end
+
+function DrawHighScoreEntering(player)
+		Printc("spectacular!", 64, 64 - 24 - 3, 7)
+		Printc("you got " .. player.placement .. OrdinalIndicator(player.placement) .. " place", 64, 64 - 3, 7)
+	local first_str = ""
+	local second_str = ""
+	local third_str = ""
+	local ok_str = ""
+	if player.score_cursor == SCORE_POSITIONS.first then
+		first_str = chr(2) .. "3"
+	end
+	first_str = first_str .. ALLOWED_LETTERS[player.letter_ids[1]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.second then
+		second_str = chr(2) .. "3"
+	end
+	second_str = second_str .. ALLOWED_LETTERS[player.letter_ids[2]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.third then
+		third_str = chr(2) .. "3"
+	end
+	third_str = third_str .. ALLOWED_LETTERS[player.letter_ids[3]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.ok then
+		ok_str = chr(2) .. "3"
+	end
+	ok_str = ok_str .. "ok" .. chr(2) .. "- "
+	Printc("your name: " .. first_str .. second_str .. third_str .. ok_str, 64, 64 + 24 - 3, 7)
 end

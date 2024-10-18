@@ -148,29 +148,6 @@ function PlayLevelMusic(level)
 	music(LEVEL_MUSIC[musicID])
 end
 
-function DrawInitialEntering(player)
-	local first_str = ""
-	local second_str = ""
-	local third_str = ""
-	local ok_str = ""
-	if player.score_cursor == SCORE_POSITIONS.first then
-		first_str = chr(2) .. "3"
-	end
-	first_str = first_str .. ALLOWED_LETTERS[player.letter_ids[1]] .. chr(2) .. "- "
-	if player.score_cursor == SCORE_POSITIONS.second then
-		second_str = chr(2) .. "3"
-	end
-	second_str = second_str .. ALLOWED_LETTERS[player.letter_ids[2]] .. chr(2) .. "- "
-	if player.score_cursor == SCORE_POSITIONS.third then
-		third_str = chr(2) .. "3"
-	end
-	third_str = third_str .. ALLOWED_LETTERS[player.letter_ids[3]] .. chr(2) .. "- "
-	if player.score_cursor == SCORE_POSITIONS.ok then
-		ok_str = chr(2) .. "3"
-	end
-	ok_str = ok_str .. "ok" .. chr(2) .. "- "
-	Printc("your name: " .. first_str .. second_str .. third_str .. ok_str, 64, 64 + 24 - 3, 7)
-end
 
 ---@param mouse_mode integer
 function SetMouseControls(mouse_mode)
@@ -276,9 +253,7 @@ function _draw()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
-		Printc("you got an extra chance!", 64, 64 - 3, 7)
-		Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
+		DrawLevelComplete(Player.level)
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -287,28 +262,22 @@ function _draw()
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("no more chances!", 64, 64 - 18, 7)
-		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
-		Printc("press a key to continue", 64, 64 + 12, 7)
+		DrawGameOver()
 	elseif CartState == STATES.game_over_fade then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("no more chances!", 64, 64 - 18, 7)
-		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
-		Printc("press a key to continue", 64, 64 + 12, 7)
+		DrawGameOver()
 		DrawFade(FrameCounter)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("spectacular!", 64, 64 - 24 - 3, 7)
-		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
-		DrawInitialEntering(Player)
+		DrawHighScoreEntering(Player)
 	elseif CartState == STATES.enter_high_score_fade then
 		DrawGameBG()
 		DrawHUD(Player)
 		Printc("spectacular!", 64, 64 - 24 - 3, 7)
 		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
-		DrawInitialEntering(Player)
+		DrawHighScoreEntering(Player)
 		DrawFade(FrameCounter)
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()

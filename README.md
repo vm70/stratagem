@@ -1,10 +1,10 @@
-# Stratagem: A Nonlinear Match-3 Game for the PICO-8
+# _Stratagem_: A Nonlinear Match-3 Game for the PICO-8
 
 <div align="center">
 <img src="assets/stratagem-label.png" alt="Stratagem Logo" style="image-rendering: pixelated" width=384 height=384>
 </div>
 
-Stratagem is a match-3 game for the
+_Stratagem_ is a match-3 game for the
 [PICO-8 fantasy console](https://www.lexaloffle.com/pico-8.php). The objective
 of the game is to get as many points as possible by swapping adjacent gems on a
 grid to clear touching groups on the grid. Spend your chances to make wrong
@@ -15,7 +15,7 @@ non-matching moves wisely; once you run out, it's game over!
 The included Makefile automatically downloads and installs
 [`picotool`](https://www.dansanderson.com/projects/picotool/) for assembling and
 modifying the PICO-8 cartridge's parts. You can run the following script to
-download and run Stratagem on your machine (assuming the PICO-8 executable is on
+download and run _Stratagem_ on your machine (assuming the PICO-8 executable is on
 your PATH).
 
 ```bash

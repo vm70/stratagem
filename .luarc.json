@@ -2,10 +2,9 @@
   "diagnostics.globals": [
     "_draw",
     "_init",
-    "band",
     "_update",
     "add",
-    "stat",
+    "band",
     "btnp",
     "cartdata",
     "chr",
@@ -17,6 +16,7 @@
     "dset",
     "fillp",
     "flr",
+    "lshr",
     "map",
     "max",
     "menuitem",
@@ -32,6 +32,7 @@
     "sin",
     "spr",
     "sspr",
+    "stat",
     "time",
     "tostr"
   ],

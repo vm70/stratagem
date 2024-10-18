@@ -1,13 +1,13 @@
 -- Grid functions.
 
 ---@type integer How many points a three-gem match scores on level 1
-BASE_MATCH_PTS = 3
+BASE_MATCH_SHIFTED_PTS = lshr(0x0003, 16)
 
 ---@type integer How many three-gem matches without combos should get you to level 2
 L1_MATCHES = 50
 
 ---@type integer How many points needed to get to level 2
-L1_THRESHOLD = L1_MATCHES * BASE_MATCH_PTS
+SHIFTED_L1_THRESHOLD = L1_MATCHES * BASE_MATCH_SHIFTED_PTS
 
 -- swap the two gems (done by the player)
 ---@param grid integer[][]
@@ -80,10 +80,15 @@ function ClearMatching(grid, coords, player)
 		if player ~= nil then
 			player.combo = player.combo + 1
 			sfx(min(player.combo, 7), -1, 0, 4) -- combo sound effects are #1-7
-			local move_score = MatchScore(player.level, player.combo, #match_list)
-			player.score = player.score + move_score
-			player.last_match =
-				{ move_score = move_score, x = coords.x, y = coords.y, gem_type = gem_type, match_list = match_list }
+			local shifted_match_score = ShiftedMatchScore(player.level, player.combo, #match_list)
+			player.shifted_score = player.shifted_score + shifted_match_score
+			player.last_match = {
+				shifted_match_score = shifted_match_score,
+				x = coords.x,
+				y = coords.y,
+				gem_type = gem_type,
+				match_list = match_list,
+			}
 		end
 		return true
 	end
@@ -146,14 +151,12 @@ end
 ---@param level integer
 ---@param combo integer
 ---@param match_size integer
-function MatchScore(level, combo, match_size)
-	-- the number of points for a 3-gem match on this level
-	local base_level_points = ((level - 1) * 2) + BASE_MATCH_PTS
-	-- the number of points added for larger matches
-	local size_bonus = level * (match_size - 3)
-	-- the number of points added for combos / cascades
-	local combo_bonus = level * (min(combo, 7) - 1)
-	return base_level_points + size_bonus + combo_bonus
+function ShiftedMatchScore(level, combo, match_size)
+	-- the number of (shifted) points added for larger matches
+	local shifted_size_bonus = lshr(match_size - 3, 16)
+	-- the number of (shifted) points added for combos / cascades
+	local shifted_combo_bonus = (min(combo, 7) - 1) * BASE_MATCH_SHIFTED_PTS
+	return level * (BASE_MATCH_SHIFTED_PTS + shifted_size_bonus + shifted_combo_bonus)
 end
 
 -- do all actions for selecting which gem to swap

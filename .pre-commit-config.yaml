@@ -13,7 +13,7 @@ repos:
         name: prettier
         description: Prettier is an opinionated code formatter.
         language: system
-        entry: prettier --write --ignore-unknown
+        entry: npx -y prettier --write --ignore-unknown
         types: [text]
       - id: selene
         name: selene

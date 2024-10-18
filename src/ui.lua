@@ -21,6 +21,9 @@ SCORE_POSITIONS = {
 	ok = 4,
 }
 
+---@type integer Number of frames to show level-up screen
+LEVEL_UP_FRAMES = 100
+
 ---@type integer How many frames to wait for level wiping transitions
 WIPE_FRAMES = 10
 
@@ -57,6 +60,22 @@ function Printc(str, x, y, col)
 	print(str, x - width / 2, y, col)
 end
 
+-- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
+---@param place integer
+---@return string
+function OrdinalIndicator(place)
+	assert((1 <= place) and (place <= 10), "only works for 1-10")
+	if place == 1 then
+		return "st"
+	elseif place == 2 then
+		return "nd"
+	elseif place == 3 then
+		return "rd"
+	else
+		return "th"
+	end
+end
+
 -- draw the cursor on the grid
 ---@param grid_cursor Coords | nil
 ---@param color integer
@@ -71,6 +90,21 @@ function DrawCursor(grid_cursor, color)
 	end
 	rect(16 * grid_cursor.x, 16 * grid_cursor.y, 16 * grid_cursor.x + 15, 16 * grid_cursor.y + 15, color)
 	-- fillp(0)
+end
+
+-- Draw the "level-complete" text
+---@param level integer
+function DrawLevelComplete(level)
+	Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
+	Printc("you got an extra chance!", 64, 64 - 3, 7)
+	Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
+end
+
+-- Draw the "game-over" text
+function DrawGameOver()
+	Printc("no more chances!", 64, 64 - 18, 7)
+	Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
+	Printc("press a key to continue", 64, 64 + 12, 7)
 end
 
 -- draw the moving game background
@@ -274,12 +308,13 @@ end
 -- Draw the HUD (score, chances, level progress bar, etc) on the screen
 ---@param player Player
 function DrawHUD(player)
-	-- the `chr(3) .. f` statement moves the text back one pixel
-	print("score:" .. chr(3) .. "h" .. LeftPad(tostr(player.score), " ", 5), 18, 9, 7)
-	print("chances:" .. chr(3) .. "h" .. max(player.chances, 0), 74, 9, 7)
-	print("level " .. player.level, 49, 121, 7)
+	-- `chr(3)` is a special PICO-8 character that shifts the print cursor
+	print("\135:" .. LeftPad(tostr(max(player.chances, 0)), " ", 2), 18, 9, 7)
+	Printc("score" .. chr(3) .. "f:" .. LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 77, 9, 7)
+	Printc("level " .. player.level, 64, 121, 7)
 	-- calculate level completion ratio
-	local level_ratio = (player.score - player.init_level_score) / (player.level_threshold - player.init_level_score)
+	local level_ratio = (player.shifted_score - player.shifted_init_level_score)
+		/ (player.shifted_level_threshold - player.shifted_init_level_score)
 	level_ratio = min(level_ratio, 1)
 	local rect_length = (93 * level_ratio)
 	rectfill(17, 114, 17 + rect_length, 117, 7)
@@ -307,10 +342,10 @@ end
 ---@param leaderboard HighScore[]
 function DrawLeaderboard(leaderboard)
 	Printc("high scores", 64, 8, 7)
-	for i, score in ipairs(leaderboard) do
-		local padded_place = LeftPad(tostr(i), " ", 2) .. ". "
-		local padded_score = LeftPad(tostr(score.score), " ", 5)
-		Printc(padded_place .. score.initials .. " " .. padded_score, 64, 16 + 6 * i, 7)
+	for entry_idx, entry in ipairs(leaderboard) do
+		local padded_place = LeftPad(tostr(entry_idx), " ", 2) .. ". "
+		local padded_score = LeftPad(tostr(entry.shifted_score, 0x2), " ", 10)
+		Printc(padded_place .. entry.initials .. " " .. padded_score, 64, 16 + 6 * entry_idx, 7)
 	end
 	Printc("\142/\151: return to title", 64, 94, 7)
 end
@@ -396,7 +431,7 @@ function DrawMatchAnimations(player, frame)
 		end
 		-- draw match point number
 		print(
-			chr(2) .. "0" .. player.last_match.move_score,
+			chr(2) .. "0" .. tostr(player.last_match.shifted_match_score, 0x2),
 			16 * player.last_match.x + 1,
 			16 * player.last_match.y + 1,
 			GEM_COLORS[player.last_match.gem_type]
@@ -445,4 +480,30 @@ function MoveGridCursor(player, mouse_mode)
 			player.grid_cursor = nil
 		end
 	end
+end
+
+function DrawHighScoreEntering(player)
+	Printc("spectacular!", 64, 64 - 24 - 3, 7)
+	Printc("you got " .. player.placement .. OrdinalIndicator(player.placement) .. " place", 64, 64 - 3, 7)
+	local first_str = ""
+	local second_str = ""
+	local third_str = ""
+	local ok_str = ""
+	if player.score_cursor == SCORE_POSITIONS.first then
+		first_str = chr(2) .. "3"
+	end
+	first_str = first_str .. ALLOWED_LETTERS[player.letter_ids[1]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.second then
+		second_str = chr(2) .. "3"
+	end
+	second_str = second_str .. ALLOWED_LETTERS[player.letter_ids[2]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.third then
+		third_str = chr(2) .. "3"
+	end
+	third_str = third_str .. ALLOWED_LETTERS[player.letter_ids[3]] .. chr(2) .. "- "
+	if player.score_cursor == SCORE_POSITIONS.ok then
+		ok_str = chr(2) .. "3"
+	end
+	ok_str = ok_str .. "ok" .. chr(2) .. "- "
+	Printc("your name: " .. first_str .. second_str .. third_str .. ok_str, 64, 64 + 24 - 3, 7)
 end

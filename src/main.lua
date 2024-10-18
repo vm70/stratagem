@@ -1,11 +1,11 @@
--- stratagem v0.4.1
+-- stratagem v0.5.0
 -- by vincent mercator & co.
 
 ---@type Version
 VERSION = {
 	major = 0,
-	minor = 4,
-	patch = 1,
+	minor = 5,
+	patch = 0,
 }
 
 ---@enum States
@@ -41,9 +41,6 @@ LEVEL_MUSIC = { 2, 8, 32 }
 ---@type integer Number of gems in the game (max 8)
 N_GEMS = 8
 
----@type integer Number of frames to show level-up screen
-LEVEL_UP_FRAMES = 100
-
 ---@type integer[][] game grid
 Grid = {}
 
@@ -53,9 +50,9 @@ FallingGrid = {}
 ---@type Player # table containing player information
 Player = {
 	grid_cursor = nil,
-	score = 0,
-	init_level_score = 0,
-	level_threshold = L1_THRESHOLD,
+	shifted_score = 0,
+	shifted_init_level_score = 0,
+	shifted_level_threshold = SHIFTED_L1_THRESHOLD,
 	level = 1,
 	chances = 3,
 	combo = 0,
@@ -93,9 +90,9 @@ end
 -- Initialize the player for starting the game
 function InitPlayer()
 	Player.grid_cursor = { x = 3, y = 3 }
-	Player.score = 0
-	Player.init_level_score = 0
-	Player.level_threshold = L1_THRESHOLD
+	Player.shifted_score = 0
+	Player.shifted_init_level_score = 0
+	Player.shifted_level_threshold = SHIFTED_L1_THRESHOLD
 	Player.level = 1
 	Player.chances = 3
 	Player.combo = 0
@@ -103,25 +100,6 @@ function InitPlayer()
 	Player.placement = nil
 	Player.score_cursor = SCORE_POSITIONS.first
 	Player.swapping_gem = nil
-end
-
--- Cycle through the initials' indices.
----@param letterID integer # current letter ID (1 to #INITIALS inclusive)
----@param isForward boolean whether the step is forward
----@return integer # next / previous letter ID
-function StepInitials(letterID, isForward)
-	assert((1 <= letterID) and (letterID <= #ALLOWED_LETTERS), "letter ID must be in allowed letter range")
-	-- undo 1-based indexing for modulo arithmetic
-	local letterID_0 = letterID - 1
-	if isForward then
-		local step_0 = (letterID_0 + 1) % #ALLOWED_LETTERS
-		-- redo 1-based indexing
-		return step_0 + 1
-	else
-		local step_0 = (letterID_0 - 1) % #ALLOWED_LETTERS
-		-- redo 1-based indexing
-		return step_0 + 1
-	end
 end
 
 -- Do all cursor moving actions for entering the high score
@@ -144,29 +122,13 @@ end
 -- Increase the player level and perform associated actions
 ---@param player Player
 function LevelUp(player)
+	player.chances = min(player.chances + 1, 99)
 	player.level = player.level + 1
-	player.init_level_score = player.score
+	player.shifted_init_level_score = player.shifted_score
 	-- number of matches needed to advance to the next level (w/o bonus)
 	local match_threshold = L1_MATCHES + 20 * (player.level - 1)
-	-- the number of points for a 3-gem match on this level
-	local base_level_points = ((player.level - 1) * 2) + BASE_MATCH_PTS
-	player.level_threshold = player.init_level_score + match_threshold * base_level_points
-end
-
--- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
----@param place integer
----@return string
-function OrdinalIndicator(place)
-	assert((1 <= place) and (place <= 10), "only works for 1-10")
-	if place == 1 then
-		return "st"
-	elseif place == 2 then
-		return "nd"
-	elseif place == 3 then
-		return "rd"
-	else
-		return "th"
-	end
+	player.shifted_level_threshold = player.shifted_init_level_score
+		+ match_threshold * ShiftedMatchScore(player.level, 1, 3)
 end
 
 -- Get the color of the score position for drawing the high score UI
@@ -184,30 +146,6 @@ end
 function PlayLevelMusic(level)
 	local musicID = (level % #LEVEL_MUSIC) + 1
 	music(LEVEL_MUSIC[musicID])
-end
-
-function DrawInitialEntering(player)
-	local first_str = ""
-	local second_str = ""
-	local third_str = ""
-	local ok_str = ""
-	if player.score_cursor == SCORE_POSITIONS.first then
-		first_str = chr(2) .. "3"
-	end
-	first_str = first_str .. ALLOWED_LETTERS[player.letter_ids[1]] .. chr(2) .. "- "
-	if player.score_cursor == SCORE_POSITIONS.second then
-		second_str = chr(2) .. "3"
-	end
-	second_str = second_str .. ALLOWED_LETTERS[player.letter_ids[2]] .. chr(2) .. "- "
-	if player.score_cursor == SCORE_POSITIONS.third then
-		third_str = chr(2) .. "3"
-	end
-	third_str = third_str .. ALLOWED_LETTERS[player.letter_ids[3]] .. chr(2) .. "- "
-	if player.score_cursor == SCORE_POSITIONS.ok then
-		ok_str = chr(2) .. "3"
-	end
-	ok_str = ok_str .. "ok" .. chr(2) .. "- "
-	Printc("your name: " .. first_str .. second_str .. third_str .. ok_str, 64, 64 + 24 - 3, 7)
 end
 
 ---@param mouse_mode integer
@@ -314,8 +252,7 @@ function _draw()
 	elseif CartState == STATES.level_up then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("level " .. Player.level .. " complete!", 64, 64 - 24 - 3, 7)
-		Printc("get ready for level " .. Player.level + 1, 64, 64 + 24 - 3, 7)
+		DrawLevelComplete(Player.level)
 	elseif CartState == STATES.game_over_transition then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -324,28 +261,22 @@ function _draw()
 	elseif CartState == STATES.game_over then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("no more chances!", 64, 64 - 18, 7)
-		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
-		Printc("press a key to continue", 64, 64 + 12, 7)
+		DrawGameOver()
 	elseif CartState == STATES.game_over_fade then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("no more chances!", 64, 64 - 18, 7)
-		Printc(chr(6) .. "w" .. chr(6) .. "t" .. "game over", 64, 64 - 6, 7)
-		Printc("press a key to continue", 64, 64 + 12, 7)
+		DrawGameOver()
 		DrawFade(FrameCounter)
 	elseif CartState == STATES.enter_high_score then
 		DrawGameBG()
 		DrawHUD(Player)
-		Printc("spectacular!", 64, 64 - 24 - 3, 7)
-		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
-		DrawInitialEntering(Player)
+		DrawHighScoreEntering(Player)
 	elseif CartState == STATES.enter_high_score_fade then
 		DrawGameBG()
 		DrawHUD(Player)
 		Printc("spectacular!", 64, 64 - 24 - 3, 7)
 		Printc("you got " .. Player.placement .. OrdinalIndicator(Player.placement) .. " place", 64, 64 - 3, 7)
-		DrawInitialEntering(Player)
+		DrawHighScoreEntering(Player)
 		DrawFade(FrameCounter)
 	elseif CartState == STATES.high_scores then
 		DrawTitleBG()
@@ -502,13 +433,17 @@ function _update()
 		MoveGridCursor(Player, MouseMode)
 		-- state transitions
 		if ClearFirstGridMatch(Grid, Player) then
+			-- transition to start/continue combo
 			FrameCounter = 0
 			CartState = STATES.show_match_points
-		elseif Player.score >= Player.level_threshold then
+		elseif Player.shifted_score >= Player.shifted_level_threshold then
+			-- transition to initiate leveling up
+			sfx(54, -1, 0, 8)
 			Player.combo = 0
 			FrameCounter = 0
 			CartState = STATES.level_up_transition
 		else
+			-- transition back to idle; optionally punish player for no match
 			if Player.combo == 0 then
 				sfx(0, -1, 0, 3) -- "error" sound effect
 				Player.chances = Player.chances - 1
@@ -543,7 +478,7 @@ function _update()
 		end
 	elseif CartState == STATES.game_over then
 		if btnp(0) or btnp(1) or btnp(2) or btnp(3) or btnp(4) or btnp(5) then
-			Player.placement = FindPlacement(Leaderboard, Player.score)
+			Player.placement = FindPlacement(Leaderboard, Player.shifted_score)
 			if Player.placement == nil then
 				FrameCounter = 0
 				CartState = STATES.game_over_fade
@@ -563,7 +498,7 @@ function _update()
 		MoveScoreCursor()
 		-- state transitions
 		if IsDoneEntering(Player) then
-			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.score)
+			UpdateLeaderboard(Leaderboard, Player.letter_ids, Player.shifted_score)
 			SaveLeaderboard(Leaderboard)
 			music(24)
 			FrameCounter = 0

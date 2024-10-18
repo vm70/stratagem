@@ -131,22 +131,6 @@ function LevelUp(player)
 		+ match_threshold * ShiftedMatchScore(player.level, 1, 3)
 end
 
--- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
----@param place integer
----@return string
-function OrdinalIndicator(place)
-	assert((1 <= place) and (place <= 10), "only works for 1-10")
-	if place == 1 then
-		return "st"
-	elseif place == 2 then
-		return "nd"
-	elseif place == 3 then
-		return "rd"
-	else
-		return "th"
-	end
-end
-
 -- Get the color of the score position for drawing the high score UI
 ---@param score_position ScorePositions
 function HSColor(score_position)

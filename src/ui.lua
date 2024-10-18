@@ -60,6 +60,22 @@ function Printc(str, x, y, col)
 	print(str, x - width / 2, y, col)
 end
 
+-- Get the corresponding ordinal indicator for the place number (e.g., 5th for 5)
+---@param place integer
+---@return string
+function OrdinalIndicator(place)
+	assert((1 <= place) and (place <= 10), "only works for 1-10")
+	if place == 1 then
+		return "st"
+	elseif place == 2 then
+		return "nd"
+	elseif place == 3 then
+		return "rd"
+	else
+		return "th"
+	end
+end
+
 -- draw the cursor on the grid
 ---@param grid_cursor Coords | nil
 ---@param color integer

@@ -102,25 +102,6 @@ function InitPlayer()
 	Player.swapping_gem = nil
 end
 
--- Cycle through the initials' indices.
----@param letterID integer # current letter ID (1 to #INITIALS inclusive)
----@param isForward boolean whether the step is forward
----@return integer # next / previous letter ID
-function StepInitials(letterID, isForward)
-	assert((1 <= letterID) and (letterID <= #ALLOWED_LETTERS), "letter ID must be in allowed letter range")
-	-- undo 1-based indexing for modulo arithmetic
-	local letterID_0 = letterID - 1
-	if isForward then
-		local step_0 = (letterID_0 + 1) % #ALLOWED_LETTERS
-		-- redo 1-based indexing
-		return step_0 + 1
-	else
-		local step_0 = (letterID_0 - 1) % #ALLOWED_LETTERS
-		-- redo 1-based indexing
-		return step_0 + 1
-	end
-end
-
 -- Do all cursor moving actions for entering the high score
 function MoveScoreCursor()
 	if Player.score_cursor ~= SCORE_POSITIONS.first and btnp(0) then

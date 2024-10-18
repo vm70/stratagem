@@ -3,6 +3,25 @@
 ---@type string Allowed initial characters for high scores
 ALLOWED_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789 "
 
+-- Cycle through the initials' indices.
+---@param letterID integer # current letter ID (1 to #INITIALS inclusive)
+---@param isForward boolean whether the step is forward
+---@return integer # next / previous letter ID
+function StepInitials(letterID, isForward)
+	assert((1 <= letterID) and (letterID <= #ALLOWED_LETTERS), "letter ID must be in allowed letter range")
+	-- undo 1-based indexing for modulo arithmetic
+	local letterID_0 = letterID - 1
+	if isForward then
+		local step_0 = (letterID_0 + 1) % #ALLOWED_LETTERS
+		-- redo 1-based indexing
+		return step_0 + 1
+	else
+		local step_0 = (letterID_0 - 1) % #ALLOWED_LETTERS
+		-- redo 1-based indexing
+		return step_0 + 1
+	end
+end
+
 -- equivalent of `string.find` in vanilla Lua's standard library
 ---@param str string
 ---@param wantChar string

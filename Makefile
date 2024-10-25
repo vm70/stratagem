@@ -18,6 +18,7 @@ p8png_file := $(BUILD_DIR)/stratagem-$(stratagem_version).p8.png
 bin_folder := $(BUILD_DIR)/stratagem-$(stratagem_version).bin
 
 # Do everything
+.PHONY: all
 all: setup build-cart run-cart
 
 # Set up development environment
@@ -65,5 +66,10 @@ ifndef PICO8_PATH
 endif
 	$(PICO8_PATH) -run $(p8_file)
 
+.PHONY: test
+test:
+	$(error "Testing not implemented yet.")
+
+.PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)

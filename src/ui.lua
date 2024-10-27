@@ -389,15 +389,19 @@ function DrawTitleFG(version)
 end
 
 ---@param player Player
+---@param particles Particle[]
 ---@param frame integer
 -- Draw the point numbers for the player's match where the gems were cleared
-function DrawMatchAnimations(player, frame)
-	-- initialize particles
+function DrawMatchAnimations(player, particles, frame)
 	if frame == 0 then
-		Particles = {}
+		-- reset particle table
+		for idx in pairs(particles) do
+			particles[idx] = nil
+		end
+		-- populate with new particles
 		for _, coord in ipairs(player.last_match.match_list) do
 			for i = 1, 8 do
-				add(Particles, { coord = coord, theta = 0.125 * i + rnd(0.125) })
+				add(particles, { coord = coord, theta = 0.125 * i + rnd(0.125) })
 			end
 		end
 	end
@@ -417,7 +421,7 @@ function DrawMatchAnimations(player, frame)
 				16 - 16 * shrinking_progress
 			)
 		end
-		for _, particle in ipairs(Particles) do
+		for _, particle in ipairs(particles) do
 			-- relative origin of the particle's polar coordinates [px, px]
 			local particle_origin = { x = 16 * particle.coord.x + 8, y = 16 * particle.coord.y + 8 }
 			-- distance [px] from the relative origin

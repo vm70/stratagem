@@ -76,30 +76,31 @@ FrameCounter = 0
 MouseMode = 0
 
 -- Initialize the grid with all holes
-function InitGrids()
+function InitGrids(grid, falling_grid)
 	for y = 1, 6 do
-		Grid[y] = {}
-		FallingGrid[y] = {}
+		grid[y] = {}
+		falling_grid[y] = {}
 		for x = 1, 6 do
-			Grid[y][x] = 0
-			FallingGrid[y][x] = true
+			grid[y][x] = 0
+			falling_grid[y][x] = true
 		end
 	end
 end
 
 -- Initialize the player for starting the game
-function InitPlayer()
-	Player.grid_cursor = { x = 3, y = 3 }
-	Player.shifted_score = 0
-	Player.shifted_init_level_score = 0
-	Player.shifted_level_threshold = SHIFTED_L1_THRESHOLD
-	Player.level = 1
-	Player.chances = 3
-	Player.combo = 0
-	Player.last_match = nil
-	Player.placement = nil
-	Player.score_cursor = SCORE_POSITIONS.first
-	Player.swapping_gem = nil
+---@param player Player
+function InitPlayer(player)
+	player.grid_cursor = { x = 3, y = 3 }
+	player.shifted_score = 0
+	player.shifted_init_level_score = 0
+	player.shifted_level_threshold = SHIFTED_L1_THRESHOLD
+	player.level = 1
+	player.chances = 3
+	player.combo = 0
+	player.last_match = nil
+	player.placement = nil
+	player.score_cursor = SCORE_POSITIONS.first
+	player.swapping_gem = nil
 end
 
 -- Increase the player level and perform associated actions
@@ -128,8 +129,8 @@ function _init()
 	poke(0x5f2d, 0x1)
 	cls(0)
 	music(24)
-	InitPlayer()
-	InitGrids()
+	InitPlayer(Player)
+	InitGrids(Grid, FallingGrid)
 	SetMouseControls(MouseMode)
 	menuitem(2, "reset scores", function()
 		ResetLeaderboard(Leaderboard)
@@ -184,7 +185,7 @@ function _draw()
 		DrawHUD(Player)
 		DrawGems(Grid, FallingGrid)
 		DrawCursor(Player.grid_cursor, 1)
-		DrawMatchAnimations(Player, FrameCounter)
+		DrawMatchAnimations(Player, Particles, FrameCounter)
 	elseif CartState == STATES.fill_grid then
 		DrawGameBG()
 		DrawHUD(Player)
@@ -270,8 +271,8 @@ function _update()
 		end
 	elseif CartState == STATES.game_init then
 		-- state actions
-		InitPlayer()
-		InitGrids()
+		InitPlayer(Player)
+		InitGrids(Grid, FallingGrid)
 		-- state transitions
 		CartState = STATES.prepare_grid
 	elseif CartState == STATES.prepare_grid then
@@ -417,7 +418,7 @@ function _update()
 		-- state transitions
 		if FrameCounter == LEVEL_UP_FRAMES then
 			LevelUp(Player)
-			InitGrids()
+			InitGrids(Grid, FallingGrid)
 			FrameCounter = 0
 			CartState = STATES.prepare_grid
 		else

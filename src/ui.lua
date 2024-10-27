@@ -382,7 +382,7 @@ function DrawTitleFG(version)
 		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
 		7
 	)
-	Printc('by vincent "vm" mercator', 64, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
+	Printc("by vincent mercator & co.", 64, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
 	Printc("\142: start game ", 64, 72, 7)
 	Printc("\151: high scores", 64, 80, 7)
 	Printc("\131: credits    ", 64, 88, 7)

@@ -2,9 +2,9 @@
 
 ---@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
 TITLE_SPRITE = {
-	width = 82,
-	height = 31,
-	y_offset = 10,
+	width = 118,
+	height = 15,
+	y_offset = 18,
 }
 
 ---@type integer Number of frames to wait to show the match points
@@ -376,16 +376,30 @@ function DrawTitleFG(version)
 		TITLE_SPRITE.width,
 		TITLE_SPRITE.height
 	)
-	print(
-		"V" .. version.major .. "." .. version.minor .. "." .. version.patch,
-		64 - TITLE_SPRITE.width / 2,
-		TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
-		7
-	)
+	local version_text = "V" .. version.major .. "." .. version.minor .. "." .. version.patch
+	ShadowPrint(version_text, 64 - TITLE_SPRITE.width / 2, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2, 7, 5)
+	-- print(
+	-- 	version_text,
+	-- 	64 - TITLE_SPRITE.width / 2,
+	-- 	TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2,
+	-- 	5
+	-- )
+	-- print(
+	-- 	version_text,
+	-- 	64 - TITLE_SPRITE.width / 2,
+	-- 	TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
+	-- 	7
+	-- )
 	Printc("by vincent mercator & co.", 64, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
 	Printc("\142: start game ", 64, 72, 7)
 	Printc("\151: high scores", 64, 80, 7)
 	Printc("\131: credits    ", 64, 88, 7)
+end
+
+function ShadowPrint(str, x, y, col_fg, col_bg)
+	for col_idx, col in ipairs({ col_bg, col_fg }) do
+		print(str, x, y + 2 - col_idx, col)
+	end
 end
 
 ---@param player Player

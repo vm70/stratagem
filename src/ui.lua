@@ -96,7 +96,7 @@ end
 ---@param level integer
 function DrawLevelComplete(level)
 	Printc("level " .. level .. " complete!", 64, 64 - 24 - 3, 7)
-	Printc("you got an extra chance!", 64, 64 - 3, 7)
+	Printc("you got an extra chance!", 65, 64 - 3, 7)
 	Printc("get ready for level " .. level + 1, 64, 64 + 24 - 3, 7)
 end
 

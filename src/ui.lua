@@ -391,28 +391,28 @@ function DrawTitleFG(version)
 		TITLE_SPRITE.height
 	)
 	local version_text = "V" .. version.major .. "." .. version.minor .. "." .. version.patch
-	ShadowPrint(version_text, 64 - TITLE_SPRITE.width / 2, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2, 7, 5)
-	-- print(
-	-- 	version_text,
-	-- 	64 - TITLE_SPRITE.width / 2,
-	-- 	TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2,
-	-- 	5
-	-- )
-	-- print(
-	-- 	version_text,
-	-- 	64 - TITLE_SPRITE.width / 2,
-	-- 	TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 1,
-	-- 	7
-	-- )
-	Printc("by vincent mercator & co.", 64, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 12, 7)
+	print(version_text, 64 - TITLE_SPRITE.width / 2, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2, 7)
+	Printc("by vincent mercator & co.", 65, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 10, 7)
 	Printc("\142: start game ", 64, 72, 7)
 	Printc("\151: high scores", 64, 80, 7)
 	Printc("\131: credits    ", 64, 88, 7)
 end
 
-function ShadowPrint(str, x, y, col_fg, col_bg)
+-- Draw the given string at the coordinates with a foreground color & shadow background color.
+---@param str string # string to print
+---@param x number # x-coordinate
+---@param y number # y-coordinate
+---@param col_fg number # foreground color
+---@param col_bg number # background shadow color
+---@param center? boolean # whether or not to print with `printc`; defaults to `false`.
+function ShadowPrint(str, x, y, col_fg, col_bg, center)
+	center = center or false
+	local temp_print = print
+	if center == true then
+		temp_print = Printc
+	end
 	for col_idx, col in ipairs({ col_bg, col_fg }) do
-		print(str, x, y + 2 - col_idx, col)
+		temp_print(str, x, y + 2 - col_idx, col)
 	end
 end
 

@@ -112,6 +112,11 @@ function DrawGameBG()
 	fillp(BG_PATTERNS[1 + flr(time() % #BG_PATTERNS)])
 	rectfill(0, 0, 128, 128, 0x21)
 	fillp(0)
+	DrawGrid()
+end
+
+-- draw the game grid
+function DrawGrid()
 	rectfill(14, 14, 113, 113, 0)
 	map(0, 0, 0, 0, 16, 16, 0)
 end

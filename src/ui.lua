@@ -367,7 +367,7 @@ end
 function DrawCredits()
 	Printc("credits", 64, 8, 7)
 	print(
-		"vincent mercator:\n lead dev,music,art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting",
+		"vincent mercator:\n lead dev, music, & art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting",
 		64 - 47,
 		24,
 		7

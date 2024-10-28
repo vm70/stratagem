@@ -337,7 +337,16 @@ function DrawTitleBG()
 			then
 				color = 2
 			end
-			pset(x, y, color)
+			-- cheat a little bit to center the pattern on the 128x128 grid
+			local x_alt = x
+			local y_alt = y
+			if x >= 64 then
+				x_alt = x_alt + 1
+			end
+			if y >= 64 then
+				y_alt = y_alt + 1
+			end
+			pset(x_alt, y_alt, color)
 		end
 	end
 	map(16, 0, 0, 0, 16, 16)

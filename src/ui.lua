@@ -2,8 +2,8 @@
 
 ---@type {width: integer, height: integer, y_offset: integer} Title art sprite properties
 TITLE_SPRITE = {
-	width = 118,
-	height = 15,
+	width = 120,
+	height = 17,
 	y_offset = 18,
 }
 
@@ -19,6 +19,12 @@ SCORE_POSITIONS = {
 	second = 2,
 	third = 3,
 	ok = 4,
+}
+
+MENU_POSITIONS = {
+	start_game = 1,
+	high_scores = 2,
+	credits = 3,
 }
 
 ---@type integer Number of frames to show level-up screen
@@ -116,9 +122,14 @@ function DrawGameBG()
 end
 
 -- draw the game grid
-function DrawGrid()
+---@param for_title boolean?
+function DrawGrid(for_title)
+	local map_loc = { x = 0, y = 0 }
+	if for_title == true then
+		map_loc = { x = 16, y = 0 }
+	end
 	rectfill(14, 14, 113, 113, 0)
-	map(0, 0, 0, 0, 16, 16, 0)
+	map(map_loc.x, map_loc.y, 0, 0, 16, 16, 0)
 end
 
 -- Draw a fade to black using fill patterns
@@ -314,8 +325,8 @@ end
 ---@param player Player
 function DrawHUD(player)
 	-- `chr(3)` is a special PICO-8 character that shifts the print cursor
-	print("\135:" .. LeftPad(tostr(max(player.chances, 0)), " ", 2), 18, 9, 7)
-	Printc("score" .. chr(3) .. "f:" .. LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 77, 9, 7)
+	print("\135" .. chr(3) .. "e:" .. chr(3) .. "i" .. LeftPad(tostr(max(player.chances, 0)), " ", 2), 18, 9, 7)
+	print("score" .. chr(3) .. "f:" .. chr(3) .. "k" .. LeftPad(tostr(player.shifted_score, 0x2), " ", 10), 43, 9, 7)
 	Printc("level " .. player.level, 64, 121, 7)
 	-- calculate level completion ratio
 	local level_ratio = (player.shifted_score - player.shifted_init_level_score)
@@ -349,13 +360,13 @@ function DrawTitleBG()
 			pset(x_alt, y_alt, color)
 		end
 	end
-	map(16, 0, 0, 0, 16, 16)
+	DrawGrid(true)
 end
 
 -- draw the leaderboard
 ---@param leaderboard HighScore[]
 function DrawLeaderboard(leaderboard)
-	Printc("high scores", 64, 8, 7)
+	Printc("high scores", 65, 15, 7)
 	for entry_idx, entry in ipairs(leaderboard) do
 		local padded_place = LeftPad(tostr(entry_idx), " ", 2) .. ". "
 		local padded_score = LeftPad(tostr(entry.shifted_score, 0x2), " ", 10)
@@ -365,7 +376,7 @@ function DrawLeaderboard(leaderboard)
 end
 
 function DrawCredits()
-	Printc("credits", 64, 8, 7)
+	Printc("credits", 64, 15, 7)
 	print(
 		"vincent mercator:\n lead dev, music, & art\n\n@squaremango:\n gem sprite art\n\nbejeweled fans discord:\n playtesting",
 		64 - 47,
@@ -380,6 +391,7 @@ end
 ---@param version Version
 function DrawTitleFG(version)
 	-- draw foreground title
+	pal(1, 0)
 	sspr(
 		0,
 		32,
@@ -390,9 +402,10 @@ function DrawTitleFG(version)
 		TITLE_SPRITE.width,
 		TITLE_SPRITE.height
 	)
+	pal(0)
 	local version_text = "V" .. version.major .. "." .. version.minor .. "." .. version.patch
-	print(version_text, 64 - TITLE_SPRITE.width / 2, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2, 7)
-	Printc("by vincent mercator & co.", 65, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 10, 7)
+	ShadowPrint("by vincent mercator & co.", 65, TITLE_SPRITE.y_offset + TITLE_SPRITE.height + 2, 7, 5, true)
+	Printc(version_text, 64, 107, 7)
 	Printc("\142: start game ", 64, 72, 7)
 	Printc("\151: high scores", 64, 80, 7)
 	Printc("\131: credits    ", 64, 88, 7)

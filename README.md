@@ -1,7 +1,7 @@
 # _Stratagem_: A Nonlinear Match-3 Game for the PICO-8
 
 <div align="center">
-<img src="assets/stratagem-label.png" alt="Stratagem Logo" style="image-rendering: pixelated" width=384 height=384>
+<img src="assets/stratagem-label-xl.png" alt="Stratagem Logo" style="image-rendering: pixelated">
 </div>
 
 _Stratagem_ is a match-3 game for the
